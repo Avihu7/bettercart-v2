@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.vite/
+coverage/
+
+# Runtime app database (user/test data — not part of source)
+server/bettercart.db
+server/bettercart.db-shm
+server/bettercart.db-wal
+
+# SQLite WAL/SHM journal files for catalog DB (products.db itself IS committed)
+server/products.db-shm
+server/products.db-wal
+
+# Claude Code developer tooling
+.claude/
