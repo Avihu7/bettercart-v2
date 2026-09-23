@@ -133,4 +133,10 @@ for (const sql of catalogCols) {
   try { db.exec(sql); } catch { /* column already exists — skip */ }
 }
 
+// Marks whether shopping list generation added catalog items to diversify
+// beyond the receipt (safe migration)
+try {
+  db.exec("ALTER TABLE shoppingLists ADD COLUMN complementary_added INTEGER DEFAULT 0");
+} catch { /* column already exists — skip */ }
+
 export default db;

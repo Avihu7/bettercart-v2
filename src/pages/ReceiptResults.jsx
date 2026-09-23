@@ -282,6 +282,9 @@ export default function ReceiptResults() {
             התאם מוצרים לקטלוג
           </Button>
         </div>
+        <p className="px-4 pt-2 text-[11px] text-muted-foreground/70">
+          מערכת ההתאמה משתמשת כרגע בקטלוג שופרסל בלבד
+        </p>
         {matchCatalogMutation.isSuccess && (
           <div className="px-4 py-2 bg-green-50 border-b border-green-100 text-xs text-green-700">
             ✓ הצלבת קטלוג הושלמה —{' '}

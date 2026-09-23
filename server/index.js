@@ -37,6 +37,20 @@ try {
   console.error('Failed to open products catalog:', err.message);
 }
 
+// ─── Catalog provider configuration ──────────────────────────────────────────
+// products.db may contain data for multiple supermarket chains, but for this
+// MVP only one chain is "active" (used by search/matching). To add another
+// chain later: add an entry here and flip enabled: true — no other changes
+// should be needed in the search/matching logic below.
+const CATALOG_PROVIDERS = {
+  shufersal: { label: 'שופרסל',  sourceChain: 'shufersal', enabled: true },
+  rami_levy: { label: 'רמי לוי', sourceChain: 'rami_levy', enabled: false },
+};
+const ACTIVE_CATALOG_CHAIN = 'shufersal';
+const SUPPORTED_CATALOG_CHAINS = Object.entries(CATALOG_PROVIDERS)
+  .filter(([, cfg]) => cfg.enabled)
+  .map(([key]) => key);
+
 // Lightweight Hebrew query normalizer (mirrors Python text_normalization.py)
 function normalizeHebrewQuery(text) {
   if (!text) return '';
@@ -80,7 +94,7 @@ const BOOL_FIELDS = {
   userProfile:   ['onboarding_complete'],
   receipts:      [],
   receiptItems:  ['is_food', 'is_approved_for_menu', 'catalog_needs_review'],
-  shoppingLists: [],
+  shoppingLists: ['complementary_added'],
   nutritionPlans: [],
 };
 
@@ -165,7 +179,20 @@ app.get('/api/products/stats', (_req, res) => {
     const byChain   = productsDb.prepare("SELECT source_chain AS chain, COUNT(*) AS n FROM products WHERE is_food = 1 GROUP BY source_chain").all();
     const topCats   = productsDb.prepare("SELECT category, COUNT(*) AS n FROM products WHERE is_food = 1 AND data_confidence = 'official' GROUP BY category ORDER BY n DESC LIMIT 10").all();
     const sample    = productsDb.prepare("SELECT original_product_name, price, category, source_chain FROM products WHERE is_food = 1 AND data_confidence = 'official' AND price > 0 ORDER BY RANDOM() LIMIT 5").all();
-    res.json({ connected: true, total_products: total, food_products: food, official_food_products: official, by_chain: byChain, top_categories: topCats, sample_products: sample });
+    const activeTotal = productsDb.prepare('SELECT COUNT(*) AS n FROM products WHERE source_chain = ?').get(ACTIVE_CATALOG_CHAIN).n;
+    const activeFood   = productsDb.prepare('SELECT COUNT(*) AS n FROM products WHERE source_chain = ? AND is_food = 1').get(ACTIVE_CATALOG_CHAIN).n;
+    res.json({
+      connected: true,
+      total_products: total,
+      food_products: food,
+      official_food_products: official,
+      by_chain: byChain,
+      top_categories: topCats,
+      sample_products: sample,
+      active_chain: ACTIVE_CATALOG_CHAIN,
+      active_chain_total_products: activeTotal,
+      active_chain_food_products: activeFood,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -184,9 +211,13 @@ app.get('/api/products/search', (req, res) => {
 
   const query      = normalizeHebrewQuery(q.trim());
   const limitN     = Math.min(parseInt(limitParam, 10) || 5, 20);
-  const validChains = new Set(['rami_levy', 'shufersal']);
-  const chainFilter = chain && validChains.has(chain) ? chain : null;
-  const chainClause = chainFilter ? ' AND source_chain = ?' : '';
+
+  // MVP: catalog search is fixed to ACTIVE_CATALOG_CHAIN regardless of the
+  // requested `chain` param — see CATALOG_PROVIDERS config above.
+  const requestedChain = chain || null;
+  const chainFilter = ACTIVE_CATALOG_CHAIN;
+  const chainClause = ' AND source_chain = ?';
+  const chainForced = requestedChain != null && requestedChain !== ACTIVE_CATALOG_CHAIN;
 
   const SELECT_COLS = `
     SELECT
@@ -250,7 +281,13 @@ app.get('/api/products/search', (req, res) => {
     res.json({
       query,
       normalized_query: query,
-      chain_filter: chainFilter || 'all',
+      chain_filter: chainFilter,
+      active_catalog_chain: ACTIVE_CATALOG_CHAIN,
+      requested_chain: requestedChain,
+      chain_forced: chainForced,
+      message: chainForced
+        ? `הצ'אין המבוקש (${requestedChain}) אינו נתמך ב-MVP הנוכחי — הקטלוג הפעיל קבוע ל-${ACTIVE_CATALOG_CHAIN}`
+        : undefined,
       total: results.length,
       results,
     });
@@ -272,7 +309,8 @@ app.post('/api/products/match-items', (req, res) => {
     return res.status(400).json({ error: 'Maximum 50 items per request' });
   }
 
-  const VALID_CHAINS = new Set(['rami_levy', 'shufersal']);
+  // MVP: matching is fixed to ACTIVE_CATALOG_CHAIN regardless of item.chain —
+  // see CATALOG_PROVIDERS config near the top of this file.
 
   // Tokens that don't identify a product on their own — matching only these should never
   // produce a matched:true result (chain names, units, generic filler words, bare numbers)
@@ -331,6 +369,8 @@ app.post('/api/products/match-items', (req, res) => {
       fat_per_100g: row.fat_per_100g ?? null,
       match_type: matchType,
       match_confidence: parseFloat(confidence.toFixed(2)),
+      catalog_chain: ACTIVE_CATALOG_CHAIN,
+      active_catalog_chain: ACTIVE_CATALOG_CHAIN,
       ...extra,
     };
   }
@@ -340,6 +380,7 @@ app.post('/api/products/match-items', (req, res) => {
       matched_product_id: String(row.product_id),
       matched_name: row.original_product_name,
       chain: row.chain,
+      catalog_chain: ACTIVE_CATALOG_CHAIN,
       price: row.price ?? null,
       category: row.category ?? null,
       match_type: matchType,
@@ -350,9 +391,10 @@ app.post('/api/products/match-items', (req, res) => {
   function matchOne(item) {
     const inputName = item.normalized_name || item.name || '';
     const normalized = normalizeHebrewQuery(inputName);
-    const preferChain = VALID_CHAINS.has(item.chain) ? item.chain : null;
-    const chainClause = preferChain ? ' AND source_chain = ?' : '';
-    const chainParams = preferChain ? [preferChain] : [];
+    // MVP: always match within ACTIVE_CATALOG_CHAIN — item.chain (e.g. from
+    // detected receipt store) is intentionally ignored for filtering.
+    const chainClause = ' AND source_chain = ?';
+    const chainParams = [ACTIVE_CATALOG_CHAIN];
 
     const base = { input_name: inputName, matched: false, match_confidence: 0 };
     if (!normalized || normalized.length < 2) return base;
@@ -363,29 +405,14 @@ app.post('/api/products/match-items', (req, res) => {
     ).all(normalized, ...chainParams);
     if (exactRows.length > 0) return buildMatch(base, exactRows[0], 'exact', 1.0);
 
-    // Tier 1 fallback: exact across all chains
-    if (preferChain) {
-      const anyExact = productsDb.prepare(
-        `${COLS} AND normalized_product_name = ? ORDER BY overall_score DESC NULLS LAST LIMIT 3`
-      ).all(normalized);
-      if (anyExact.length > 0) return buildMatch(base, anyExact[0], 'exact', 1.0);
-    }
-
     // Tier 2: partial LIKE (full normalized query is substring of product name)
     const likeParam = `%${normalized}%`;
-    let partialRows = productsDb.prepare(
+    const partialRows = productsDb.prepare(
       `${COLS} AND normalized_product_name LIKE ? ${chainClause} ORDER BY overall_score DESC NULLS LAST LIMIT 15`
     ).all(likeParam, ...chainParams);
-    if (preferChain && partialRows.length === 0) {
-      partialRows = productsDb.prepare(
-        `${COLS} AND normalized_product_name LIKE ? ORDER BY overall_score DESC NULLS LAST LIMIT 15`
-      ).all(likeParam);
-    }
 
     // Tier 3: token LIKE — query only on meaningful (non-stop) tokens.
-    // Always fetches from ALL chains (chain preference is applied in JS scoring, not SQL),
-    // so that a good cross-chain match isn't hidden behind a shufersal product with
-    // high overall_score but an irrelevant name.
+    // Restricted to ACTIVE_CATALOG_CHAIN like every other tier.
     const allTokens = normalized.split(/\s+/).filter(t => t.length >= 2);
     const sigTokens = allTokens.filter(t => t.length >= 3);
     const meaningfulTokens = sigTokens.filter(isMeaningful);
@@ -393,12 +420,12 @@ app.post('/api/products/match-items', (req, res) => {
     let tokenRows = [];
     let prefixRows = [];
     if (meaningfulTokens.length > 0) {
-      // Broad token search (any-position LIKE, all chains, capped at 60)
+      // Broad token search (any-position LIKE, capped at 60)
       const orClauses = meaningfulTokens.map(() => 'normalized_product_name LIKE ?').join(' OR ');
       const tokenLikeParams = meaningfulTokens.map(t => `%${t}%`);
       tokenRows = productsDb.prepare(
-        `${COLS} AND (${orClauses}) ORDER BY overall_score DESC NULLS LAST LIMIT 60`
-      ).all(...tokenLikeParams);
+        `${COLS} AND (${orClauses}) ${chainClause} ORDER BY overall_score DESC NULLS LAST LIMIT 60`
+      ).all(...tokenLikeParams, ...chainParams);
 
       // Prefix search: products that START WITH one of the meaningful tokens.
       // These can rank below LIMIT 60 in overall_score yet be the correct match
@@ -409,8 +436,8 @@ app.post('/api/products/match-items', (req, res) => {
       ]).join(' OR ');
       const prefParams = meaningfulTokens.flatMap(t => [`${t} %`, t]);
       prefixRows = productsDb.prepare(
-        `${COLS} AND (${prefClauses}) ORDER BY overall_score DESC NULLS LAST LIMIT 20`
-      ).all(...prefParams);
+        `${COLS} AND (${prefClauses}) ${chainClause} ORDER BY overall_score DESC NULLS LAST LIMIT 20`
+      ).all(...prefParams, ...chainParams);
     }
 
     // Merge, deduplicate, and score all candidates
@@ -453,9 +480,8 @@ app.post('/api/products/match-items', (req, res) => {
         const firstProdWord = prodNorm.split(/\s+/)[0];
         if (firstProdWord === meaningfulTokens[0]) conf += 0.05;
       }
-      // Chain preference: tiebreaker for ranking — capped so it never lifts a weak
-      // token match (< 0.65 base) over the 0.7 acceptance threshold on its own
-      if (preferChain && c.chain === preferChain) conf += 0.02;
+      // No chain-preference bonus needed: all candidates are already
+      // restricted to ACTIVE_CATALOG_CHAIN.
       if (c.calories_per_100g != null) conf += 0.01;
       if (c.overall_score) conf += c.overall_score / 5000;
       return { row: c, conf: Math.min(0.95, conf), type, meaningfulHits };
@@ -508,7 +534,12 @@ app.post('/api/products/match-items', (req, res) => {
         return { input_name: item.normalized_name || item.name || '', matched: false, match_confidence: 0, error: err.message };
       }
     });
-    res.json({ total: items.length, matched: matches.filter(m => m.matched).length, matches });
+    res.json({
+      total: items.length,
+      matched: matches.filter(m => m.matched).length,
+      active_catalog_chain: ACTIVE_CATALOG_CHAIN,
+      matches,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -22,6 +22,7 @@
 - **Receipt results** — food/non-food split, inline item editing (price/category/quantity/approval), approve/reject items for meal planning
 - **Product Catalog Integration** (Steps 1–4 complete):
   - Step 1: `server/products.db` — 82,564 products from Rami Levy and Shufersal (read-only)
+  - **Active catalog provider (MVP): Shufersal only.** `server/index.js` defines `ACTIVE_CATALOG_CHAIN = "shufersal"` and a `CATALOG_PROVIDERS` config; `/api/products/search` and `/api/products/match-items` always filter/match against `source_chain = "shufersal"`, regardless of any `chain` value passed in. Rami Levy rows remain in `products.db` but are not used by current matching. This narrowed scope was chosen to reduce complexity and improve reliability for academic submission; the code is structured so another chain can be enabled later by flipping `enabled: true` in `CATALOG_PROVIDERS` — no matching-logic changes required.
   - Step 2: `POST /api/products/match-items` — 3-tier matching (exact → partial LIKE → token scoring) with stop tokens, confidence thresholds, `needs_review` flag
   - Step 3: ReceiptResults "התאם מוצרים לקטלוג" button — catalog badges per item, catalog fields stored separately from AI/user data, no overwrite of user-edited values
   - Step 4: ShoppingListPage `getEffectiveItemData()` — uses catalog nutrition/price only for `status=matched AND !needs_review`; falls back to AI/user values otherwise

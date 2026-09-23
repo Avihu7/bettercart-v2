@@ -17,6 +17,64 @@ import { optimizeShoppingQuantities, getOptimizationSummary } from "@/lib/shoppi
 
 const MIN_FOOD_ITEMS = 3;
 
+// ─── Protein source diversity ────────────────────────────────────────────────
+// Receipts tend to be dominated by 1-2 "safe" proteins (chicken, eggs). To keep
+// the shopping list from narrowing the whole week's menu to just those, we
+// detect which of these groups are already represented in the receipt and, for
+// groups that are missing (and not excluded by dietary restrictions/allergies),
+// fetch a couple of real complementary candidates from the active Shufersal
+// catalog to suggest to the AI generator.
+const PROTEIN_SOURCE_GROUPS = {
+  poultry:       { label: "עוף/הודו",     terms: ["עוף", "הודו"],                    searchTerm: "חזה עוף" },
+  eggs:          { label: "ביצים",         terms: ["ביצים", "ביצה"],                  searchTerm: "ביצים" },
+  dairy_protein: { label: "חלבון חלבי",    terms: ["קוטג", "יוגורט", "לבנה", "גבינה"], searchTerm: "קוטג" },
+  fish:          { label: "דגים",          terms: ["טונה", "סלמון", "דג"],            searchTerm: "טונה בשמן" },
+  legumes:       { label: "קטניות",        terms: ["עדש", "חומוס", "שעועית"],         searchTerm: "עדשים" },
+  plant_protein: { label: "חלבון צמחי",    terms: ["טופו", "סייטן"],                  searchTerm: "טופו" },
+};
+
+function excludedProteinGroups(dietaryRestrictions, allergies) {
+  const has = (arr, ...vals) => vals.some(v => arr.includes(v));
+  const excluded = new Set();
+  if (has(dietaryRestrictions, "vegan", "טבעוני")) {
+    ["poultry", "eggs", "dairy_protein", "fish"].forEach(g => excluded.add(g));
+  }
+  if (has(dietaryRestrictions, "vegetarian", "צמחוני")) {
+    ["poultry", "fish"].forEach(g => excluded.add(g));
+  }
+  if (has(allergies, "דגים", "פירות ים")) excluded.add("fish");
+  if (has(allergies, "ביצים")) excluded.add("eggs");
+  if (has(allergies, "חלב") || has(dietaryRestrictions, "ללא לקטוז")) excluded.add("dairy_protein");
+  if (has(allergies, "סויה")) excluded.add("plant_protein");
+  return excluded;
+}
+
+function presentProteinGroups(itemNames) {
+  const present = new Set();
+  for (const [group, cfg] of Object.entries(PROTEIN_SOURCE_GROUPS)) {
+    if (cfg.terms.some(t => itemNames.some(n => n.includes(t)))) present.add(group);
+  }
+  return present;
+}
+
+// Best-effort: fetch a couple of real Shufersal catalog candidates per missing
+// protein group. Failures are swallowed — this is a suggestion layer only, the
+// AI prompt still works fine without it.
+async function fetchComplementaryCandidates(missingGroups) {
+  const candidates = [];
+  for (const group of missingGroups.slice(0, 3)) {
+    try {
+      const res = await fetch(`/api/products/search?q=${encodeURIComponent(PROTEIN_SOURCE_GROUPS[group].searchTerm)}&limit=2`);
+      if (!res.ok) continue;
+      const data = await res.json();
+      for (const p of (data.results || []).slice(0, 2)) {
+        candidates.push({ group, ...p });
+      }
+    } catch { /* best-effort — skip this group on failure */ }
+  }
+  return candidates;
+}
+
 function getEffectiveItemData(item) {
   const hasStrongCatalogMatch =
     item.catalog_match_status === "matched" && !item.catalog_needs_review;
@@ -123,17 +181,38 @@ export default function ShoppingListPage() {
 
       const dietaryRestrictions = profile?.dietary_preferences || [];
       const allergies = profile?.allergies || [];
-      
+
+      // Diversity: figure out which protein source groups the receipt is
+      // already covering, and fetch real Shufersal candidates for the ones
+      // that are missing (and not excluded by diet/allergies) so the AI has
+      // concrete, real-priced options to diversify beyond chicken/eggs.
+      const itemNames = enrichedItems.map(i => (i.normalized_name || i.original_name || ""));
+      const excludedGroups = excludedProteinGroups(dietaryRestrictions, allergies);
+      const eligibleGroups = Object.keys(PROTEIN_SOURCE_GROUPS).filter(g => !excludedGroups.has(g));
+      const presentGroups = presentProteinGroups(itemNames);
+      const missingGroups = eligibleGroups.filter(g => !presentGroups.has(g));
+      const complementaryCandidates = missingGroups.length > 0
+        ? await fetchComplementaryCandidates(missingGroups)
+        : [];
+      const complementaryList = complementaryCandidates.length > 0
+        ? complementaryCandidates.map(c =>
+            `${c.original_product_name} (קבוצת חלבון: ${PROTEIN_SOURCE_GROUPS[c.group].label}, ${c.calories_per_100g ?? "?"} cal/100g, protein:${c.protein_per_100g ?? "?"}g, ₪${c.price ?? "?"}, מקור: קטלוג שופרסל)`
+          ).join("\n")
+        : null;
+      const eligibleGroupLabels = eligibleGroups.map(g => PROTEIN_SOURCE_GROUPS[g].label).join(", ");
+
       const restrictionWarning = dietaryRestrictions.length > 0 || allergies.length > 0
         ? `⚠️ CRITICAL DIETARY RESTRICTIONS - MUST BE STRICTLY FOLLOWED:
 ${dietaryRestrictions.includes("vegan") || dietaryRestrictions.includes("טבעוני") ? "- USER IS VEGAN: ABSOLUTELY NO meat, poultry, fish, dairy, eggs, or any animal products whatsoever." : ""}
 ${dietaryRestrictions.includes("vegetarian") || dietaryRestrictions.includes("צמחוני") ? "- USER IS VEGETARIAN: NO meat, poultry, or fish." : ""}
-${dietaryRestrictions.includes("kosher") || dietaryRestrictions.includes("כשר") ? "- USER KEEPS KOSHER: No mixing of meat and dairy." : ""}
+${dietaryRestrictions.includes("kosher") || dietaryRestrictions.includes("כשר") ? "- USER KEEPS KOSHER: Never combine meat/poultry items with dairy items in the same meal — keep meat-based and dairy-based items usable as separate meals." : ""}
 ${allergies.length > 0 ? `- ALLERGIES (NEVER include): ${allergies.join(", ")}` : ""}
 Any item violating these restrictions must be replaced with a compliant alternative.`
         : "";
 
-      const prompt = `You are a smart shopping list generator. Create an optimized shopping list based on the user's profile and receipt history.
+      const prompt = `You are a smart shopping list generator. Create an optimized, VARIED shopping list based on the user's profile and receipt history.
+
+The RECEIPT ITEMS below are a signal of the user's habits and preferences — they are a STARTING POINT, not a strict limit. You must actively diversify beyond them using realistic Israeli Shufersal products (the CATALOG COMPLEMENTARY OPTIONS below, if given, are real catalog products you can draw from or use as inspiration).
 
 ${restrictionWarning}
 
@@ -151,21 +230,27 @@ USER PROFILE:
 - Favorite foods: ${(profile?.favorite_foods || []).join(", ") || "None"}
 - Disliked foods: ${(profile?.disliked_foods || []).join(", ") || "None"}
 
-RECEIPT ITEMS (user's actual purchases - use only items that comply with dietary restrictions above):
+RECEIPT ITEMS (user's actual purchases — a preference signal, not a strict limit; use items that comply with dietary restrictions above):
 ${itemsList || "No receipt data available"}
+
+CATALOG COMPLEMENTARY OPTIONS (real products from the active Shufersal catalog, offered to fill protein-group gaps the receipt is missing — use some of these, or similar realistic Shufersal products, to diversify):
+${complementaryList || "None needed — receipt already covers enough protein variety"}
 
 RULES:
 1. FIRST AND FOREMOST: strictly follow all dietary restrictions above - no exceptions.
-2. Prefer compliant foods from the user's actual receipt history.
-3. Give priority to favorite foods.
-4. Add healthier alternatives where needed.
-5. ⚠️ STRICT BUDGET LIMIT: The SUM of all estimated_price values MUST be under ₪${profile?.budget_per_purchase || 500}. No exceptions. Reduce quantities or item count if needed.
-6. Ensure enough calories for ${daysPerPurchase} days (${totalCaloriesNeeded} cal total).
-7. Balance protein, carbs, and fats.
-8. Each item needs: name, category, quantity, estimated_price, calories (total for quantity), protein, carbs, fat, health_score (0-10), and reason.
-9. Before returning, verify: sum of all estimated_price < ₪${profile?.budget_per_purchase || 500}.
+2. The receipt reflects habits, not a ceiling — actively diversify beyond it. Do NOT build the list around chicken/poultry and eggs as the only protein sources.
+3. Protein source diversity (REQUIRED): include items from AT LEAST 3 different protein source groups among: ${eligibleGroupLabels}. Use the CATALOG COMPLEMENTARY OPTIONS above (or similar real Shufersal products) to cover groups missing from the receipt.
+4. Category variety targets for a ${daysPerPurchase}-day list: at least 4 different vegetables, 2+ fruits, 2+ healthy fat sources, 2-3 different carb sources.
+5. Give priority to favorite foods and compliant receipt items, but do not let them crowd out the diversity requirements above.
+6. Add healthier alternatives where needed.
+7. ⚠️ STRICT BUDGET LIMIT: The SUM of all estimated_price values MUST be under ₪${profile?.budget_per_purchase || 500}. No exceptions. Reduce quantities or item count if needed — prefer trimming duplicate/overlapping items over dropping an entire protein group.
+8. Ensure enough calories for ${daysPerPurchase} days (${totalCaloriesNeeded} cal total).
+9. Balance protein, carbs, and fats.
+10. If the user keeps kosher, keep meat/poultry items and dairy-protein items as distinct shopping items (they must be usable in separate meals, never combined).
+11. Each item needs: name, category, quantity, estimated_price, calories (total for quantity), protein, carbs, fat, health_score (0-10), and reason.
+12. Before returning, verify: sum of all estimated_price < ₪${profile?.budget_per_purchase || 500}.
 
-Generate a practical, realistic shopping list with 12-18 items. Use Israeli supermarket product names. MAX BUDGET: ₪${profile?.budget_per_purchase || 500}.`;
+Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Israeli supermarket product names. MAX BUDGET: ₪${profile?.budget_per_purchase || 500}.`;
 
       const result = await api.integrations.Core.InvokeLLM({
         prompt,
@@ -215,6 +300,7 @@ Generate a practical, realistic shopping list with 12-18 items. Use Israeli supe
         total_calories: result.total_calories,
         status: "draft",
         items: finalItems,
+        complementary_added: missingGroups.length > 0,
       });
 
       return list;
@@ -283,6 +369,16 @@ Generate a practical, realistic shopping list with 12-18 items. Use Israeli supe
               {catalogMatchCount > 0
                 ? `הסל משתמש בנתוני קטלוג מאומתים עבור ${catalogMatchCount} מוצרים`
                 : "הסל מבוסס על נתוני הקבלה והערכת AI"}
+            </p>
+          )}
+          {effectiveReceiptId && catalogMatchCount > 0 && (
+            <p className="text-[11px] text-muted-foreground/50 mt-0.5">
+              נתוני הקטלוג מבוססים כרגע על שופרסל
+            </p>
+          )}
+          {showList?.complementary_added && (
+            <p className="text-[11px] text-muted-foreground/50 mt-0.5">
+              הסל מבוסס על הקבלה, אך הושלמו מוצרים חסרים כדי ליצור תפריט מגוון ומאוזן יותר
             </p>
           )}
         </div>

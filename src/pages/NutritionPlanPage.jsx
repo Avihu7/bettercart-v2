@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   UtensilsCrossed, Loader2, Sparkles, ChevronLeft,
-  Sun, CloudSun, Moon, Cookie, Flame, Beef, Wheat, ShoppingCart
+  Sun, CloudSun, Moon, Cookie, Flame, Beef, Wheat, ShoppingCart, AlertCircle
 } from "lucide-react";
 
 const ShekelIcon = ({ className }) => (
@@ -89,7 +89,7 @@ export default function NutritionPlanPage() {
         ? `⚠️ CRITICAL DIETARY RESTRICTIONS - MUST BE STRICTLY FOLLOWED:
 ${dietaryRestrictions.includes("vegan") || dietaryRestrictions.includes("טבעוני") ? "- USER IS VEGAN: ABSOLUTELY NO meat, poultry, fish, dairy, eggs, honey, or any animal products. If the shopping list contains non-vegan items, do NOT include them in the meal plan." : ""}
 ${dietaryRestrictions.includes("vegetarian") || dietaryRestrictions.includes("צמחוני") ? "- USER IS VEGETARIAN: NO meat, poultry, or fish." : ""}
-${dietaryRestrictions.includes("kosher") || dietaryRestrictions.includes("כשר") ? "- USER KEEPS KOSHER: No mixing of meat and dairy." : ""}
+${dietaryRestrictions.includes("kosher") || dietaryRestrictions.includes("כשר") ? "- USER KEEPS KOSHER: Never combine meat/poultry items with dairy items within the same meal (breakfast/lunch/dinner/snack). Each meal must be either meat-based or dairy-based, not both." : ""}
 ${allergies.length > 0 ? `- ALLERGIES (NEVER include): ${allergies.join(", ")}` : ""}`
         : "";
 
@@ -116,10 +116,11 @@ RULES:
 4. Match protein target.
 5. Use ONLY foods from the shopping list that comply with dietary restrictions.
 6. Keep meals realistic and simple.
-7. Each meal item needs: food_name, grams, calories, protein, carbs, fat, estimated_cost.
-8. Each meal needs totals for: total_calories, total_protein, total_carbs, total_fat, estimated_cost.
-9. Each day needs totals.
-10. Also calculate before_after metrics:
+7. Protein variety (REQUIRED): rotate across the different protein items available in the shopping list — do not use the same single protein source (e.g. chicken breast) in more than 2-3 meals total across the whole week. Distribute available protein items (poultry, eggs, dairy proteins like cottage/yogurt, fish, legumes, etc.) across different days and meals.
+8. Each meal item needs: food_name, grams, calories, protein, carbs, fat, estimated_cost.
+9. Each meal needs totals for: total_calories, total_protein, total_carbs, total_fat, estimated_cost.
+10. Each day needs totals.
+11. Also calculate before_after metrics:
     - previous_monthly_spending (estimate from shopping list cost * purchases/month)
     - estimated_new_monthly_spending (optimized estimate)
     - monthly_savings (difference)
@@ -259,6 +260,18 @@ Day names: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday (use f
           <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
           <h2 className="font-heading font-semibold text-lg">יוצרים את התפריט שלכם...</h2>
           <p className="text-sm text-muted-foreground">מייעלים ארוחות למטרות ולתקציב שלכם</p>
+        </Card>
+      )}
+
+      {generateMutation.isError && (
+        <Card className="p-4 border-destructive/50 bg-destructive/5">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-destructive mt-0.5" />
+            <div>
+              <p className="font-medium text-sm">יצירת התפריט נכשלה</p>
+              <p className="text-xs text-muted-foreground mt-1">{generateMutation.error?.message}</p>
+            </div>
+          </div>
         </Card>
       )}
 

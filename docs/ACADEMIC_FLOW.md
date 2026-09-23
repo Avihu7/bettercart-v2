@@ -6,6 +6,8 @@ BetterCart v2 is a full-stack web application that helps Israeli supermarket sho
 
 Supported supermarkets: **Rami Levy (רמי לוי)** and **Shufersal (שופרסל)**.
 
+**Current MVP catalog scope:** product price/nutrition matching uses **Shufersal only** (`ACTIVE_CATALOG_CHAIN = "shufersal"` in `server/index.js`). Rami Levy data still exists in `server/products.db` but is not used by the matching endpoints in this MVP. This decision was made to reduce complexity and improve reliability for academic submission. The code is prepared for additional providers later via the `CATALOG_PROVIDERS` config — enabling another chain does not require changes to the matching logic itself.
+
 ---
 
 ## End-to-End Algorithm Flow (8 Stages)
@@ -92,7 +94,7 @@ This stage enriches AI-extracted receipt items with verified catalog data.
 
 **Stop tokens:** Chain names (שופרסל, רמי לוי…), units (גרם, קילוגרם…), and filler words (מארז, יחידה…) are excluded from meaningful token scoring to prevent false positives.
 
-**Chain preference:** Products from the same detected chain get a small tiebreaker bonus (+0.02), but chain name alone can never cause acceptance.
+**Chain scope:** All three tiers query only `source_chain = ACTIVE_CATALOG_CHAIN` ("shufersal" in this MVP) — there is no cross-chain fallback or chain-preference scoring, since only one chain is in scope.
 
 **Result stored per item:**
 - `catalog_match_status`: `"matched"` / `"needs_review"` / `"not_found"` / `"not_checked"`

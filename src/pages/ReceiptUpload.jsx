@@ -11,6 +11,21 @@ import { DEMO_RECEIPT_TEXT } from "@/lib/demoData";
 import { analyzeReceipt } from "@/lib/receiptPipeline";
 import { IS_DEMO_MODE } from "@/lib/ai";
 
+function getErrorHeadline(error) {
+  switch (error?.code) {
+    case 'auth':
+      return 'לא הוגדר API Key תקין';
+    case 'billing':
+      return 'נראה שאין קרדיט פעיל ב-Anthropic API';
+    case 'unsupported_media':
+      return 'סוג קובץ לא נתמך';
+    case 'too_large':
+      return 'הקובץ גדול מדי';
+    default:
+      return 'משהו השתבש בניתוח הקבלה';
+  }
+}
+
 const PIPELINE_STEPS = [
   "מעלה קובץ...",
   "מחלץ טקסט מהקובץ...",
@@ -185,7 +200,7 @@ export default function ReceiptUpload() {
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-destructive mt-0.5" />
             <div>
-              <p className="font-medium text-sm">משהו השתבש בניתוח הקבלה</p>
+              <p className="font-medium text-sm">{getErrorHeadline(processMutation.error)}</p>
               <p className="text-xs text-muted-foreground mt-1">נסו שוב בעוד רגע. ודאו שהקבלה היא מרמי לוי או שופרסל.</p>
               <p className="text-xs text-muted-foreground">{processMutation.error?.message}</p>
             </div>
