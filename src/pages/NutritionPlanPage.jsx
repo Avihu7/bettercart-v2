@@ -16,6 +16,7 @@ const ShekelIcon = ({ className }) => (
   <span className={`${className} flex items-center justify-center font-bold`} style={{ fontSize: '0.9rem' }}>₪</span>
 );
 import { formatCurrency } from "@/lib/calculations";
+import { generateNutritionPlan } from "@/lib/nutritionPlanGenerator";
 import StatCard from "@/components/dashboard/StatCard";
 
 const mealIcons = {
@@ -79,110 +80,7 @@ export default function NutritionPlanPage() {
       const list = sourceList;
       if (!list?.items?.length) return;
 
-      const itemsList = list.items.map(i => `${i.name} (${i.quantity}, ${i.calories} cal, P:${i.protein}g C:${i.carbs}g F:${i.fat}g)`).join("\n");
-      const daysToGenerate = Math.min(list.shopping_period_days || 7, 7);
-
-      const dietaryRestrictions = profile?.dietary_preferences || [];
-      const allergies = profile?.allergies || [];
-      
-      const restrictionWarning = dietaryRestrictions.length > 0 || allergies.length > 0
-        ? `⚠️ CRITICAL DIETARY RESTRICTIONS - MUST BE STRICTLY FOLLOWED:
-${dietaryRestrictions.includes("vegan") || dietaryRestrictions.includes("טבעוני") ? "- USER IS VEGAN: ABSOLUTELY NO meat, poultry, fish, dairy, eggs, honey, or any animal products. If the shopping list contains non-vegan items, do NOT include them in the meal plan." : ""}
-${dietaryRestrictions.includes("vegetarian") || dietaryRestrictions.includes("צמחוני") ? "- USER IS VEGETARIAN: NO meat, poultry, or fish." : ""}
-${dietaryRestrictions.includes("kosher") || dietaryRestrictions.includes("כשר") ? "- USER KEEPS KOSHER: Never combine meat/poultry items with dairy items within the same meal (breakfast/lunch/dinner/snack). Each meal must be either meat-based or dairy-based, not both." : ""}
-${allergies.length > 0 ? `- ALLERGIES (NEVER include): ${allergies.join(", ")}` : ""}`
-        : "";
-
-      const prompt = `You are a nutrition plan generator. Create a ${daysToGenerate}-day meal plan using ONLY the foods from the shopping list below.
-
-${restrictionWarning}
-
-USER PROFILE:
-- Daily calories target: ${profile?.daily_calories || 2000}
-- Protein target: ${profile?.protein_target || 150}g/day
-- Carbs target: ${profile?.carbs_target || 200}g/day
-- Fat target: ${profile?.fat_target || 67}g/day
-- Goal: ${profile?.goal || "maintenance"}
-- Dietary preferences: ${dietaryRestrictions.join(", ") || "None"}
-- Allergies: ${allergies.join(", ") || "None"}
-
-SHOPPING LIST:
-${itemsList}
-
-RULES:
-1. FIRST AND FOREMOST: strictly follow all dietary restrictions above - skip any shopping list item that violates them.
-2. Each day has 4 meals: Breakfast, Lunch, Dinner, Snacks.
-3. Match daily calorie target as closely as possible.
-4. Match protein target.
-5. Use ONLY foods from the shopping list that comply with dietary restrictions.
-6. Keep meals realistic and simple.
-7. Protein variety (REQUIRED): rotate across the different protein items available in the shopping list — do not use the same single protein source (e.g. chicken breast) in more than 2-3 meals total across the whole week. Distribute available protein items (poultry, eggs, dairy proteins like cottage/yogurt, fish, legumes, etc.) across different days and meals.
-8. Each meal item needs: food_name, grams, calories, protein, carbs, fat, estimated_cost.
-9. Each meal needs totals for: total_calories, total_protein, total_carbs, total_fat, estimated_cost.
-10. Each day needs totals.
-11. Also calculate before_after metrics:
-    - previous_monthly_spending (estimate from shopping list cost * purchases/month)
-    - estimated_new_monthly_spending (optimized estimate)
-    - monthly_savings (difference)
-    - yearly_savings (monthly_savings * 12)
-    - previous_health_score (average health score of items, out of 100)
-    - new_health_score (improved score with the plan, out of 100)
-
-Day names: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday (use first ${daysToGenerate}).`;
-
-      const result = await api.integrations.Core.InvokeLLM({
-        prompt,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            days: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  day_name: { type: "string" },
-                  meals: {
-                    type: "array",
-                    items: {
-                      type: "object",
-                      properties: {
-                        meal_type: { type: "string" },
-                        items: {
-                          type: "array",
-                          items: {
-                            type: "object",
-                            properties: {
-                              food_name: { type: "string" },
-                              grams: { type: "number" },
-                              calories: { type: "number" },
-                              protein: { type: "number" },
-                              carbs: { type: "number" },
-                              fat: { type: "number" },
-                              estimated_cost: { type: "number" },
-                            },
-                          },
-                        },
-                        total_calories: { type: "number" },
-                        total_protein: { type: "number" },
-                        total_carbs: { type: "number" },
-                        total_fat: { type: "number" },
-                        estimated_cost: { type: "number" },
-                      },
-                    },
-                  },
-                  total_calories: { type: "number" },
-                  total_protein: { type: "number" },
-                  total_carbs: { type: "number" },
-                  total_fat: { type: "number" },
-                  estimated_cost: { type: "number" },
-                },
-              },
-            },
-            weekly_calories: { type: "number" },
-            estimated_weekly_cost: { type: "number" },
-          },
-        },
-      });
+      const result = await generateNutritionPlan({ list, profile });
 
       // Calculate before_after from real user data
       const purchasesPerMonth = profile?.purchases_per_month || 4;
@@ -346,7 +244,10 @@ Day names: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday (use f
                       <div className="p-4 border-b flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <MealIcon className="w-4 h-4 text-primary" />
-                          <h3 className="font-heading font-semibold">{MEAL_LABELS[meal.meal_type] || meal.meal_type}</h3>
+                          <div>
+                            <h3 className="font-heading font-semibold">{MEAL_LABELS[meal.meal_type] || meal.meal_type}</h3>
+                            {meal.meal_name && <p className="text-sm text-muted-foreground">{meal.meal_name}</p>}
+                          </div>
                         </div>
                         <div className="flex gap-3 text-xs text-muted-foreground">
                           <span>{meal.total_calories} קל'</span>

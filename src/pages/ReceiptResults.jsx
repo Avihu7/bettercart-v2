@@ -85,6 +85,22 @@ const categoryColors = {
   other: "bg-gray-50 text-gray-700",
 };
 
+// Older AI insights used a malformed Hebrew term for dairy ("מוצרי דייה",
+// "דיירי") — show the correct "מוצרי חלב" for receipts already saved.
+function fixHebrewTerm(text) {
+  if (typeof text !== "string") return text;
+  return text
+    .replace(/מוצרי\s+(?:דייה|דיירי|דאירי)/g, "מוצרי חלב")
+    .replace(/(?<![א-ת])(?:דייה|דיירי|דאירי)(?![א-ת])/g, "מוצרי חלב");
+}
+
+function fixInsightTerms(insights) {
+  if (!insights || typeof insights !== "object") return insights;
+  return Object.fromEntries(
+    Object.entries(insights).map(([k, v]) => [k, Array.isArray(v) ? v.map(fixHebrewTerm) : fixHebrewTerm(v)])
+  );
+}
+
 export default function ReceiptResults() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -214,7 +230,7 @@ export default function ReceiptResults() {
     );
   }
 
-  const insights = receipt.insights;
+  const insights = fixInsightTerms(receipt.insights);
 
   return (
     <div className="space-y-6">

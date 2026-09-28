@@ -234,7 +234,10 @@ export default function FinalResults() {
                   {day.meals?.map(meal => (
                     <div key={meal.meal_type} className="p-4">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-semibold text-primary">{MEAL_LABELS[meal.meal_type] || meal.meal_type}</h4>
+                        <h4 className="text-sm font-semibold text-primary">
+                          {MEAL_LABELS[meal.meal_type] || meal.meal_type}
+                          {meal.meal_name && <span className="font-normal text-muted-foreground"> — {meal.meal_name}</span>}
+                        </h4>
                         <span className="text-xs text-muted-foreground">{meal.total_calories} קל' · {formatCurrency(meal.estimated_cost)}</span>
                       </div>
                       <div className="space-y-1">

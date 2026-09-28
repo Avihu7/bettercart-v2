@@ -268,7 +268,10 @@ export default function PrintExport() {
               {day.meals?.map(meal => (
                 <div key={meal.meal_type} className="meal-card">
                   <div className="meal-header">
-                    <span>{MEAL_LABELS[meal.meal_type] || meal.meal_type}</span>
+                    <span>
+                      {MEAL_LABELS[meal.meal_type] || meal.meal_type}
+                      {meal.meal_name && <span style={{ fontWeight: 'normal' }}> — {meal.meal_name}</span>}
+                    </span>
                     <span style={{ color: '#666', fontWeight: 'normal' }}>
                       {meal.total_calories} קל' · {formatCurrency(meal.estimated_cost)}
                     </span>
