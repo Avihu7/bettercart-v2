@@ -62,9 +62,12 @@ function normalizeHebrewQuery(text) {
   text = text.replace(/\bקילו\b/g, 'קילוגרם');
   text = text.replace(/מ["״]ל|מ"ל/g, 'מיליליטר');
   text = text.replace(/\bמל\b/g, 'מיליליטר');
-  text = text.replace(/גר['']/g, 'גרם');
-  text = text.replace(/ג['']/g, 'גרם');
-  text = text.replace(/\bגר\b/g, 'גרם');
+  // Grams: ג / ג' / גר / גר' are only a unit right after a number ("250 ג'",
+  // "500ג"). Elsewhere ג' is part of a word (e.g. "קוטג'") and must be kept.
+  text = text.replace(/(\d)\s*(?:גר'?|ג')(?![א-ת])/g, '$1 גרם');
+  text = text.replace(/(\d)\s*ג(?![א-ת'])/g, '$1 גרם');
+  // Catalog stores "קוטג'" / "חלב'" without the geresh (see Python normalizer)
+  text = text.replace(/(חלב|קוטג)'/g, '$1');
   // Collapse whitespace
   text = text.replace(/\s+/g, ' ').trim();
   return text;
