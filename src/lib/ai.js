@@ -85,7 +85,8 @@ async function callClaude(prompt, systemPrompt) {
     console.error('[Claude API] response truncated at max_tokens — output is incomplete JSON');
     throw new Error('התשובה מה-AI נחתכה (יותר מדי תוכן) — נסו שוב עם רשימה קצרה יותר');
   }
-  const text = data.content?.[0]?.text || '{}';
+  // Responses may lead with a "thinking" block — find the text block by type.
+  const text = data.content?.find(block => block.type === 'text')?.text || '{}';
 
   // Strip markdown code fences if present
   const cleaned = text.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim();
@@ -157,7 +158,8 @@ export async function extractDataFromFile({ file_url, json_schema }) {
     },
     body: JSON.stringify({
       model: VISION_MODEL,
-      max_tokens: 2048,
+      // Thinking and text blocks share this budget; long receipts need headroom.
+      max_tokens: 4096,
       system: [
         'You are a precise OCR assistant for Israeli supermarket receipts (Hebrew).',
         'Transcribe ONLY text that is clearly and unambiguously legible in the image.',
@@ -180,7 +182,17 @@ export async function extractDataFromFile({ file_url, json_schema }) {
     throw classifyAndLogAnthropicError(response.status, err, 'extractDataFromFile');
   }
   const data = await response.json();
-  const text = data.content?.[0]?.text || '{}';
+  // claude-sonnet-5 may return [thinking, text] — never assume the text block is first.
+  const textBlock = data.content?.find(block => block.type === 'text');
+  const text = textBlock?.text;
+  if (!text?.trim()) {
+    console.error(`[Claude Vision] no text content (stop_reason=${data.stop_reason}, blocks=${(data.content || []).map(b => b.type).join(',')})`);
+    throw new Error('Claude Vision returned no text content');
+  }
+  if (data.stop_reason === 'max_tokens') {
+    console.error('[Claude Vision] response truncated at max_tokens');
+    throw new Error('Claude Vision response was truncated');
+  }
   const cleaned = text.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim();
   return { output: JSON.parse(cleaned) };
 }

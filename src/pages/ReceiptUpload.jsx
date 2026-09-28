@@ -61,7 +61,12 @@ export default function ReceiptUpload() {
             }
           }
         });
-        textToAnalyze = extracted.output?.receipt_text || "לא הצלחנו לחלץ טקסט";
+        textToAnalyze = extracted.output?.receipt_text;
+        // Stop here rather than sending a placeholder to the analysis step and
+        // saving an empty receipt.
+        if (typeof textToAnalyze !== "string" || !textToAnalyze.trim()) {
+          throw new Error("לא הצלחנו לחלץ טקסט מהקובץ — Claude Vision לא החזיר טקסט קבלה");
+        }
       }
 
       setPipelineStep("מנתח את הקבלה עם AI...");
