@@ -12,8 +12,14 @@ import {
   MEAL_TYPES, buildProductCatalog, canonicalizePlan, validatePlan,
   forceRepair, recomputeTotals, portionCap,
 } from '@/lib/mealPlanRules';
+import { buildDensities, applyDensities, balanceCalories } from '@/lib/mealPlanCalories';
+import { WEEK_DAYS } from '@/lib/weekDays';
 
-const DAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+// Israeli week: Sunday is day 1
+const DAY_NAMES = WEEK_DAYS.map(d => d.key);
+
+// Share of the daily calorie target per meal
+const MEAL_SHARE = { Breakfast: 0.25, Lunch: 0.35, Dinner: 0.27, Snacks: 0.13 };
 
 const ITEM_SCHEMA = {
   type: "object",
@@ -54,17 +60,33 @@ const PLAN_SCHEMA = {
   },
 };
 
-function catalogForPrompt(catalog) {
-  return JSON.stringify(catalog.map(p => ({
-    id: p.id,
-    name_he: p.name_he,
-    category: p.category,
-    quantity: p.quantity,
-    meal_roles: p.meal_roles,
-    kosher: p.kosher,
-    max_grams_per_meal: portionCap(p),
-    list_totals: { calories: p.calories, protein: p.protein, carbs: p.carbs, fat: p.fat, price: p.price },
-  })), null, 1);
+function catalogForPrompt(catalog, densities) {
+  const r = n => (n == null ? null : Math.round(n * 10) / 10);
+  return JSON.stringify(catalog.map(p => {
+    const d = densities?.get(p.id);
+    return {
+      id: p.id,
+      name_he: p.name_he,
+      category: p.category,
+      quantity: p.quantity,
+      meal_roles: p.meal_roles,
+      kosher: p.kosher,
+      max_grams_per_meal: portionCap(p),
+      per_100g: d
+        ? { calories: r(d.kcal), protein: r(d.protein), carbs: r(d.carbs), fat: r(d.fat) }
+        : { list_totals: { calories: p.calories, protein: p.protein, carbs: p.carbs, fat: p.fat } },
+    };
+  }), null, 1);
+}
+
+function calorieRules(profile) {
+  const target = profile?.daily_calories || 2000;
+  const budget = Object.entries(MEAL_SHARE).map(([m, f]) => `${m} ≈ ${Math.round(target * f)} kcal`).join(", ");
+  return `CALORIES (the primary constraint):
+- The daily calorie target is ${target} kcal. Every day's total must be within ±10% (${Math.round(target * 0.9)}–${Math.round(target * 1.1)} kcal). Do not exceed it.
+- Per-meal budget: ${budget}.
+- Size portions from per_100g: item calories = grams × per_100g.calories / 100. Add up each day before answering.
+- Calories come first. Approach the protein target where possible, but never go above the calorie range to reach protein or other macro targets.`;
 }
 
 function restrictionRules(profile) {
@@ -104,7 +126,7 @@ const NAMING_RULES = `NAMING (strict):
 - All text (meal_name, food_name) must be Hebrew. No English words and no transliterated English (write "מלפפון", never "קוקומבר").
 - "meal_type" must be one of: Breakfast, Lunch, Dinner, Snacks (these keys stay in English).`;
 
-function buildPlanPrompt({ catalog, profile, daysToGenerate }) {
+function buildPlanPrompt({ catalog, densities, profile, daysToGenerate }) {
   const dietary = profile?.dietary_preferences || [];
   const allergies = profile?.allergies || [];
   return `You are a nutrition meal plan generator for an Israeli user. Create a ${daysToGenerate}-day meal plan using ONLY the products in the catalog below.
@@ -122,8 +144,10 @@ USER PROFILE:
 - Disliked foods: ${(profile?.disliked_foods || []).join(", ") || "None"}
 - Allergies: ${allergies.join(", ") || "None"}
 
-PRODUCT CATALOG (the user's shopping list; list_totals are for the whole purchased quantity):
-${catalogForPrompt(catalog)}
+PRODUCT CATALOG (the user's shopping list; per_100g is nutrition per 100g as eaten):
+${catalogForPrompt(catalog, densities)}
+
+${calorieRules(profile)}
 
 ${MEAL_COMPOSITION_RULES}
 
@@ -132,7 +156,7 @@ ${NAMING_RULES}
 NUTRITION:
 - FIRST AND FOREMOST: strictly follow all dietary restrictions above — skip any product that violates them.
 - Each day has exactly 4 meals, in this order: Breakfast, Lunch, Dinner, Snacks.
-- Match the daily calorie and protein targets as closely as possible — but with realistic single-person portions. Never exceed a product's max_grams_per_meal (e.g. bread ≤150g ≈ 4 slices, yellow cheese ≤100g, cottage ≤250g, cooked rice/pasta ≤300g, vegetables ≤300g). If the target is high, spread calories across all four meals rather than inflating one ingredient.
+- Use realistic single-person portions. Never exceed a product's max_grams_per_meal (e.g. bread ≤150g ≈ 4 slices, yellow cheese ≤100g, cottage ≤250g, cooked rice/pasta ≤300g, vegetables ≤300g). If the target is high, spread calories across all four meals rather than inflating one ingredient.
 - grams = the edible amount as eaten (cooked weight for rice/pasta/legumes).
 - Each item needs: product_id, food_name, grams, calories, protein, carbs, fat, estimated_cost (portion share of the product price).
 
@@ -143,7 +167,7 @@ function mealCalories(meal) {
   return meal.items.reduce((s, i) => s + (Number(i.calories) || 0), 0);
 }
 
-function buildRepairPrompt({ catalog, profile, plan, problems }) {
+function buildRepairPrompt({ catalog, densities, profile, plan, problems }) {
   const dailyTarget = profile?.daily_calories || 2000;
   const lunchProteinUse = {};
   for (const day of plan.days) {
@@ -174,8 +198,8 @@ ${restrictionRules(profile)}
 
 Daily targets: ${profile?.daily_calories || 2000} kcal, ${profile?.protein_target || 150}g protein.
 
-PRODUCT CATALOG:
-${catalogForPrompt(catalog)}
+PRODUCT CATALOG (per_100g is nutrition per 100g as eaten):
+${catalogForPrompt(catalog, densities)}
 
 MEALS TO REPLACE:
 ${JSON.stringify(bad, null, 1)}
@@ -212,17 +236,23 @@ const REPAIR_SCHEMA = {
  */
 export async function generateNutritionPlan({ list, profile }) {
   const daysToGenerate = Math.min(list.shopping_period_days || 7, 7);
+  const target = profile?.daily_calories || 2000;
   const catalog = buildProductCatalog(list.items);
+  // Per-100g values from the shopping list alone (before any AI output exists)
+  const listDensities = buildDensities(catalog, { days: [] });
 
   const raw = await invokeLLM({
-    prompt: buildPlanPrompt({ catalog, profile, daysToGenerate }),
+    prompt: buildPlanPrompt({ catalog, densities: listDensities, profile, daysToGenerate }),
     response_json_schema: PLAN_SCHEMA,
   });
 
   // Demo responses aren't tied to the user's list — return them unchanged
   if (IS_DEMO_MODE) return raw;
 
-  const plan = { days: raw.days || [] };
+  // Day names come from position (Sunday first), not from the AI's labels
+  const plan = {
+    days: (raw.days || []).slice(0, daysToGenerate).map((day, i) => ({ ...day, day_name: DAY_NAMES[i] })),
+  };
   const dropped = canonicalizePlan(plan, catalog);
   let problems = validatePlan(plan, catalog);
   const initialProblems = problems;
@@ -230,7 +260,7 @@ export async function generateNutritionPlan({ list, profile }) {
   if (problems.length) {
     console.warn("[nutrition plan] regenerating meals that break meal rules:", problems);
     const repair = await invokeLLM({
-      prompt: buildRepairPrompt({ catalog, profile, plan, problems }),
+      prompt: buildRepairPrompt({ catalog, densities: listDensities, profile, plan, problems }),
       response_json_schema: REPAIR_SCHEMA,
     });
     for (const r of repair.replacements || []) {
@@ -245,8 +275,18 @@ export async function generateNutritionPlan({ list, profile }) {
     problems = validatePlan(plan, catalog);
   }
 
+  // Calories come from the actual portions, then each day is balanced to the target
+  const dailyCalories = () => plan.days.map(d => Math.round(d.meals.reduce((s, m) => s + m.items.reduce((t, i) => t + (Number(i.calories) || 0), 0), 0)));
+  const aiDailyCalories = dailyCalories();
+  const densities = buildDensities(catalog, plan);
+  applyDensities(plan, densities);
+  const itemDailyCalories = dailyCalories();
+  const calories = balanceCalories(plan, catalog, densities, target);
+  problems = validatePlan(plan, catalog);
+
   if (dropped.length) console.warn("[nutrition plan] dropped items not in shopping list:", dropped);
   if (problems.length) console.warn("[nutrition plan] remaining issues after repair:", problems);
+  console.info("[nutrition plan] daily calories vs target:", calories);
 
   recomputeTotals(plan);
   return {
@@ -255,6 +295,10 @@ export async function generateNutritionPlan({ list, profile }) {
       initial_issues: initialProblems.length,
       remaining_issues: problems,
       dropped_items: dropped,
+      target_calories: target,
+      ai_daily_calories: aiDailyCalories,
+      item_daily_calories: itemDailyCalories,
+      calories,
     },
   };
 }

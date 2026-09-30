@@ -3,6 +3,7 @@ import { api } from "@/api/localAPI";
 import { useAuth } from "@/lib/AuthContext";
 import { useQuery } from "@tanstack/react-query";
 import { formatCurrency } from "@/lib/calculations";
+import { sortDays, dayLabel } from "@/lib/weekDays";
 
 const CATEGORY_LABELS = {
   protein: "חלבון", carb: "פחמימה", fat: "שומן",
@@ -15,11 +16,6 @@ const MEAL_LABELS = {
   Lunch: "ארוחת צהריים",
   Dinner: "ארוחת ערב",
   Snacks: "חטיפים",
-};
-
-const DAY_LABELS = {
-  Monday: "שני", Tuesday: "שלישי", Wednesday: "רביעי",
-  Thursday: "חמישי", Friday: "שישי", Saturday: "שבת", Sunday: "ראשון",
 };
 
 const GOAL_LABELS = {
@@ -257,10 +253,10 @@ export default function PrintExport() {
             קלוריות יומיות: {plan.daily_calories} · קלוריות שבועיות: {plan.weekly_calories?.toLocaleString()} · עלות שבועית: {formatCurrency(plan.estimated_weekly_cost)}
           </p>
 
-          {plan.days?.map(day => (
+          {sortDays(plan.days).map(day => (
             <div key={day.day_name} style={{ marginBottom: 20, pageBreakInside: 'avoid' }}>
               <div className="day-header">
-                <span className="day-name">יום {DAY_LABELS[day.day_name] || day.day_name}</span>
+                <span className="day-name">{dayLabel(day.day_name)}</span>
                 <span className="day-stats">
                   {day.total_calories} קל' · ח:{day.total_protein}ג' · פ:{day.total_carbs}ג' · ש:{day.total_fat}ג' · {formatCurrency(day.estimated_cost)}
                 </span>

@@ -158,10 +158,11 @@ export function resolveProduct(item, catalog) {
 }
 
 const HEBREW = /[֐-׿]/;
-const LATIN_WORD = /[A-Za-z]{2,}/;
+// Any letter outside the Hebrew script (Latin, CJK, …); size marks like "L"/"XL" are allowed
+const NON_HEBREW_LETTER = /(?![֐-׿])\p{L}/u;
 
 export function isHebrewText(s) {
-  return HEBREW.test(s || "") && !LATIN_WORD.test((s || "").replace(/\b[A-Z]{1,2}\b/g, ""));
+  return HEBREW.test(s || "") && !NON_HEBREW_LETTER.test((s || "").replace(/\b[A-Z]{1,2}\b/g, ""));
 }
 
 const MEAL_TYPE_ALIASES = {

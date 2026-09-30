@@ -17,6 +17,7 @@ const ShekelIcon = ({ className }) => (
 );
 import { formatCurrency } from "@/lib/calculations";
 import { generateNutritionPlan } from "@/lib/nutritionPlanGenerator";
+import { sortDays, dayLabel } from "@/lib/weekDays";
 import StatCard from "@/components/dashboard/StatCard";
 
 const mealIcons = {
@@ -33,15 +34,15 @@ const MEAL_LABELS = {
   Snacks: "חטיפים",
 };
 
-const DAY_LABELS = {
-  Monday: "שני",
-  Tuesday: "שלישי",
-  Wednesday: "רביעי",
-  Thursday: "חמישי",
-  Friday: "שישי",
-  Saturday: "שבת",
-  Sunday: "ראשון",
-};
+// Daily total vs target: within ±10% counts as on target
+function targetStatus(total, target) {
+  if (!target || !total) return null;
+  const dev = (total - target) / target;
+  if (Math.abs(dev) <= 0.1) return { label: "במסגרת היעד", className: "text-emerald-600" };
+  return dev > 0
+    ? { label: "מעל היעד", className: "text-amber-600" }
+    : { label: "מתחת ליעד", className: "text-amber-600" };
+}
 
 export default function NutritionPlanPage() {
   const navigate = useNavigate();
@@ -128,6 +129,8 @@ export default function NutritionPlanPage() {
   });
 
   const showPlan = latestPlan;
+  const planDays = sortDays(showPlan?.days);
+  const dailyTarget = showPlan?.daily_calories || profile?.daily_calories;
 
   return (
     <div className="space-y-6">
@@ -198,29 +201,32 @@ export default function NutritionPlanPage() {
         <>
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard title="קלוריות יומיות" value={showPlan.daily_calories} icon={Flame} color="orange" />
+            <StatCard title="יעד יומי" value={`${Number(dailyTarget || 0).toLocaleString()} קלוריות`} icon={Flame} color="orange" />
             <StatCard title="קלוריות שבועיות" value={showPlan.weekly_calories?.toLocaleString()} icon={Flame} color="red" />
             <StatCard title="עלות שבועית" value={formatCurrency(showPlan.estimated_weekly_cost)} icon={ShekelIcon} color="green" />
             <StatCard title="ימים מתוכננים" value={showPlan.days?.length || 0} icon={UtensilsCrossed} color="blue" />
           </div>
 
           {/* Day Tabs */}
-          <Tabs defaultValue={showPlan.days?.[0]?.day_name} className="w-full">
+          <Tabs key={showPlan.id} defaultValue={planDays[0]?.day_name} dir="rtl" className="w-full">
             <TabsList className="w-full flex overflow-x-auto">
-              {showPlan.days?.map(day => (
+              {planDays.map(day => (
                 <TabsTrigger key={day.day_name} value={day.day_name} className="flex-1 text-xs sm:text-sm">
-                  {DAY_LABELS[day.day_name] || day.day_name?.slice(0, 3)}
+                  {dayLabel(day.day_name)}
                 </TabsTrigger>
               ))}
             </TabsList>
 
-            {showPlan.days?.map(day => (
+            {planDays.map(day => {
+              const status = targetStatus(day.total_calories, dailyTarget);
+              return (
               <TabsContent key={day.day_name} value={day.day_name} className="mt-4 space-y-4">
                 {/* Day Summary */}
                 <div className="grid grid-cols-4 gap-2">
                   <div className="p-3 rounded-lg bg-muted text-center">
-                    <p className="text-xs text-muted-foreground">קלוריות</p>
-                    <p className="font-heading font-bold">{day.total_calories}</p>
+                    <p className="text-xs text-muted-foreground">סה״כ</p>
+                    <p className="font-heading font-bold">{Number(day.total_calories || 0).toLocaleString()} קלוריות</p>
+                    {status && <p className={`text-[11px] mt-0.5 ${status.className}`}>{status.label}</p>}
                   </div>
                   <div className="p-3 rounded-lg bg-muted text-center">
                     <p className="text-xs text-muted-foreground">חלבון</p>
@@ -273,7 +279,8 @@ export default function NutritionPlanPage() {
                   );
                 })}
               </TabsContent>
-            ))}
+              );
+            })}
           </Tabs>
         </>
       )}

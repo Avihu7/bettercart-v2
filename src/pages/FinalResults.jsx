@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/calculations";
 import StatCard from "@/components/dashboard/StatCard";
+import { sortDays, dayLabel } from "@/lib/weekDays";
 
 const categoryColors = {
   protein: "bg-red-50 text-red-700",
@@ -35,11 +36,6 @@ const CATEGORY_LABELS = {
 
 const MEAL_LABELS = {
   Breakfast: "בוקר", Lunch: "צהריים", Dinner: "ערב", Snacks: "חטיפים",
-};
-
-const DAY_LABELS = {
-  Monday: "שני", Tuesday: "שלישי", Wednesday: "רביעי",
-  Thursday: "חמישי", Friday: "שישי", Saturday: "שבת", Sunday: "ראשון",
 };
 
 export default function FinalResults() {
@@ -218,10 +214,10 @@ export default function FinalResults() {
         {/* Meal Plan Tab */}
         <TabsContent value="meals" className="mt-4 space-y-4">
           {plan?.days?.length ? (
-            plan.days.map(day => (
+            sortDays(plan.days).map(day => (
               <Card key={day.day_name} className="overflow-hidden">
                 <div className="p-4 border-b flex items-center justify-between bg-muted/30">
-                  <h3 className="font-heading font-semibold">יום {DAY_LABELS[day.day_name] || day.day_name}</h3>
+                  <h3 className="font-heading font-semibold">{dayLabel(day.day_name)}</h3>
                   <div className="flex gap-3 text-xs text-muted-foreground">
                     <span>{day.total_calories} קל'</span>
                     <span>ח:{day.total_protein}ג</span>

@@ -127,6 +127,63 @@ const CATEGORY_LABELS = {
   snack: "חטיף", drink: "שתייה", other: "אחר",
 };
 
+const SHOPPING_CATEGORIES = Object.keys(CATEGORY_LABELS);
+
+// Maps AI category variants ("carbs", "legumes", "מוצרי חלב", …) onto the category keys above
+const CATEGORY_ALIASES = [
+  [/^(carbs?|grains?|bread|pasta|rice|cereals?)$|פחמימ|דגנ|לחם|כוללי/i, "carb"],
+  [/^(legumes?|plant_protein|meat|poultry|fish|eggs?|proteins?)$|חלבון|קטני|עו[פף]|בשר|דג/i, "protein"],
+  [/^(dairy_products|milk)$|חלב/i, "dairy"],
+  [/^(fats?|oils?|healthy_fats?|nuts?)$|שומנ|שמן|אגוז|שקד/i, "fat"],
+  [/^vegetables?$|ירק/i, "vegetable"],
+  [/^fruits?$|פרי|פירות|פרות/i, "fruit"],
+  [/^(snacks?|sweets?|favorite)$|חטי[פף]|מתוק/i, "snack"],
+  [/^(drinks?|beverages?)$|משק[הא]|שתי/i, "drink"],
+];
+
+function normalizeCategory(category) {
+  const c = String(category || "").trim();
+  if (SHOPPING_CATEGORIES.includes(c)) return c;
+  return CATEGORY_ALIASES.find(([re]) => re.test(c))?.[1] || "other";
+}
+
+// A reason is shown only if it is Hebrew text, not predominantly Latin/English
+function isHebrewReason(text) {
+  const hebrew = (String(text || "").match(/[\u05D0-\u05EA]/g) || []).length;
+  const latin = (String(text || "").match(/[A-Za-z]/g) || []).length;
+  return hebrew > 0 && hebrew >= latin;
+}
+
+// Rewrites only the non-Hebrew reasons in Hebrew; unrepaired ones are cleared
+async function ensureHebrewReasons(items) {
+  const bad = items.map((item, index) => ({ index, item })).filter(({ item }) => item.reason && !isHebrewReason(item.reason));
+  if (!bad.length) return items;
+  console.warn(`[shopping list] rewriting ${bad.length} non-Hebrew reasons`);
+  let fixes = [];
+  try {
+    const res = await api.integrations.Core.InvokeLLM({
+      prompt: `Rewrite each shopping-list item explanation below as one short, natural Hebrew sentence with the same meaning. Hebrew only — no English words.
+
+ITEMS:
+${JSON.stringify(bad.map(({ index, item }) => ({ index, name: item.name, reason: item.reason })), null, 1)}`,
+      response_json_schema: {
+        type: "object",
+        properties: {
+          reasons: { type: "array", items: { type: "object", properties: { index: { type: "number" }, reason: { type: "string" } } } },
+        },
+      },
+    });
+    fixes = res.reasons || [];
+  } catch (err) {
+    console.error("[shopping list] reason rewrite failed", err);
+  }
+  return items.map((item, index) => {
+    if (!item.reason || isHebrewReason(item.reason)) return item;
+    const fixed = fixes.find(f => f.index === index)?.reason;
+    return { ...item, reason: isHebrewReason(fixed) ? fixed : "" };
+  });
+}
+
 export default function ShoppingListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -248,7 +305,8 @@ RULES:
 9. Balance protein, carbs, and fats.
 10. If the user keeps kosher, keep meat/poultry items and dairy-protein items as distinct shopping items (they must be usable in separate meals, never combined).
 11. Each item needs: name, category, quantity, estimated_price, calories (total for quantity), protein, carbs, fat, health_score (0-10), and reason.
-12. Before returning, verify: sum of all estimated_price < ₪${profile?.budget_per_purchase || 500}.
+12. LANGUAGE (strict): "name" is the Hebrew product name as sold in Israeli supermarkets. "category" is exactly one of: ${SHOPPING_CATEGORIES.join(", ")}. "reason" is one short, natural Hebrew sentence explaining why the item is on the list — Hebrew only, never English.
+13. Before returning, verify: sum of all estimated_price < ₪${profile?.budget_per_purchase || 500}.
 
 Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Israeli supermarket product names. MAX BUDGET: ₪${profile?.budget_per_purchase || 500}.`;
 
@@ -263,7 +321,7 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
                 type: "object",
                 properties: {
                   name: { type: "string" },
-                  category: { type: "string" },
+                  category: { type: "string", enum: SHOPPING_CATEGORIES },
                   quantity: { type: "string" },
                   estimated_price: { type: "number" },
                   calories: { type: "number" },
@@ -271,7 +329,7 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
                   carbs: { type: "number" },
                   fat: { type: "number" },
                   health_score: { type: "number" },
-                  reason: { type: "string" },
+                  reason: { type: "string", description: "One short sentence in Hebrew" },
                 },
               },
             },
@@ -283,7 +341,9 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
 
       // Enforce budget hard cap - trim items if AI exceeded budget
       const budget = profile?.budget_per_purchase || 500;
-      let finalItems = result.items || [];
+      let finalItems = await ensureHebrewReasons(
+        (result.items || []).map(item => ({ ...item, category: normalizeCategory(item.category) }))
+      );
       let runningTotal = finalItems.reduce((sum, i) => sum + (i.estimated_price || 0), 0);
       while (runningTotal > budget && finalItems.length > 1) {
         // Remove the most expensive item
@@ -550,7 +610,7 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
                         </div>
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
-                        {item.reason}
+                        {isHebrewReason(item.reason) ? item.reason : ""}
                       </TableCell>
                     </TableRow>
                   ))}
