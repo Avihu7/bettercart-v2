@@ -10,6 +10,9 @@ import { Upload, FileText, Camera, Loader2, Sparkles, AlertCircle, Info } from "
 import { DEMO_RECEIPT_TEXT } from "@/lib/demoData";
 import { analyzeReceipt } from "@/lib/receiptPipeline";
 import { IS_DEMO_MODE } from "@/lib/ai";
+import { useAuth } from "@/lib/AuthContext";
+import FlowSteps from "@/components/FlowSteps";
+import { useFlowData } from "@/lib/flowData";
 
 function getErrorHeadline(error) {
   switch (error?.code) {
@@ -36,6 +39,8 @@ const PIPELINE_STEPS = [
 
 export default function ReceiptUpload() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { completed } = useFlowData(user);
   const [receiptText, setReceiptText] = useState("");
   const [file, setFile] = useState(null);
   const [uploadMode, setUploadMode] = useState("text");
@@ -143,6 +148,7 @@ export default function ReceiptUpload() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
+      <FlowSteps current={1} completed={completed} />
       <div>
         <h1 className="font-heading text-2xl font-bold">העלאת קבלה</h1>
         <p className="text-sm text-muted-foreground mt-1">

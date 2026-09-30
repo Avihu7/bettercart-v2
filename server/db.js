@@ -139,4 +139,10 @@ try {
   db.exec("ALTER TABLE shoppingLists ADD COLUMN complementary_added INTEGER DEFAULT 0");
 } catch { /* column already exists — skip */ }
 
+// Final shopping lists (status 'final') point at the nutrition plan whose
+// weekly usage their quantities were calculated from (safe migration)
+try {
+  db.exec("ALTER TABLE shoppingLists ADD COLUMN nutrition_plan_id TEXT");
+} catch { /* column already exists — skip */ }
+
 export default db;

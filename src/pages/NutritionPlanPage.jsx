@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/api/localAPI";
 import { useAuth } from "@/lib/AuthContext";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,8 @@ const ShekelIcon = ({ className }) => (
 import { formatCurrency } from "@/lib/calculations";
 import { generateNutritionPlan } from "@/lib/nutritionPlanGenerator";
 import { sortDays, dayLabel } from "@/lib/weekDays";
+import { useFlowData, FLOW_QUERY_KEY } from "@/lib/flowData";
+import FlowSteps from "@/components/FlowSteps";
 import StatCard from "@/components/dashboard/StatCard";
 
 const mealIcons = {
@@ -51,30 +53,8 @@ export default function NutritionPlanPage() {
   const urlParams = new URLSearchParams(window.location.search);
   const listId = urlParams.get("list_id");
 
-  const { data: profiles } = useQuery({
-    queryKey: ["userProfile", user?.email],
-    queryFn: () => api.entities.UserProfile.filter({ created_by: user.email }),
-    initialData: [],
-    enabled: !!user,
-  });
-
-  const { data: shoppingLists } = useQuery({
-    queryKey: ["shoppingLists", user?.email],
-    queryFn: () => api.entities.ShoppingList.filter({ created_by: user.email }, "-created_date", 1),
-    initialData: [],
-    enabled: !!user,
-  });
-
-  const { data: plans } = useQuery({
-    queryKey: ["nutritionPlans", user?.email],
-    queryFn: () => api.entities.NutritionPlan.filter({ created_by: user.email }, "-created_date", 5),
-    initialData: [],
-    enabled: !!user,
-  });
-
-  const profile = profiles?.[0];
-  const sourceList = listId ? shoppingLists?.find(l => l.id === listId) : shoppingLists?.[0];
-  const latestPlan = plans?.[0];
+  // Basket (step 2) this plan is built from, latest plan, and its final list (step 4)
+  const { profile, basket: sourceList, plan: latestPlan, finalList, completed } = useFlowData(user, { listId });
 
   const generateMutation = useMutation({
     mutationFn: async () => {
@@ -125,6 +105,7 @@ export default function NutritionPlanPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["nutritionPlans"] });
+      queryClient.invalidateQueries({ queryKey: [FLOW_QUERY_KEY] });
     },
   });
 
@@ -134,10 +115,11 @@ export default function NutritionPlanPage() {
 
   return (
     <div className="space-y-6">
+      <FlowSteps current={3} completed={completed} />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-heading text-2xl font-bold">תפריט תזונה</h1>
-          <p className="text-sm text-muted-foreground">תפריט השבועי המותאם אישית שלכם</p>
+          <h1 className="font-heading text-2xl font-bold">תפריט תזונה שבועי</h1>
+          <p className="text-sm text-muted-foreground">תפריט אישי מהמוצרים שבסל המוצרים החכם שלכם</p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -146,13 +128,8 @@ export default function NutritionPlanPage() {
             disabled={generateMutation.isPending || !sourceList?.items?.length}
           >
             {generateMutation.isPending ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Sparkles className="w-4 h-4 ml-2" />}
-            {showPlan ? "יצירה מחדש" : "יצירת תפריט"}
+            {showPlan ? "בנייה מחדש" : "בניית תפריט תזונה"}
           </Button>
-          {showPlan && (
-            <Button onClick={() => navigate("/results")} className="rounded-full">
-              צפייה בתוצאות <ChevronLeft className="w-4 h-4 mr-1" />
-            </Button>
-          )}
         </div>
       </div>
 
@@ -182,16 +159,16 @@ export default function NutritionPlanPage() {
           <h2 className="font-heading font-semibold text-lg mb-2">עדיין אין תפריט</h2>
           <p className="text-sm text-muted-foreground mb-6">
             {sourceList?.items?.length
-              ? "צרו תפריט אישי מסל הקניות שלכם"
-              : "כדי ליצור תפריט תזונה, קודם צריך ליצור סל קניות."}
+              ? "נבנה תפריט שבועי אישי מהמוצרים שבסל המוצרים שלכם"
+              : "כדי לבנות תפריט תזונה, קודם בונים סל מוצרים חכם."}
           </p>
           {sourceList?.items?.length ? (
             <Button onClick={() => generateMutation.mutate()}>
-              <Sparkles className="w-4 h-4 ml-2" /> יצירת תפריט
+              <Sparkles className="w-4 h-4 ml-2" /> בניית תפריט תזונה
             </Button>
           ) : (
             <Button onClick={() => navigate("/shopping-list")}>
-              <ShoppingCart className="w-4 h-4 ml-2" /> ליצירת סל קניות
+              <ShoppingCart className="w-4 h-4 ml-2" /> בניית סל מוצרים חכם
             </Button>
           )}
         </Card>
@@ -282,6 +259,17 @@ export default function NutritionPlanPage() {
               );
             })}
           </Tabs>
+
+          <Card className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p className="text-sm text-muted-foreground">
+              {finalList
+                ? "סל הקניות הסופי כבר חושב לפי התפריט הזה."
+                : "נחשב את הכמויות המדויקות הדרושות לכל השבוע לפי התפריט שבנינו."}
+            </p>
+            <Button onClick={() => navigate("/final-list")} className="rounded-full">
+              {finalList ? "צפייה בסל הקניות הסופי" : "בניית סל קניות סופי"} <ChevronLeft className="w-4 h-4 mr-1" />
+            </Button>
+          </Card>
         </>
       )}
     </div>

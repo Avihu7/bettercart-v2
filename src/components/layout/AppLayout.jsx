@@ -1,16 +1,17 @@
 import React, { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import {
-  LayoutDashboard, Receipt, ShoppingCart, UtensilsCrossed,
+  LayoutDashboard, Receipt, ShoppingCart, ShoppingBasket, UtensilsCrossed,
   Trophy, Upload, Settings, Menu, X, LogOut, Bug
 } from "lucide-react";
 import { useAuth } from "@/lib/AuthContext";
 
 const NAV_ITEMS = [
   { path: "/dashboard", label: "דשבורד", icon: LayoutDashboard },
-  { path: "/upload", label: "העלאת קבלה", icon: Upload },
-  { path: "/shopping-list", label: "סל קניות", icon: ShoppingCart },
-  { path: "/nutrition-plan", label: "תפריט תזונה", icon: UtensilsCrossed },
+  { path: "/upload", label: "סריקת קבלה", icon: Upload },
+  { path: "/shopping-list", label: "סל מוצרים חכם", icon: ShoppingBasket },
+  { path: "/nutrition-plan", label: "תפריט שבועי", icon: UtensilsCrossed },
+  { path: "/final-list", label: "סל קניות סופי", icon: ShoppingCart },
   { path: "/results", label: "תוצאות סופיות", icon: Trophy },
   { path: "/debug", label: "תצוגת ניפוי", icon: Bug },
 ];

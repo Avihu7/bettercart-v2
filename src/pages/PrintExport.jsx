@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
-import { api } from "@/api/localAPI";
+import React from "react";
 import { useAuth } from "@/lib/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useFlowData } from "@/lib/flowData";
+import { weeklyUsageLabel } from "@/lib/shoppingOptimizer";
 import { formatCurrency } from "@/lib/calculations";
 import { sortDays, dayLabel } from "@/lib/weekDays";
 
@@ -29,33 +29,9 @@ export default function PrintExport() {
   const urlParams = new URLSearchParams(window.location.search);
   const mode = urlParams.get("mode") || "both"; // "shopping" | "nutrition" | "both"
 
-  const { data: profiles } = useQuery({
-    queryKey: ["userProfile", user?.email],
-    queryFn: () => api.entities.UserProfile.filter({ created_by: user.email }),
-    initialData: [],
-    enabled: !!user,
-  });
-
-  const { data: shoppingLists } = useQuery({
-    queryKey: ["shoppingLists", user?.email],
-    queryFn: () => api.entities.ShoppingList.filter({ created_by: user.email }, "-created_date", 1),
-    initialData: [],
-    enabled: !!user,
-  });
-
-  const { data: plans } = useQuery({
-    queryKey: ["nutritionPlans", user?.email],
-    queryFn: () => api.entities.NutritionPlan.filter({ created_by: user.email }, "-created_date", 1),
-    initialData: [],
-    enabled: !!user,
-  });
-
-  const profile = profiles?.[0];
-  const list = shoppingLists?.[0];
-  const plan = plans?.[0];
+  // Prints the final list (step 4) — never the preliminary step-2 basket
+  const { profile, plan, finalList: list } = useFlowData(user);
   const ba = plan?.before_after;
-
-  const isLoading = !profile && !list && !plan;
 
   return (
     <div className="print-page" dir="rtl">
@@ -162,39 +138,12 @@ export default function PrintExport() {
         </div>
       )}
 
-      {/* Before / After */}
-      {ba && (
-        <div style={{ marginBottom: 24 }}>
-          <div className="section-title">לפני ואחרי</div>
-          <div className="before-after">
-            <div className="ba-box before">
-              <div className="label">הוצאה חודשית לפני</div>
-              <div className="value" style={{ color: '#dc2626' }}>{formatCurrency(ba.previous_monthly_spending)}</div>
-              <div className="label" style={{ marginTop: 8 }}>ציון בריאות לפני</div>
-              <div className="value" style={{ color: '#dc2626', fontSize: 14 }}>{ba.previous_health_score}/100</div>
-            </div>
-            <div className="ba-box saving">
-              <div className="label">חיסכון חודשי</div>
-              <div className="value" style={{ color: '#059669' }}>{formatCurrency(ba.monthly_savings)}</div>
-              <div className="label" style={{ marginTop: 8 }}>חיסכון שנתי</div>
-              <div className="value" style={{ color: '#059669', fontSize: 14 }}>{formatCurrency(ba.yearly_savings)}</div>
-            </div>
-            <div className="ba-box after">
-              <div className="label">הוצאה חודשית אחרי</div>
-              <div className="value" style={{ color: '#16a34a' }}>{formatCurrency(ba.estimated_new_monthly_spending)}</div>
-              <div className="label" style={{ marginTop: 8 }}>ציון בריאות אחרי</div>
-              <div className="value" style={{ color: '#16a34a', fontSize: 14 }}>{ba.new_health_score}/100</div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Shopping List */}
       {list && (mode === "shopping" || mode === "both") && (
         <div style={{ marginBottom: 28 }}>
-          <div className="section-title">סל קניות</div>
+          <div className="section-title">סל קניות סופי</div>
           <p style={{ fontSize: 12, color: '#666', marginBottom: 10 }}>
-            תקופה: {list.shopping_period_days} ימים · סה"כ: {formatCurrency(list.total_estimated_cost)} · קלוריות: {list.total_calories?.toLocaleString()}
+            הכמויות חושבו לפי התפריט השבועי · {list.shopping_period_days} ימים · סה"כ משוער: {formatCurrency(list.total_estimated_cost)}
           </p>
           <table>
             <thead>
@@ -202,11 +151,9 @@ export default function PrintExport() {
                 <th>#</th>
                 <th>מוצר</th>
                 <th>קטגוריה</th>
-                <th>כמות</th>
-                <th>מחיר</th>
-                <th>קל'</th>
-                <th>ח/פ/ש (ג')</th>
-                <th>ציון</th>
+                <th>שימוש בתפריט</th>
+                <th>כמות לקנייה</th>
+                <th>מחיר משוער</th>
               </tr>
             </thead>
             <tbody>
@@ -215,25 +162,27 @@ export default function PrintExport() {
                   <td style={{ color: '#888', width: 28 }}>{i + 1}</td>
                   <td style={{ fontWeight: 500 }}>{item.name}</td>
                   <td>{CATEGORY_LABELS[item.category] || item.category}</td>
-                  <td>{item.quantity}</td>
+                  <td style={{ color: '#666' }}>{weeklyUsageLabel(item)}</td>
+                  <td style={{ fontWeight: 'bold' }}>{item.quantity}</td>
                   <td>{formatCurrency(item.estimated_price)}</td>
-                  <td>{item.calories?.toLocaleString()}</td>
-                  <td>{item.protein}/{item.carbs}/{item.fat}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 'bold', color: item.health_score >= 7 ? '#16a34a' : item.health_score >= 4 ? '#d97706' : '#dc2626' }}>
-                    {item.health_score}
-                  </td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr style={{ fontWeight: 'bold', background: '#f0f0f0' }}>
-                <td colSpan={4} style={{ textAlign: 'right' }}>סה"כ</td>
+                <td colSpan={5} style={{ textAlign: 'right' }}>סה"כ משוער</td>
                 <td>{formatCurrency(list.total_estimated_cost)}</td>
-                <td>{list.total_calories?.toLocaleString()}</td>
-                <td colSpan={2}></td>
               </tr>
             </tfoot>
           </table>
+        </div>
+      )}
+
+      {/* Final shopping list — missing state */}
+      {!list && plan && (mode === "shopping" || mode === "both") && (
+        <div style={{ marginBottom: 28, padding: '24px', border: '1px dashed #ccc', borderRadius: 8, textAlign: 'center', color: '#888' }}>
+          <div style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>סל הקניות הסופי עדיין לא חושב</div>
+          <div style={{ fontSize: 13 }}>חזרו ל-BetterCart, לחצו "בניית סל קניות סופי" בעמוד התפריט, ואז חזרו להדפסה.</div>
         </div>
       )}
 
@@ -241,7 +190,7 @@ export default function PrintExport() {
       {!plan && list && (mode === "nutrition" || mode === "both") && (
         <div style={{ marginBottom: 28, padding: '24px', border: '1px dashed #ccc', borderRadius: 8, textAlign: 'center', color: '#888' }}>
           <div style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 8 }}>תפריט תזונה עדיין לא נוצר</div>
-          <div style={{ fontSize: 13 }}>חזרו ל-BetterCart, צרו תפריט תזונה בשלב "תפריט תזונה", ואז חזרו להדפסה.</div>
+          <div style={{ fontSize: 13 }}>חזרו ל-BetterCart, בנו תפריט תזונה בשלב "תפריט שבועי", ואז חזרו להדפסה.</div>
         </div>
       )}
 
@@ -284,6 +233,33 @@ export default function PrintExport() {
               ))}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Before / After */}
+      {ba && (
+        <div className="page-break-div" style={{ marginBottom: 24 }}>
+          <div className="section-title">לפני ואחרי</div>
+          <div className="before-after">
+            <div className="ba-box before">
+              <div className="label">הוצאה חודשית לפני</div>
+              <div className="value" style={{ color: '#dc2626' }}>{formatCurrency(ba.previous_monthly_spending)}</div>
+              <div className="label" style={{ marginTop: 8 }}>ציון בריאות לפני</div>
+              <div className="value" style={{ color: '#dc2626', fontSize: 14 }}>{ba.previous_health_score}/100</div>
+            </div>
+            <div className="ba-box saving">
+              <div className="label">חיסכון חודשי</div>
+              <div className="value" style={{ color: '#059669' }}>{formatCurrency(ba.monthly_savings)}</div>
+              <div className="label" style={{ marginTop: 8 }}>חיסכון שנתי</div>
+              <div className="value" style={{ color: '#059669', fontSize: 14 }}>{formatCurrency(ba.yearly_savings)}</div>
+            </div>
+            <div className="ba-box after">
+              <div className="label">הוצאה חודשית אחרי</div>
+              <div className="value" style={{ color: '#16a34a' }}>{formatCurrency(ba.estimated_new_monthly_spending)}</div>
+              <div className="label" style={{ marginTop: 8 }}>ציון בריאות אחרי</div>
+              <div className="value" style={{ color: '#16a34a', fontSize: 14 }}>{ba.new_health_score}/100</div>
+            </div>
+          </div>
         </div>
       )}
 

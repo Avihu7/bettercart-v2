@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/api/localAPI";
 import { useAuth } from "@/lib/AuthContext";
@@ -9,11 +9,11 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   ShoppingCart, Loader2, ChevronLeft, Sparkles, RefreshCw,
-  Heart, AlertCircle, Upload, Zap, CheckCircle2
+  Heart, AlertCircle, Upload
 } from "lucide-react";
-import { formatCurrency } from "@/lib/calculations";
 import StatCard from "@/components/dashboard/StatCard";
-import { optimizeShoppingQuantities, getOptimizationSummary } from "@/lib/shoppingOptimizer";
+import { useFlowData, FLOW_QUERY_KEY } from "@/lib/flowData";
+import FlowSteps from "@/components/FlowSteps";
 
 const MIN_FOOD_ITEMS = 3;
 
@@ -105,9 +105,6 @@ function getEffectiveItemData(item) {
   };
 }
 
-const ShekelIcon = ({ className }) => (
-  <span className={`${className} flex items-center justify-center font-bold`} style={{ fontSize: '0.9rem' }}>₪</span>
-);
 
 const categoryColors = {
   protein: "bg-red-50 text-red-700",
@@ -198,12 +195,6 @@ export default function ShoppingListPage() {
     enabled: !!user,
   });
 
-  const { data: shoppingLists, isLoading: listsLoading } = useQuery({
-    queryKey: ["shoppingLists", user?.email],
-    queryFn: () => api.entities.ShoppingList.filter({ created_by: user.email }, "-created_date", 5),
-    initialData: [],
-    enabled: !!user,
-  });
 
   // Fetch latest receipt for this user (used when no receipt_id in URL)
   const { data: latestReceipts = [] } = useQuery({
@@ -367,42 +358,12 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shoppingLists"] });
+      queryClient.invalidateQueries({ queryKey: [FLOW_QUERY_KEY] });
     },
   });
 
-  const { data: nutritionPlans } = useQuery({
-    queryKey: ["nutritionPlans", user?.email],
-    queryFn: () => api.entities.NutritionPlan.filter({ created_by: user.email }, "-created_date", 1),
-    initialData: [],
-    enabled: !!user,
-  });
-
-  const [optimizeDone, setOptimizeDone] = useState(false);
-
-  const optimizeMutation = useMutation({
-    mutationFn: async () => {
-      const list = shoppingLists?.[0];
-      const plan = nutritionPlans?.[0];
-      if (!list?.items?.length || !plan?.days?.length) {
-        throw new Error("נדרש סל קניות ותפריט תזונה קיימים");
-      }
-      const optimizedItems = optimizeShoppingQuantities(list.items, plan.days);
-      const summary = getOptimizationSummary(list.items, optimizedItems);
-      const cleanedItems = optimizedItems.map(({ _optimized, _gramsNeeded, ...rest }) => rest);
-      await api.entities.ShoppingList.update(list.id, { items: cleanedItems });
-      return summary;
-    },
-    onSuccess: (summary) => {
-      queryClient.invalidateQueries({ queryKey: ["shoppingLists"] });
-      setOptimizeDone(true);
-      setTimeout(() => setOptimizeDone(false), 4000);
-    },
-  });
-
-  const latestList = shoppingLists?.[0];
-  const latestPlan = nutritionPlans?.[0];
-  const showList = latestList || null;
-  const canOptimize = !!(latestList?.items?.length && latestPlan?.days?.length);
+  // Baskets only — a final shopping list (step 4) is never shown here
+  const { basket: showList, completed } = useFlowData(user);
 
   const catalogMatchCount = receiptItems.filter(
     i => i.catalog_match_status === "matched" && !i.catalog_needs_review
@@ -410,10 +371,11 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
 
   return (
     <div className="space-y-6">
+      <FlowSteps current={2} completed={completed} />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="font-heading text-2xl font-bold">סל קניות חכם</h1>
-          <p className="text-sm text-muted-foreground">מותאם למטרות ולתקציב שלכם באמצעות AI</p>
+          <h1 className="font-heading text-2xl font-bold">סל מוצרים חכם</h1>
+          <p className="text-sm text-muted-foreground">בחרנו עבורך מוצרים שמהם נבנה את התפריט השבועי</p>
           {effectiveReceiptId && (
             <p className="text-xs text-muted-foreground/70 mt-0.5">
               מבוסס על קבלה מ-{latestReceipt?.store_name || (receiptId ? "הקבלה שנבחרה" : "הקבלה האחרונה שהועלתה")}
@@ -446,32 +408,11 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
           <Button
             variant="outline"
             onClick={() => generateMutation.mutate()}
-            disabled={generateMutation.isPending || optimizeMutation.isPending}
+            disabled={generateMutation.isPending}
           >
             {generateMutation.isPending ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <RefreshCw className="w-4 h-4 ml-2" />}
-            {showList ? "יצירה מחדש" : "יצירת רשימה"}
+            {showList ? "בחירה מחדש" : "בניית סל מוצרים חכם"}
           </Button>
-          {canOptimize && (
-            <Button
-              variant="outline"
-              onClick={() => optimizeMutation.mutate()}
-              disabled={optimizeMutation.isPending || generateMutation.isPending}
-              className={optimizeDone ? "border-green-500 text-green-700" : ""}
-            >
-              {optimizeMutation.isPending
-                ? <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                : optimizeDone
-                  ? <CheckCircle2 className="w-4 h-4 ml-2 text-green-600" />
-                  : <Zap className="w-4 h-4 ml-2" />
-              }
-              {optimizeDone ? "הכמויות עודכנו!" : "כיוון כמויות"}
-            </Button>
-          )}
-          {showList && (
-            <Button onClick={() => navigate(`/nutrition-plan?list_id=${showList.id}`)} className="rounded-full">
-              יצירת תפריט <ChevronLeft className="w-4 h-4 mr-1" />
-            </Button>
-          )}
         </div>
       </div>
 
@@ -480,7 +421,7 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
           <div className="flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-destructive mt-0.5 shrink-0" />
             <div>
-              <p className="font-medium text-sm">לא הצלחנו ליצור את סל הקניות</p>
+              <p className="font-medium text-sm">לא הצלחנו לבנות את סל המוצרים</p>
               <p className="text-xs text-muted-foreground mt-1">
                 בדקו שה-API key מוגדר, או נסו שוב בעוד רגע.
               </p>
@@ -490,52 +431,18 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
         </Card>
       )}
 
-      {optimizeMutation.isError && !optimizeMutation.isPending && (
-        <Card className="p-4 border-amber-200 bg-amber-50">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
-            <div>
-              <p className="font-medium text-sm text-amber-800">לא הצלחנו לייעל את הכמויות</p>
-              <p className="text-xs text-amber-700 mt-1">{optimizeMutation.error?.message}</p>
-            </div>
-          </div>
-        </Card>
-      )}
-
-      {canOptimize && !optimizeMutation.isPending && !generateMutation.isPending && showList && (
-        <Card className="p-4 bg-blue-50 border-blue-200">
-          <div className="flex items-start gap-3">
-            <Zap className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-blue-800">כיוון כמויות אוטומטי זמין</p>
-              <p className="text-xs text-blue-700 mt-0.5">
-                לאחר יצירת תפריט תזונה, לחצו "כיוון כמויות" כדי לחשב אוטומטית את הכמויות הנדרשות לפי השימוש הממשי בתפריט השבועי.
-              </p>
-            </div>
-          </div>
-        </Card>
-      )}
-
       {generateMutation.isPending && (
         <Card className="p-10 text-center">
           <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
-          <h2 className="font-heading font-semibold text-lg">יוצרים את סל הקניות החכם שלכם...</h2>
+          <h2 className="font-heading font-semibold text-lg">בוחרים עבורכם מוצרים...</h2>
           <p className="text-sm text-muted-foreground">מנתחים העדפות, תקציב וצרכים תזונתיים</p>
         </Card>
       )}
 
-      {optimizeMutation.isPending && (
-        <Card className="p-10 text-center">
-          <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
-          <h2 className="font-heading font-semibold text-lg">מחשבים כמויות מהתפריט השבועי...</h2>
-          <p className="text-sm text-muted-foreground">מצרפים גרמים לפי ימי התפריט ומחשבים כמויות קנייה</p>
-        </Card>
-      )}
-
-      {!generateMutation.isPending && !optimizeMutation.isPending && !showList && (
+      {!generateMutation.isPending && !showList && (
         <Card className="p-10 text-center">
           <ShoppingCart className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-          <h2 className="font-heading font-semibold text-lg mb-2">עדיין לא נוצר סל קניות</h2>
+          <h2 className="font-heading font-semibold text-lg mb-2">עדיין לא נבחרו מוצרים</h2>
           {!itemsLoading && receiptItems.length < MIN_FOOD_ITEMS ? (
             <>
               <p className="text-sm text-muted-foreground mb-6">
@@ -553,29 +460,29 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
           ) : (
             <>
               <p className="text-sm text-muted-foreground mb-6">
-                ניצור עבורכם סל קניות חכם לפי הפרופיל, התקציב והקבלות שהעליתם.
+                נבחר עבורכם מוצרים לפי הפרופיל, התקציב והקבלות שהעליתם — מהם נבנה את התפריט השבועי.
               </p>
               <Button onClick={() => generateMutation.mutate()}>
-                <Sparkles className="w-4 h-4 ml-2" /> צור סל קניות חכם
+                <Sparkles className="w-4 h-4 ml-2" /> בניית סל מוצרים חכם
               </Button>
             </>
           )}
         </Card>
       )}
 
-      {showList && !generateMutation.isPending && !optimizeMutation.isPending && (
+      {showList && !generateMutation.isPending && (
         <>
           {/* Summary Stats */}
           <div className="grid grid-cols-2 gap-4">
-            <StatCard title="עלות כוללת" value={formatCurrency(showList.total_estimated_cost)} icon={ShekelIcon} color="green" />
-            <StatCard title="מוצרים" value={showList.items?.length || 0} icon={ShoppingCart} color="blue" />
+            <StatCard title="מוצרים שנבחרו" value={showList.items?.length || 0} icon={ShoppingCart} color="blue" />
+            <StatCard title="קטגוריות" value={new Set((showList.items || []).map(i => i.category)).size} icon={Heart} color="green" />
           </div>
 
           {/* Items Table */}
           <Card className="overflow-hidden">
             <div className="p-4 border-b flex items-center justify-between">
-              <h2 className="font-heading font-semibold">מוצרים לקנייה</h2>
-              <Badge variant="secondary">תקופה של {showList.shopping_period_days} ימים</Badge>
+              <h2 className="font-heading font-semibold">המוצרים שנבחרו</h2>
+              <span className="text-xs text-muted-foreground">הכמויות והעלות לקנייה יחושבו בסוף, לפי התפריט השבועי</span>
             </div>
             <div className="overflow-x-auto">
               <Table>
@@ -583,8 +490,6 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
                   <TableRow>
                     <TableHead>מוצר</TableHead>
                     <TableHead>קטגוריה</TableHead>
-                    <TableHead>כמות</TableHead>
-                    <TableHead>מחיר</TableHead>
                     <TableHead>ציון</TableHead>
                     <TableHead>סיבה</TableHead>
                   </TableRow>
@@ -598,8 +503,6 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
                           {CATEGORY_LABELS[item.category] || item.category}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-sm">{item.quantity}</TableCell>
-                      <TableCell className="text-sm">{formatCurrency(item.estimated_price)}</TableCell>
                       <TableCell>
                         <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                           item.health_score >= 7 ? "bg-green-50 text-green-700" :
@@ -617,6 +520,13 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
                 </TableBody>
               </Table>
             </div>
+          </Card>
+
+          <Card className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <p className="text-sm text-muted-foreground">מהמוצרים האלה נבנה עבורכם תפריט תזונה שבועי מותאם.</p>
+            <Button onClick={() => navigate(`/nutrition-plan?list_id=${showList.id}`)} className="rounded-full">
+              בניית תפריט תזונה <ChevronLeft className="w-4 h-4 mr-1" />
+            </Button>
           </Card>
         </>
       )}

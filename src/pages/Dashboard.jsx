@@ -391,8 +391,8 @@ export default function Dashboard() {
                 <ShoppingCart className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="font-heading font-semibold">סל הקניות האחרון</p>
-                <p className="text-sm text-muted-foreground">צפו ברשימת הקניות החכמה שלכם</p>
+                <p className="font-heading font-semibold">סל המוצרים החכם</p>
+                <p className="text-sm text-muted-foreground">צפו במוצרים שנבחרו עבורכם</p>
               </div>
             </div>
           </Card>

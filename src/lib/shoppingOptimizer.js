@@ -13,6 +13,9 @@
  *  4. Return updated shopping list items with corrected quantities
  */
 
+import { classifyProduct } from '@/lib/mealPlanRules';
+import { quantityCandidates, parseQuantityGrams } from '@/lib/mealPlanCalories';
+
 // Category-based package size rules (common Israeli supermarket sizes)
 const PACKAGE_SIZES = {
   protein: [
@@ -136,6 +139,106 @@ function aggregatePlanGrams(days) {
   return totals;
 }
 
+// Cooked plan portions → dry purchase weight (rice/pasta ≈ 2.7×, dry legumes ≈ 3× when cooked)
+const COOKED_TO_DRY = { grain: 2.7, legumes: 3 };
+// Ready-to-eat products in those groups (tofu, canned/cooked legumes) are bought as eaten
+const READY_TO_EAT = /טופו|שימורי|קופסה|מבושל|מוכן/;
+
+function isSoldDry(item, group) {
+  return !!COOKED_TO_DRY[group] && !READY_TO_EAT.test(item.name || '');
+}
+
+// Typical Israeli supermarket pack per product group: { grams, label }
+function productUnit(item, group) {
+  const name = item.name || '';
+  switch (group) {
+    case 'milk': return { grams: 1000, label: '1 ליטר' };
+    case 'yogurt': return { grams: 200, label: '200 גרם' };
+    case 'dairy_protein':
+      if (/קוטג/.test(name)) return { grams: 250, label: '250 גרם' };
+      return { grams: 200, label: '200 גרם' };
+    case 'bread': return { grams: 750, label: 'כיכר' };
+    case 'grain': return /פסטה|ספגטי|פתיתים|אטריות/.test(name) ? { grams: 500, label: '500 גרם' } : { grams: 1000, label: '1 ק"ג' };
+    case 'legumes': return /טופו/.test(name) ? { grams: 300, label: '300 גרם' } : { grams: 500, label: '500 גרם' };
+    case 'cereal': return { grams: 750, label: '750 גרם' };
+    case 'oil': return { grams: 750, label: '750 מ"ל' };
+    case 'tahini': return { grams: 500, label: '500 גרם' };
+    case 'nuts': return { grams: 200, label: '200 גרם' };
+    case 'coffee': return { grams: 200, label: '200 גרם' };
+    case 'tea': return { grams: 100, label: '100 גרם' };
+    case 'fish': return /טונה/.test(name) ? { grams: 160, label: 'קופסה' } : null;
+    default: return null;
+  }
+}
+
+const WEIGHED_GROUPS = new Set(['meat', 'fish', 'vegetable', 'fruit', 'starch_veg']);
+const LIQUID_GROUPS = new Set(['milk', 'oil']);
+
+function packLabel(grams, group) {
+  if (LIQUID_GROUPS.has(group)) return grams >= 1000 ? `${grams / 1000} ליטר` : `${grams} מ"ל`;
+  return grams >= 1000 ? `${grams / 1000} ק"ג` : `${grams} גרם`;
+}
+
+/**
+ * The pack size the shopping list itself names: "2 יחידות (250 גרם כל אחת)" → 250g,
+ * or a single pack like "200 גרם" / "500 מל" (up to 1 kg; larger values are totals).
+ */
+function listPackUnit(item, group) {
+  const q = String(item.quantity || '');
+  const each = q.match(/(\d+(?:\.\d+)?)\s*(?:גרם|ג'?|מ"ל|מל)\s*כל אח[תד]/);
+  if (each) return { grams: parseFloat(each[1]), label: packLabel(parseFloat(each[1]), group) };
+  if (/^\s*\d+\s*(?:יחידות|יח'|חבילות|מארזים|קופסאות|בקבוקים)/.test(q)) return null;
+  const g = parseQuantityGrams(q, group);
+  return g && g <= 1000 ? { grams: g, label: packLabel(g, group) } : null;
+}
+
+function formatWeight(grams) {
+  return grams >= 1000 ? `${Math.round(grams / 100) / 10} ק"ג` : `${Math.round(grams)} גרם`;
+}
+
+/**
+ * Converts the weekly amount eaten into a purchase quantity.
+ * Returns { label, purchaseGrams }.
+ */
+function purchaseQuantity(item, eatenGrams, group) {
+  let need = eatenGrams * 1.1; // 10% buffer so the week doesn't run short
+  if (isSoldDry(item, group)) need /= COOKED_TO_DRY[group];
+
+  if (group === 'eggs') {
+    const eggs = Math.ceil(need / 60);
+    const cartons = Math.ceil(eggs / 12);
+    return { label: cartons === 1 ? 'תבנית 12 ביצים' : `תבנית 12 ביצים × ${cartons}`, purchaseGrams: cartons * 12 * 60 };
+  }
+  if (WEIGHED_GROUPS.has(group) && !productUnit(item, group)) {
+    // Sold by weight: round up to the next 100g (at least 250g)
+    const grams = Math.max(250, Math.ceil(need / 100) * 100);
+    return { label: `כ-${formatWeight(grams)}`, purchaseGrams: grams };
+  }
+  const unit = listPackUnit(item, group) || productUnit(item, group);
+  if (unit) {
+    const packs = Math.max(1, Math.ceil(need / unit.grams));
+    return { label: packs === 1 ? unit.label : `${unit.label} × ${packs}`, purchaseGrams: packs * unit.grams };
+  }
+  const { unit: label, packageGrams } = pickPackageSize(need, item.category || 'other');
+  return { label, purchaseGrams: packageGrams };
+}
+
+/**
+ * Assigns every plan ingredient to exactly one shopping-list item — exact
+ * name first (plans store the list's exact names), then the fuzzy match for
+ * older plans — and sums the grams eaten per item across the week.
+ */
+function weeklyUsageByItem(shoppingListItems, nutritionPlanDays) {
+  const usage = new Map();
+  for (const [key, data] of aggregatePlanGrams(nutritionPlanDays)) {
+    let idx = shoppingListItems.findIndex(i => normalize(i.name) === key);
+    if (idx === -1) idx = shoppingListItems.findIndex(i => namesMatch(data.originalName, i.name));
+    if (idx === -1) continue;
+    usage.set(idx, (usage.get(idx) || 0) + data.totalGrams);
+  }
+  return usage;
+}
+
 /**
  * Main optimizer function.
  *
@@ -144,36 +247,56 @@ function aggregatePlanGrams(days) {
  * @returns {Object[]} - updated shopping list items with corrected quantities
  */
 export function optimizeShoppingQuantities(shoppingListItems, nutritionPlanDays) {
-  const planGrams = aggregatePlanGrams(nutritionPlanDays);
+  const usage = weeklyUsageByItem(shoppingListItems, nutritionPlanDays);
 
-  return shoppingListItems.map(item => {
-    const listNorm = normalize(item.name);
-
-    // Find matching plan item(s)
-    let matchedGrams = 0;
-    for (const [planKey, planData] of planGrams) {
-      if (namesMatch(planData.originalName, item.name) || namesMatch(planKey, listNorm)) {
-        matchedGrams += planData.totalGrams;
-      }
-    }
-
-    if (matchedGrams === 0) {
-      // No match in the plan — keep original quantity but flag it
+  return shoppingListItems.map((item, idx) => {
+    const eaten = usage.get(idx) || 0;
+    if (!eaten) {
+      // Not used in the plan — keep original quantity but flag it
       return { ...item, _optimized: false };
     }
+    const group = classifyProduct(item.name, item.category);
+    const { label, purchaseGrams } = purchaseQuantity(item, eaten, group);
 
-    // Add 10% buffer to avoid running short mid-week
-    const gramsWithBuffer = Math.ceil(matchedGrams * 1.1);
-
-    const { unit } = pickPackageSize(gramsWithBuffer, item.category || 'other');
+    // Price from the list's own price per gram (its quantity is the pack it priced)
+    const listGrams = quantityCandidates(item.quantity, group)[0];
+    const pricePerGram = listGrams && item.estimated_price ? item.estimated_price / listGrams : null;
 
     return {
       ...item,
-      quantity: unit,
+      quantity: label,
+      weekly_usage_grams: Math.round(eaten),
+      purchase_grams: Math.round(purchaseGrams),
+      estimated_price: pricePerGram ? Math.round(pricePerGram * purchaseGrams * 10) / 10 : item.estimated_price,
+      price_is_estimate: !pricePerGram,
       _optimized: true,
-      _gramsNeeded: matchedGrams,
+      _gramsNeeded: eaten,
     };
   });
+}
+
+/** Weekly usage as it appears in the menu (rice/pasta/legumes are cooked weight). */
+export function weeklyUsageLabel(item) {
+  const g = item.weekly_usage_grams;
+  if (!g) return '—';
+  const group = classifyProduct(item.name, item.category);
+  const amount = formatWeight(g);
+  return isSoldDry(item, group) ? `${amount} (מבושל)` : amount;
+}
+
+/**
+ * Final shopping list for a nutrition plan: only the products the plan uses,
+ * with purchase quantities and prices derived from the week's actual usage.
+ * Returns { items, total_estimated_cost, unused } (unused = basket names not in the plan).
+ */
+export function buildFinalShoppingList(basketItems, nutritionPlanDays) {
+  const optimized = optimizeShoppingQuantities(basketItems || [], nutritionPlanDays || []);
+  const items = optimized
+    .filter(i => i._optimized)
+    .map(({ _optimized, _gramsNeeded, ...rest }) => rest);
+  const unused = optimized.filter(i => !i._optimized).map(i => i.name);
+  const total = items.reduce((s, i) => s + (Number(i.estimated_price) || 0), 0);
+  return { items, total_estimated_cost: Math.round(total * 10) / 10, unused };
 }
 
 /**

@@ -11,6 +11,7 @@ import ReceiptUpload from './pages/ReceiptUpload';
 import ReceiptResults from './pages/ReceiptResults';
 import ShoppingListPage from './pages/ShoppingListPage';
 import NutritionPlanPage from './pages/NutritionPlanPage';
+import FinalShoppingList from './pages/FinalShoppingList';
 import FinalResults from './pages/FinalResults';
 import PrintExport from './pages/PrintExport';
 import DebugView from './pages/DebugView';
@@ -30,6 +31,7 @@ function App() {
               <Route path="/receipt-results" element={<ReceiptResults />} />
               <Route path="/shopping-list" element={<ShoppingListPage />} />
               <Route path="/nutrition-plan" element={<NutritionPlanPage />} />
+              <Route path="/final-list" element={<FinalShoppingList />} />
               <Route path="/results" element={<FinalResults />} />
               <Route path="/print" element={<PrintExport />} />
               <Route path="/debug" element={<DebugView />} />

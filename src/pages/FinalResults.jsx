@@ -1,8 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "@/api/localAPI";
 import { useAuth } from "@/lib/AuthContext";
-import { useQuery } from "@tanstack/react-query";
+import { useFlowData } from "@/lib/flowData";
+import { weeklyUsageLabel } from "@/lib/shoppingOptimizer";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Trophy, ShoppingCart, UtensilsCrossed, TrendingDown,
-  Flame, Heart, ArrowDown, ArrowUp, Printer
+  Flame, Heart, ArrowDown, ArrowUp, Printer, BarChart3, ChevronLeft
 } from "lucide-react";
 import { formatCurrency } from "@/lib/calculations";
 import StatCard from "@/components/dashboard/StatCard";
@@ -42,31 +42,12 @@ export default function FinalResults() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const { data: profiles } = useQuery({
-    queryKey: ["userProfile", user?.email],
-    queryFn: () => api.entities.UserProfile.filter({ created_by: user.email }),
-    initialData: [],
-    enabled: !!user,
-  });
-
-  const { data: shoppingLists } = useQuery({
-    queryKey: ["shoppingLists", user?.email],
-    queryFn: () => api.entities.ShoppingList.filter({ created_by: user.email }, "-created_date", 1),
-    initialData: [],
-    enabled: !!user,
-  });
-
-  const { data: plans } = useQuery({
-    queryKey: ["nutritionPlans", user?.email],
-    queryFn: () => api.entities.NutritionPlan.filter({ created_by: user.email }, "-created_date", 1),
-    initialData: [],
-    enabled: !!user,
-  });
-
-  const profile = profiles?.[0];
-  const list = shoppingLists?.[0];
-  const plan = plans?.[0];
+  // The completed output: the final list (step 4) and the plan it was calculated from.
+  // The step-2 basket is never shown here as the shopping list.
+  const { profile, plan, planBasket, finalList: list, isLoading } = useFlowData(user);
   const ba = plan?.before_after;
+
+  if (isLoading) return null;
 
   if (!list && !plan) {
     return (
@@ -88,93 +69,59 @@ export default function FinalResults() {
           <p className="text-sm text-muted-foreground">סיכום התוכנית המותאמת שלכם</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button size="sm" onClick={() => navigate("/print")}>
-            <Printer className="w-4 h-4 ml-1" /> הדפסה / שמירה ל-PDF בעברית
-          </Button>
+          {list && (
+            <Button size="sm" onClick={() => navigate("/print")}>
+              <Printer className="w-4 h-4 ml-1" /> הדפסה / שמירה כ-PDF
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* Before / After Comparison */}
-      {ba && (
-        <Card className="p-5">
-          <h2 className="font-heading font-semibold text-lg mb-1 flex items-center gap-2">
-            <TrendingDown className="w-5 h-5 text-primary" /> לפני ואחרי
-          </h2>
-          <p className="text-xs text-muted-foreground mb-4">
-            לפני = התקציב החודשי שהגדרתם בפרופיל · אחרי = עלות סל הקניות החדש × מספר ביקורים בחודש
-          </p>
-          <div className="grid sm:grid-cols-3 gap-4">
-            {/* Before Column */}
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">לפני</p>
-              <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-center">
-                <p className="text-xs text-muted-foreground mb-1">הוצאה חודשית</p>
-                <p className="text-xl font-heading font-bold text-red-600">{formatCurrency(ba.previous_monthly_spending)}</p>
-                <p className="text-xs text-muted-foreground mt-1">התקציב שהגדרתם בפרופיל</p>
-              </div>
-              <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-center">
-                <p className="text-xs text-muted-foreground mb-1">ציון בריאות</p>
-                <p className="text-xl font-heading font-bold text-red-500">{ba.previous_health_score}<span className="text-sm font-normal text-muted-foreground">/100</span></p>
-                <p className="text-xs text-muted-foreground mt-1">לפי הפרופיל שלכם</p>
-              </div>
-            </div>
-
-            {/* Savings Column */}
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">החיסכון שלכם</p>
-              <div className="p-4 rounded-xl bg-accent border border-primary/20 text-center">
-                <p className="text-xs text-muted-foreground mb-1">חיסכון חודשי</p>
-                <p className="text-xl font-heading font-bold text-primary">{formatCurrency(ba.monthly_savings)}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(ba.yearly_savings)}/שנה</p>
-              </div>
-              <div className="p-4 rounded-xl bg-accent border border-primary/20 text-center">
-                <p className="text-xs text-muted-foreground mb-1">שיפור בציון</p>
-                <p className="text-xl font-heading font-bold text-primary">
-                  +{Math.max(0, (ba.new_health_score || 0) - (ba.previous_health_score || 0)).toFixed(0)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">נקודות בריאות</p>
-              </div>
-            </div>
-
-            {/* After Column */}
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">אחרי</p>
-              <div className="p-4 rounded-xl bg-green-50 border border-green-100 text-center">
-                <p className="text-xs text-muted-foreground mb-1">הוצאה חודשית</p>
-                <p className="text-xl font-heading font-bold text-green-600">{formatCurrency(ba.estimated_new_monthly_spending)}</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {formatCurrency(list?.total_estimated_cost)} × {profile?.purchases_per_month || "?"} ביקורים
-                </p>
-              </div>
-              <div className="p-4 rounded-xl bg-green-50 border border-green-100 text-center">
-                <p className="text-xs text-muted-foreground mb-1">ציון בריאות</p>
-                <p className="text-xl font-heading font-bold text-green-600">{ba.new_health_score}<span className="text-sm font-normal text-muted-foreground">/100</span></p>
-                <p className="text-xs text-muted-foreground mt-1">לפי סל הקניות החדש</p>
-              </div>
-            </div>
-          </div>
+      {plan?.days?.length > 0 && !list && (
+        <Card className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-primary/30">
+          <p className="text-sm text-muted-foreground">התפריט מוכן. נותר לחשב את סל הקניות הסופי — הכמויות המדויקות לכל השבוע.</p>
+          <Button onClick={() => navigate("/final-list")} className="rounded-full">
+            בניית סל קניות סופי <ChevronLeft className="w-4 h-4 mr-1" />
+          </Button>
         </Card>
       )}
 
       <Tabs defaultValue="shopping">
         <TabsList className="w-full">
           <TabsTrigger value="shopping" className="flex-1">
-            <ShoppingCart className="w-4 h-4 ml-2" /> סל קניות
+            <ShoppingCart className="w-4 h-4 ml-2" /> סל קניות סופי
           </TabsTrigger>
           <TabsTrigger value="meals" className="flex-1">
             <UtensilsCrossed className="w-4 h-4 ml-2" /> תפריט תזונה
+          </TabsTrigger>
+          <TabsTrigger value="summary" className="flex-1">
+            <BarChart3 className="w-4 h-4 ml-2" /> סיכום ונתונים
           </TabsTrigger>
         </TabsList>
 
         {/* Shopping List Tab */}
         <TabsContent value="shopping" className="mt-4">
+          {!list && (
+            <Card className="p-10 text-center">
+              <ShoppingCart className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+              <h2 className="font-heading font-semibold text-lg mb-2">סל הקניות הסופי עדיין לא חושב</h2>
+              <p className="text-sm text-muted-foreground mb-6">
+                {plan?.days?.length ? "הכמויות לקנייה מחושבות לפי התפריט השבועי." : "קודם בונים תפריט תזונה, ואז מחשבים ממנו את סל הקניות הסופי."}
+              </p>
+              <Button onClick={() => navigate(plan?.days?.length ? "/final-list" : "/nutrition-plan")}>
+                {plan?.days?.length ? "בניית סל קניות סופי" : "בניית תפריט תזונה"}
+              </Button>
+            </Card>
+          )}
           {list && (
             <Card className="overflow-hidden">
               <div className="p-4 border-b flex items-center justify-between">
-                <h2 className="font-heading font-semibold">סל הקניות הסופי</h2>
+                <div>
+                  <h2 className="font-heading font-semibold">סל הקניות הסופי</h2>
+                  <p className="text-xs text-muted-foreground">הכמויות חושבו לפי התפריט השבועי שלך.</p>
+                </div>
                 <div className="flex gap-4 text-sm">
                   <span>סה״כ: <strong>{formatCurrency(list.total_estimated_cost)}</strong></span>
-                  <span>קלוריות: <strong>{list.total_calories?.toLocaleString()}</strong></span>
                 </div>
               </div>
               <div className="overflow-x-auto">
@@ -183,10 +130,9 @@ export default function FinalResults() {
                     <TableRow>
                       <TableHead>מוצר</TableHead>
                       <TableHead>קטגוריה</TableHead>
-                      <TableHead>כמות</TableHead>
-                      <TableHead>מחיר</TableHead>
-                      <TableHead>קלוריות</TableHead>
-                      <TableHead>ח/פ/ש</TableHead>
+                      <TableHead>שימוש בתפריט</TableHead>
+                      <TableHead>כמות לקנייה</TableHead>
+                      <TableHead>מחיר משוער</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -198,10 +144,9 @@ export default function FinalResults() {
                             {CATEGORY_LABELS[item.category] || item.category}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm">{item.quantity}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{weeklyUsageLabel(item)}</TableCell>
+                        <TableCell className="text-sm font-semibold">{item.quantity}</TableCell>
                         <TableCell className="text-sm">{formatCurrency(item.estimated_price)}</TableCell>
-                        <TableCell className="text-sm">{item.calories}</TableCell>
-                        <TableCell className="text-xs">{item.protein}ג / {item.carbs}ג / {item.fat}ג</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -262,32 +207,97 @@ export default function FinalResults() {
             </Card>
           )}
         </TabsContent>
+
+        {/* Summary Tab */}
+        <TabsContent value="summary" className="mt-4 space-y-4">
+      {/* Before / After Comparison */}
+          {ba && (
+            <Card className="p-5">
+              <h2 className="font-heading font-semibold text-lg mb-1 flex items-center gap-2">
+                <TrendingDown className="w-5 h-5 text-primary" /> לפני ואחרי
+              </h2>
+              <p className="text-xs text-muted-foreground mb-4">
+                לפני = התקציב החודשי שהגדרתם בפרופיל · אחרי = עלות סל הקניות החדש × מספר ביקורים בחודש
+              </p>
+              <div className="grid sm:grid-cols-3 gap-4">
+                {/* Before Column */}
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">לפני</p>
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">הוצאה חודשית</p>
+                    <p className="text-xl font-heading font-bold text-red-600">{formatCurrency(ba.previous_monthly_spending)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">התקציב שהגדרתם בפרופיל</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">ציון בריאות</p>
+                    <p className="text-xl font-heading font-bold text-red-500">{ba.previous_health_score}<span className="text-sm font-normal text-muted-foreground">/100</span></p>
+                    <p className="text-xs text-muted-foreground mt-1">לפי הפרופיל שלכם</p>
+                  </div>
+                </div>
+
+                {/* Savings Column */}
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">החיסכון שלכם</p>
+                  <div className="p-4 rounded-xl bg-accent border border-primary/20 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">חיסכון חודשי</p>
+                    <p className="text-xl font-heading font-bold text-primary">{formatCurrency(ba.monthly_savings)}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(ba.yearly_savings)}/שנה</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-accent border border-primary/20 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">שיפור בציון</p>
+                    <p className="text-xl font-heading font-bold text-primary">
+                      +{Math.max(0, (ba.new_health_score || 0) - (ba.previous_health_score || 0)).toFixed(0)}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">נקודות בריאות</p>
+                  </div>
+                </div>
+
+                {/* After Column */}
+                <div className="space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground text-center">אחרי</p>
+                  <div className="p-4 rounded-xl bg-green-50 border border-green-100 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">הוצאה חודשית</p>
+                    <p className="text-xl font-heading font-bold text-green-600">{formatCurrency(ba.estimated_new_monthly_spending)}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatCurrency(planBasket?.total_estimated_cost)} × {profile?.purchases_per_month || "?"} ביקורים
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-green-50 border border-green-100 text-center">
+                    <p className="text-xs text-muted-foreground mb-1">ציון בריאות</p>
+                    <p className="text-xl font-heading font-bold text-green-600">{ba.new_health_score}<span className="text-sm font-normal text-muted-foreground">/100</span></p>
+                    <p className="text-xs text-muted-foreground mt-1">לפי סל הקניות החדש</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          )}
+      {/* Profile Summary */}
+          {profile && (
+            <Card className="p-5">
+              <h2 className="font-heading font-semibold text-lg mb-3">היעדים שלכם</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 rounded-lg bg-muted text-center">
+                  <p className="text-xs text-muted-foreground">קלוריות יומיות</p>
+                  <p className="font-heading font-bold">{profile.daily_calories}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted text-center">
+                  <p className="text-xs text-muted-foreground">חלבון</p>
+                  <p className="font-heading font-bold">{profile.protein_target}ג</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted text-center">
+                  <p className="text-xs text-muted-foreground">פחמימות</p>
+                  <p className="font-heading font-bold">{profile.carbs_target}ג</p>
+                </div>
+                <div className="p-3 rounded-lg bg-muted text-center">
+                  <p className="text-xs text-muted-foreground">שומן</p>
+                  <p className="font-heading font-bold">{profile.fat_target}ג</p>
+                </div>
+              </div>
+            </Card>
+          )}
+        </TabsContent>
       </Tabs>
 
-      {/* Profile Summary */}
-      {profile && (
-        <Card className="p-5">
-          <h2 className="font-heading font-semibold text-lg mb-3">היעדים שלכם</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3 rounded-lg bg-muted text-center">
-              <p className="text-xs text-muted-foreground">קלוריות יומיות</p>
-              <p className="font-heading font-bold">{profile.daily_calories}</p>
-            </div>
-            <div className="p-3 rounded-lg bg-muted text-center">
-              <p className="text-xs text-muted-foreground">חלבון</p>
-              <p className="font-heading font-bold">{profile.protein_target}ג</p>
-            </div>
-            <div className="p-3 rounded-lg bg-muted text-center">
-              <p className="text-xs text-muted-foreground">פחמימות</p>
-              <p className="font-heading font-bold">{profile.carbs_target}ג</p>
-            </div>
-            <div className="p-3 rounded-lg bg-muted text-center">
-              <p className="text-xs text-muted-foreground">שומן</p>
-              <p className="font-heading font-bold">{profile.fat_target}ג</p>
-            </div>
-          </div>
-        </Card>
-      )}
     </div>
   );
 }

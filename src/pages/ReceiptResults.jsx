@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@/lib/calculations";
 import { format } from "date-fns";
+import FlowSteps from "@/components/FlowSteps";
+import { useFlowData } from "@/lib/flowData";
 
 const CATEGORIES = ["protein", "carb", "fat", "vegetable", "fruit", "dairy", "snack", "drink", "other"];
 
@@ -105,6 +107,7 @@ export default function ReceiptResults() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { completed } = useFlowData(user);
   const urlParams = new URLSearchParams(window.location.search);
   const receiptId = urlParams.get("id");
   const [editingId, setEditingId] = useState(null);
@@ -234,6 +237,7 @@ export default function ReceiptResults() {
 
   return (
     <div className="space-y-6">
+      <FlowSteps current={1} completed={completed} />
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -241,7 +245,7 @@ export default function ReceiptResults() {
           <p className="text-sm text-muted-foreground">תוצאות ניתוח AI של הקבלה שלכם</p>
         </div>
         <Button onClick={() => navigate(`/shopping-list?receipt_id=${receiptId}`)} className="rounded-full">
-          יצירת סל קניות <ChevronLeft className="w-4 h-4 mr-1" />
+          בניית סל מוצרים חכם <ChevronLeft className="w-4 h-4 mr-1" />
         </Button>
       </div>
 
@@ -496,6 +500,13 @@ export default function ReceiptResults() {
           </div>
         </Card>
       )}
+      {/* Next step */}
+      <Card className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <p className="text-sm text-muted-foreground">בשלב הבא נבחר עבורכם מוצרים מתאימים מהקבלה ומקטלוג שופרסל.</p>
+        <Button onClick={() => navigate(`/shopping-list?receipt_id=${receiptId}`)} className="rounded-full">
+          בניית סל מוצרים חכם <ChevronLeft className="w-4 h-4 mr-1" />
+        </Button>
+      </Card>
     </div>
   );
 }
