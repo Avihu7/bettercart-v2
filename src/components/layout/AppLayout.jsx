@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Receipt, ShoppingCart, ShoppingBasket, UtensilsCrossed,
   Trophy, Upload, Settings, Menu, X, LogOut, Bug
@@ -19,7 +19,14 @@ const NAV_ITEMS = [
 export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
-  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const { logout, user } = useAuth();
+
+  const handleLogout = async () => {
+    setSidebarOpen(false);
+    await logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <div className="min-h-screen bg-background font-body" dir="rtl">
@@ -78,6 +85,11 @@ export default function AppLayout() {
         </nav>
 
         <div className="absolute bottom-0 left-0 right-0 p-3 border-t">
+          {user?.email && (
+            <p className="px-3 pb-2 text-xs text-muted-foreground truncate" dir="ltr" style={{ textAlign: "right" }} title={user.email}>
+              {user.email}
+            </p>
+          )}
           <Link
             to="/onboarding"
             onClick={() => setSidebarOpen(false)}
@@ -87,11 +99,11 @@ export default function AppLayout() {
             הגדרות פרופיל
           </Link>
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
           >
             <LogOut className="w-4 h-4" />
-            איפוס נתונים
+            התנתקות
           </button>
         </div>
       </aside>

@@ -11,12 +11,30 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import Database from 'better-sqlite3';
 import db from './db.js';
+import {
+  requireAuth, sessionUser, createSession, destroySession, createUser, verifyCredentials,
+  findUserByEmail, normalizeEmail, isValidEmail, passwordError,
+  loginBlocked, recordLoginFailure, clearLoginFailures,
+} from './auth.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors({ origin: 'http://localhost:5173' }));
+const ALLOWED_ORIGINS = new Set(
+  (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',').map(o => o.trim()).filter(Boolean)
+);
+
+app.use(cors({ origin: [...ALLOWED_ORIGINS], credentials: true }));
 app.use(express.json({ limit: '10mb' }));
+
+// Requests that change data must come from the app itself (defense in depth on
+// top of SameSite=Lax cookies): a browser Origin header outside the allow-list is refused.
+app.use('/api', (req, res, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  const origin = req.headers.origin;
+  if (origin && !ALLOWED_ORIGINS.has(origin)) return res.status(403).json({ error: 'בקשה ממקור לא מורשה' });
+  next();
+});
 
 // ─── Products catalog DB (read-only) ─────────────────────────────────────────
 
@@ -548,26 +566,90 @@ app.post('/api/products/match-items', (req, res) => {
   }
 });
 
+// ─── Accounts ────────────────────────────────────────────────────────────────
+
+// Register: creates the account and signs the user in
+app.post('/api/auth/register', async (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  const password = req.body?.password;
+  if (!isValidEmail(email)) return res.status(400).json({ error: 'כתובת האימייל אינה תקינה' });
+  const pwError = passwordError(password);
+  if (pwError) return res.status(400).json({ error: pwError });
+  if (findUserByEmail(email)) return res.status(409).json({ error: 'האימייל כבר רשום במערכת' });
+  try {
+    const user = await createUser(email, password);
+    createSession(res, user.id);
+    res.status(201).json({ user });
+  } catch (err) {
+    if (/UNIQUE/.test(err.message)) return res.status(409).json({ error: 'האימייל כבר רשום במערכת' });
+    console.error('[auth] register failed');
+    res.status(500).json({ error: 'יצירת החשבון נכשלה. נסו שוב.' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  const limitKey = `${req.ip}|${email}`;
+  if (loginBlocked(limitKey)) {
+    return res.status(429).json({ error: 'יותר מדי ניסיונות התחברות. נסו שוב בעוד כמה דקות.' });
+  }
+  const user = await verifyCredentials(email, req.body?.password);
+  if (!user) {
+    recordLoginFailure(limitKey);
+    return res.status(401).json({ error: 'פרטי ההתחברות שגויים' });
+  }
+  clearLoginFailures(limitKey);
+  createSession(res, user.id);
+  res.json({ user });
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  destroySession(req, res);
+  res.json({ success: true });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  const user = sessionUser(req);
+  if (!user) return res.status(401).json({ error: 'לא מחובר' });
+  res.json({ user });
+});
+
+// ─── Legacy guest data ───────────────────────────────────────────────────────
+// Rows created before accounts existed are owned by browser-generated guest ids.
+// A guest id is not proof of ownership (it lived in localStorage, unsigned), so
+// there is deliberately no API to claim guest data. Moving it into an account
+// is a manual, server-side operator task: see server/scripts/migrate-legacy-guest.js.
+
+// ─── Personal data CRUD ──────────────────────────────────────────────────────
+// Every route below requires a session. The owner is always the signed-in user:
+// created_by from the client is ignored, and reads/updates/deletes are scoped
+// to rows where created_by = req.userId (another user's id behaves like a missing row).
+
+// Fields the client may never set
+const PROTECTED_FIELDS = ['id', 'created_by', 'created_date'];
+function withoutProtected(data) {
+  const clean = { ...(data && typeof data === 'object' ? data : {}) };
+  for (const f of PROTECTED_FIELDS) delete clean[f];
+  return clean;
+}
+
 // LIST / FILTER  GET /api/:entity?sort=-created_date&limit=5&receipt_id=abc
-app.get('/api/:entity', (req, res) => {
+app.get('/api/:entity', requireAuth, (req, res) => {
   const { entity } = req.params;
   const { sort, limit, ...filters } = req.query;
 
-  const filterKeys = Object.keys(filters).filter(isSafeFieldName);
+  const filterKeys = Object.keys(filters).filter(k => isSafeFieldName(k) && k !== 'created_by');
   const boolFields = new Set(BOOL_FIELDS[entity] || []);
 
-  let query = `SELECT * FROM "${entity}"`;
-  const params = [];
+  let query = `SELECT * FROM "${entity}" WHERE created_by = ?`;
+  const params = [req.userId];
 
-  if (filterKeys.length > 0) {
-    const clauses = filterKeys.map(k => {
-      let v = filters[k];
-      // URLSearchParams sends booleans as strings; coerce back to 0/1 for SQLite
-      if (boolFields.has(k)) v = (v === 'true' || v === '1') ? 1 : 0;
-      params.push(v);
-      return `"${k}" = ?`;
-    });
-    query += ' WHERE ' + clauses.join(' AND ');
+  for (const k of filterKeys) {
+    let v = filters[k];
+    // URLSearchParams sends booleans as strings; coerce back to 0/1 for SQLite
+    if (boolFields.has(k)) v = (v === 'true' || v === '1') ? 1 : 0;
+    params.push(v);
+    query += ` AND "${k}" = ?`;
   }
 
   if (sort) {
@@ -592,13 +674,13 @@ app.get('/api/:entity', (req, res) => {
 });
 
 // CREATE  POST /api/:entity
-app.post('/api/:entity', (req, res) => {
+app.post('/api/:entity', requireAuth, (req, res) => {
   const { entity } = req.params;
   const data = {
+    ...withoutProtected(req.body),
     id: generateId(),
     created_date: new Date().toISOString(),
-    ...req.body,
-    created_by: req.body?.created_by || 'anonymous',
+    created_by: req.userId,
   };
   try {
     insertRow(entity, data);
@@ -609,17 +691,17 @@ app.post('/api/:entity', (req, res) => {
 });
 
 // BULK CREATE  POST /api/:entity/bulk
-app.post('/api/:entity/bulk', (req, res) => {
+app.post('/api/:entity/bulk', requireAuth, (req, res) => {
   const { entity } = req.params;
   if (!Array.isArray(req.body)) {
     return res.status(400).json({ error: 'Request body must be an array' });
   }
   const now = new Date().toISOString();
   const created = req.body.map(item => ({
+    ...withoutProtected(item),
     id: generateId(),
     created_date: now,
-    ...item,
-    created_by: item?.created_by || 'anonymous',
+    created_by: req.userId,
   }));
   try {
     const insertAll = db.transaction(() => created.forEach(d => insertRow(entity, d)));
@@ -631,12 +713,12 @@ app.post('/api/:entity/bulk', (req, res) => {
 });
 
 // UPDATE  PATCH /api/:entity/:id
-app.patch('/api/:entity/:id', (req, res) => {
+app.patch('/api/:entity/:id', requireAuth, (req, res) => {
   const { entity, id } = req.params;
-  const existing = db.prepare(`SELECT * FROM "${entity}" WHERE id = ?`).get(id);
+  const existing = db.prepare(`SELECT id FROM "${entity}" WHERE id = ? AND created_by = ?`).get(id, req.userId);
   if (!existing) return res.status(404).json({ error: 'Record not found' });
 
-  const row = recordToRow(entity, req.body);
+  const row = recordToRow(entity, withoutProtected(req.body));
   const safeKeys = Object.keys(row).filter(isSafeFieldName);
   if (safeKeys.length === 0) return res.status(400).json({ error: 'No valid fields to update' });
 
@@ -644,8 +726,8 @@ app.patch('/api/:entity/:id', (req, res) => {
   const values = safeKeys.map(k => row[k]);
 
   try {
-    db.prepare(`UPDATE "${entity}" SET ${setClauses} WHERE id = ?`).run(...values, id);
-    const updated = db.prepare(`SELECT * FROM "${entity}" WHERE id = ?`).get(id);
+    db.prepare(`UPDATE "${entity}" SET ${setClauses} WHERE id = ? AND created_by = ?`).run(...values, id, req.userId);
+    const updated = db.prepare(`SELECT * FROM "${entity}" WHERE id = ? AND created_by = ?`).get(id, req.userId);
     res.json(rowToRecord(entity, updated));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -653,10 +735,11 @@ app.patch('/api/:entity/:id', (req, res) => {
 });
 
 // DELETE  DELETE /api/:entity/:id
-app.delete('/api/:entity/:id', (req, res) => {
+app.delete('/api/:entity/:id', requireAuth, (req, res) => {
   const { entity, id } = req.params;
   try {
-    db.prepare(`DELETE FROM "${entity}" WHERE id = ?`).run(id);
+    const { changes } = db.prepare(`DELETE FROM "${entity}" WHERE id = ? AND created_by = ?`).run(id, req.userId);
+    if (changes === 0) return res.status(404).json({ error: 'Record not found' });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

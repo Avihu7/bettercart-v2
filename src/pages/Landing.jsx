@@ -47,18 +47,19 @@ const STEPS = [
 
 export default function Landing() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   const { data: profiles } = useQuery({
     queryKey: ["userProfile", user?.email],
     queryFn: () => api.entities.UserProfile.filter({ created_by: user.email }),
     initialData: [],
-    enabled: !!user,
+    enabled: isAuthenticated && !!user,
   });
 
   const profileComplete = profiles?.[0]?.onboarding_complete === true;
 
   const handleStart = () => {
+    if (!isAuthenticated) return navigate("/login");
     navigate(profileComplete ? "/dashboard" : "/onboarding");
   };
 

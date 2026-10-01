@@ -14,6 +14,7 @@ const db = new Database(join(__dirname, 'bettercart.db'));
 
 // WAL mode is faster for concurrent reads
 db.pragma('journal_mode = WAL');
+db.pragma('foreign_keys = ON');
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS userProfile (
@@ -144,5 +145,33 @@ try {
 try {
   db.exec("ALTER TABLE shoppingLists ADD COLUMN nutrition_plan_id TEXT");
 } catch { /* column already exists — skip */ }
+
+// ─── User accounts & sessions ────────────────────────────────────────────────
+// Personal rows (profile, receipts, lists, plans) belong to a user through
+// created_by = users.id. Sessions store only a SHA-256 hash of the cookie token.
+db.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id            TEXT PRIMARY KEY,
+    email         TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    created_at    TEXT NOT NULL,
+    updated_at    TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS sessions (
+    token_hash   TEXT PRIMARY KEY,
+    user_id      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at   TEXT NOT NULL,
+    expires_at   TEXT NOT NULL,
+    last_used_at TEXT NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+
+  CREATE INDEX IF NOT EXISTS idx_userProfile_owner    ON userProfile(created_by);
+  CREATE INDEX IF NOT EXISTS idx_receipts_owner       ON receipts(created_by);
+  CREATE INDEX IF NOT EXISTS idx_receiptItems_owner   ON receiptItems(created_by);
+  CREATE INDEX IF NOT EXISTS idx_shoppingLists_owner  ON shoppingLists(created_by);
+  CREATE INDEX IF NOT EXISTS idx_nutritionPlans_owner ON nutritionPlans(created_by);
+`);
 
 export default db;

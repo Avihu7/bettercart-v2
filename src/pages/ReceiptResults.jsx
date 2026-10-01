@@ -113,7 +113,7 @@ export default function ReceiptResults() {
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
 
-  const { data: receipt } = useQuery({
+  const { data: receipt, isFetched: receiptFetched } = useQuery({
     queryKey: ["receipt", receiptId, user?.email],
     queryFn: async () => {
       const filters = user?.email ? { id: receiptId, created_by: user.email } : { id: receiptId };
@@ -226,9 +226,10 @@ export default function ReceiptResults() {
   };
 
   if (!receipt) {
+    // Not found also covers another user's receipt id — the server returns nothing for it
     return (
       <div className="flex items-center justify-center min-h-[40vh]">
-        <p className="text-muted-foreground">טוען קבלה...</p>
+        <p className="text-muted-foreground">{receiptFetched || !receiptId ? "הקבלה לא נמצאה" : "טוען קבלה..."}</p>
       </div>
     );
   }

@@ -9,22 +9,18 @@
 // Set VITE_API_URL to override (e.g. for production deployments).
 const BASE_URL = import.meta.env.VITE_API_URL || '';
 
-const GUEST_ID_KEY = 'bettercart_guest_user_id';
-
-function getGuestId() {
-  let id = localStorage.getItem(GUEST_ID_KEY);
-  if (!id) {
-    id = 'guest_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 9);
-    localStorage.setItem(GUEST_ID_KEY, id);
-  }
-  return id;
-}
+// Fired when the server says the session is missing/expired, so AuthContext
+// can drop the user and send them to the login screen.
+export const UNAUTHORIZED_EVENT = 'bettercart:unauthorized';
 
 async function request(path, options = {}) {
+  // The session cookie identifies the user; the server sets ownership (created_by)
   const res = await fetch(`${BASE_URL}${path}`, {
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     ...options,
   });
+  if (res.status === 401) window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`API ${options.method || 'GET'} ${path} → ${res.status}: ${body}`);
@@ -39,7 +35,7 @@ export function createEntityAPI(name) {
     create(data) {
       return request(base, {
         method: 'POST',
-        body: JSON.stringify({ ...data, created_by: getGuestId() }),
+        body: JSON.stringify(data),
       });
     },
 
@@ -75,10 +71,9 @@ export function createEntityAPI(name) {
     },
 
     bulkCreate(dataArray) {
-      const guestId = getGuestId();
       return request(`${base}/bulk`, {
         method: 'POST',
-        body: JSON.stringify(dataArray.map(item => ({ ...item, created_by: guestId }))),
+        body: JSON.stringify(dataArray),
       });
     },
   };

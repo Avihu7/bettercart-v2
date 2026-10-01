@@ -16,6 +16,7 @@ import FinalResults from './pages/FinalResults';
 import PrintExport from './pages/PrintExport';
 import DebugView from './pages/DebugView';
 import AppLayout from './components/layout/AppLayout';
+import { LoginPage, RegisterPage, RequireAuth } from './pages/AuthPages';
 
 function App() {
   return (
@@ -24,8 +25,10 @@ function App() {
         <Router>
           <Routes>
             <Route path="/" element={<Landing />} />
-            <Route path="/onboarding" element={<Onboarding />} />
-            <Route element={<AppLayout />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
+            <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/upload" element={<ReceiptUpload />} />
               <Route path="/receipt-results" element={<ReceiptResults />} />

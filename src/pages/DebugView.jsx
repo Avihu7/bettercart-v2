@@ -68,13 +68,6 @@ export default function DebugView() {
 
   const selectedReceipt = receipts.find(r => r.id === selectedReceiptId);
 
-  const handleResetGuestId = () => {
-    if (confirm('מחיקת ה-Guest ID הנוכחי? הדף ייטען מחדש עם מזהה משתמש חדש. נתוני ה-DB לא יימחקו.')) {
-      localStorage.removeItem('bettercart_guest_user_id');
-      window.location.href = '/';
-    }
-  };
-
   const latestReceiptId = receipts?.[0]?.id;
   const latestListId = shoppingLists?.[0]?.id;
 
@@ -93,14 +86,11 @@ export default function DebugView() {
       <Card className="p-4 bg-slate-50 border-slate-200">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div className="space-y-1 font-mono text-xs text-slate-600">
-            <p><span className="font-semibold text-slate-800">Guest ID:</span> {user?.email || '—'}</p>
+            <p><span className="font-semibold text-slate-800">User:</span> {user?.email || '—'}</p>
             <p><span className="font-semibold text-slate-800">Latest Receipt ID:</span> {latestReceiptId || '—'}</p>
             <p><span className="font-semibold text-slate-800">Latest Shopping List ID:</span> {latestListId || '—'}</p>
             <p><span className="font-semibold text-slate-800">Profile:</span> {profiles?.[0] ? `id=${profiles[0].id}` : 'אין פרופיל'}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={handleResetGuestId} className="text-destructive border-destructive/30 hover:bg-destructive/5 shrink-0">
-            איפוס משתמש דמו
-          </Button>
         </div>
       </Card>
 
