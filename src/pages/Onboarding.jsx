@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/api/localAPI";
 import { useAuth } from "@/lib/AuthContext";
@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight, Check, X, ShoppingCart } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, X, ShoppingCart, Loader2, AlertCircle } from "lucide-react";
 import {
   calculateBMI, calculateBMR, calculateDailyCalories,
   calculateMacros, calculateBudgetPerPurchase, calculateFitnessScore
@@ -133,6 +133,23 @@ export default function Onboarding() {
   const budgetEntered = !!form.monthly_budget;
   const purchasesEntered = !!form.purchases_per_month;
 
+  // Missing/invalid required fields, as Hebrew messages (empty = valid)
+  const validationErrors = () => {
+    const errors = [];
+    if (!form.age || Number(form.age) <= 0) errors.push("נא להזין גיל");
+    if (!form.height || Number(form.height) <= 0) errors.push("נא להזין גובה");
+    if (!form.weight || Number(form.weight) <= 0) errors.push("נא להזין משקל");
+    if (step >= 3 && !form.monthly_budget) errors.push("נא להזין תקציב חודשי");
+    else if (step >= 3 && !budgetValid) errors.push("התקציב החודשי חייב להיות בין ₪500 ל-₪10,000");
+    if (step >= 3 && !form.purchases_per_month) errors.push("נא להזין מספר ביקורים בחודש");
+    else if (step >= 3 && !purchasesValid) errors.push("מספר הביקורים בחודש חייב להיות בין 1 ל-31");
+    return errors;
+  };
+  const [saveErrors, setSaveErrors] = useState([]);
+
+  // Guards against a double click creating two profiles before the button re-renders as disabled
+  const submittingRef = useRef(false);
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       const data = {
@@ -158,7 +175,19 @@ export default function Onboarding() {
       queryClient.invalidateQueries({ queryKey: ["userProfile"], exact: false });
       navigate("/dashboard");
     },
+    onSettled: () => {
+      submittingRef.current = false;
+    },
   });
+
+  const handleFinish = () => {
+    if (submittingRef.current || saveMutation.isPending) return;
+    const errors = validationErrors();
+    setSaveErrors(errors);
+    if (errors.length) return;
+    submittingRef.current = true;
+    saveMutation.mutate();
+  };
 
   const canNext = () => {
     if (step === 0) return form.age && form.gender && form.height && form.weight;
@@ -516,6 +545,23 @@ export default function Onboarding() {
             </div>
           )}
 
+          {/* Validation / save errors (Hebrew) */}
+          {step < STEPS.length - 1 && !canNext() && (step === 0 || step === 3) && validationErrors().length > 0 && (
+            <p className="text-xs text-muted-foreground mt-6" role="status">
+              כדי להמשיך: {validationErrors().join(" · ")}
+            </p>
+          )}
+          {step === STEPS.length - 1 && (saveErrors.length > 0 || saveMutation.isError) && (
+            <div role="alert" className="flex items-start gap-2 rounded-lg bg-destructive/10 text-destructive text-sm p-3 mt-6">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>
+                {saveErrors.length > 0
+                  ? `חסרים פרטים: ${saveErrors.join(" · ")}`
+                  : "שמירת הפרופיל נכשלה. בדקו את החיבור ונסו שוב."}
+              </span>
+            </div>
+          )}
+
           {/* Navigation */}
           <div className="flex justify-between mt-8">
             {step < STEPS.length - 1 ? (
@@ -523,11 +569,13 @@ export default function Onboarding() {
                 המשך <ChevronLeft className="w-4 h-4 mr-1" />
               </Button>
             ) : (
-              <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? "שומר..." : <><Check className="w-4 h-4 ml-1" /> סיום</>}
+              <Button onClick={handleFinish} disabled={saveMutation.isPending} aria-busy={saveMutation.isPending}>
+                {saveMutation.isPending
+                  ? <><Loader2 className="w-4 h-4 ml-1 animate-spin" /> שומר...</>
+                  : <><Check className="w-4 h-4 ml-1" /> סיום</>}
               </Button>
             )}
-            <Button variant="outline" disabled={step === 0} onClick={() => setStep(s => s - 1)}>
+            <Button variant="outline" disabled={step === 0 || saveMutation.isPending} onClick={() => setStep(s => s - 1)}>
               <ChevronRight className="w-4 h-4 ml-1" /> חזרה
             </Button>
           </div>

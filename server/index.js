@@ -676,6 +676,26 @@ app.get('/api/:entity', requireAuth, (req, res) => {
 // CREATE  POST /api/:entity
 app.post('/api/:entity', requireAuth, (req, res) => {
   const { entity } = req.params;
+
+  // One profile per user: creating again (e.g. a double-submitted onboarding)
+  // updates the existing profile instead of adding a duplicate
+  if (entity === 'userProfile') {
+    const existing = db.prepare('SELECT id FROM "userProfile" WHERE created_by = ? ORDER BY created_date LIMIT 1').get(req.userId);
+    if (existing) {
+      const row = recordToRow(entity, withoutProtected(req.body));
+      const keys = Object.keys(row).filter(isSafeFieldName);
+      try {
+        if (keys.length) {
+          db.prepare(`UPDATE "userProfile" SET ${keys.map(k => `"${k}" = ?`).join(', ')} WHERE id = ? AND created_by = ?`)
+            .run(...keys.map(k => row[k]), existing.id, req.userId);
+        }
+        return res.json(rowToRecord(entity, db.prepare('SELECT * FROM "userProfile" WHERE id = ?').get(existing.id)));
+      } catch (err) {
+        return res.status(500).json({ error: err.message });
+      }
+    }
+  }
+
   const data = {
     ...withoutProtected(req.body),
     id: generateId(),
