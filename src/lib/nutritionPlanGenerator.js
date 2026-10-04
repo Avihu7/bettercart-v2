@@ -12,7 +12,7 @@ import {
   MEAL_TYPES, buildProductCatalog, canonicalizePlan, validatePlan,
   forceRepair, recomputeTotals, portionCap,
 } from '@/lib/mealPlanRules';
-import { buildDensities, applyDensities, balanceCalories } from '@/lib/mealPlanCalories';
+import { buildDensities, applyDensities, balanceCalories, balanceProtein } from '@/lib/mealPlanCalories';
 import { WEEK_DAYS } from '@/lib/weekDays';
 
 // Israeli week: Sunday is day 1
@@ -86,7 +86,21 @@ function calorieRules(profile) {
 - The daily calorie target is ${target} kcal. Every day's total must be within ±10% (${Math.round(target * 0.9)}–${Math.round(target * 1.1)} kcal). Do not exceed it.
 - Per-meal budget: ${budget}.
 - Size portions from per_100g: item calories = grams × per_100g.calories / 100. Add up each day before answering.
-- Calories come first. Approach the protein target where possible, but never go above the calorie range to reach protein or other macro targets.`;
+- Calories come first. Within that range, protein is the next priority (see PROTEIN).
+${proteinRules(profile)}`;
+}
+
+function proteinRules(profile) {
+  const protein = profile?.protein_target;
+  if (!protein) return "";
+  const carbs = profile?.carbs_target;
+  const budget = Object.entries(MEAL_SHARE).map(([m, f]) => `${m} ≈ ${Math.round(protein * f)}g`).join(", ");
+  return `PROTEIN:
+- Daily protein target: ${protein}g. Every day must reach at least ${Math.round(protein * 0.9)}g, using per_100g.protein to compute it.
+- Per-meal protein budget: ${budget}. Every main meal and breakfast needs a real protein source from the catalog (fish, poultry, eggs, cottage/cheese/yogurt, tuna, legumes) in a meaningful portion.
+- Reach protein by choosing protein-dense products and portions, and make room within the calorie range by using less rice/pasta/bread/oil — not by adding calories.${carbs ? `
+- Keep daily carbs near ${carbs}g; do not exceed ${Math.round(carbs * 1.2)}g.` : ""}
+- Portions stay realistic (never above max_grams_per_meal).`;
 }
 
 function restrictionRules(profile) {
@@ -235,7 +249,10 @@ const REPAIR_SCHEMA = {
  * Returns { days, weekly_calories, estimated_weekly_cost, validation }.
  */
 export async function generateNutritionPlan({ list, profile }) {
-  const daysToGenerate = Math.min(list.shopping_period_days || 7, 7);
+  // The plan is always a full Israeli week (Sunday → Saturday). The basket's
+  // shopping_period_days is about how often the user shops (e.g. 30/6 = 5 days)
+  // and must not shorten the weekly menu.
+  const daysToGenerate = 7;
   const target = profile?.daily_calories || 2000;
   const catalog = buildProductCatalog(list.items);
   // Per-100g values from the shopping list alone (before any AI output exists)
@@ -282,6 +299,10 @@ export async function generateNutritionPlan({ list, profile }) {
   applyDensities(plan, densities);
   const itemDailyCalories = dailyCalories();
   const calories = balanceCalories(plan, catalog, densities, target);
+  // Protein next: grow protein portions / shrink carbs within the calorie range,
+  // then re-check calories in case a day could not shrink carbs enough
+  const protein = balanceProtein(plan, catalog, densities, { calories: target, protein: profile?.protein_target });
+  balanceCalories(plan, catalog, densities, target);
   problems = validatePlan(plan, catalog);
 
   if (dropped.length) console.warn("[nutrition plan] dropped items not in shopping list:", dropped);
@@ -299,6 +320,7 @@ export async function generateNutritionPlan({ list, profile }) {
       ai_daily_calories: aiDailyCalories,
       item_daily_calories: itemDailyCalories,
       calories,
+      protein,
     },
   };
 }

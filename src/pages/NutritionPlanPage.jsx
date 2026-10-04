@@ -112,6 +112,7 @@ export default function NutritionPlanPage() {
   const showPlan = latestPlan;
   const planDays = sortDays(showPlan?.days);
   const dailyTarget = showPlan?.daily_calories || profile?.daily_calories;
+  const proteinTarget = profile?.protein_target;
 
   return (
     <div className="space-y-6">
@@ -208,6 +209,11 @@ export default function NutritionPlanPage() {
                   <div className="p-3 rounded-lg bg-muted text-center">
                     <p className="text-xs text-muted-foreground">חלבון</p>
                     <p className="font-heading font-bold">{day.total_protein}ג</p>
+                    {proteinTarget > 0 && (
+                      <p className={`text-[11px] mt-0.5 ${day.total_protein < proteinTarget * 0.85 ? "text-amber-600" : "text-muted-foreground"}`}>
+                        יעד {proteinTarget}ג{day.total_protein < proteinTarget * 0.85 ? " · מתחת ליעד" : ""}
+                      </p>
+                    )}
                   </div>
                   <div className="p-3 rounded-lg bg-muted text-center">
                     <p className="text-xs text-muted-foreground">פחמימות</p>

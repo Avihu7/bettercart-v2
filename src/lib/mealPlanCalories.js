@@ -3,8 +3,10 @@
  *
  * Item calories/macros are derived from portion grams × the product's
  * per-100g values (taken from the shopping list, falling back to the AI's own
- * estimate), and each day is then balanced to the user's calorie target by
- * scaling adjustable portions within realistic bounds or adding a snack.
+ * estimate, then to typical reference values — each checked for plausible
+ * calories AND protein), and each day is then balanced to the user's calorie
+ * target by scaling adjustable portions within realistic bounds or adding a
+ * snack, and finally nudged toward the protein target (see balanceProtein).
  */
 
 import { portionCap } from '@/lib/mealPlanRules';
@@ -16,6 +18,39 @@ const KCAL_RANGE = {
   grain: [80, 260], cereal: [320, 460], starch_veg: [55, 140], vegetable: [8, 120],
   fruit: [20, 200], nuts: [250, 700], tahini: [500, 720], oil: [700, 920], other: [0, 920],
 };
+
+// Plausible protein g/100g "as eaten" per food group (catches e.g. salmon at 8g/100g).
+const PROTEIN_RANGE = {
+  coffee: [0, 25], tea: [0, 25], milk: [2.5, 4.5], yogurt: [2.5, 12], dairy_protein: [6, 36],
+  eggs: [10, 15], meat: [15, 36], fish: [14, 32], legumes: [5, 28], bread: [5, 15],
+  grain: [1.5, 6], cereal: [4, 16], starch_veg: [0.5, 4], vegetable: [0, 6],
+  fruit: [0, 3], nuts: [8, 32], tahini: [14, 30], oil: [0, 1], other: [0, 100],
+};
+
+// Typical per-100g values (as eaten), used only when neither the shopping list
+// nor the AI gives plausible numbers for a product.
+const REFERENCE = {
+  meat: { kcal: 165, protein: 31, carbs: 0, fat: 3.6 }, fish: { kcal: 150, protein: 22, carbs: 0, fat: 6.5 },
+  eggs: { kcal: 155, protein: 13, carbs: 1.1, fat: 11 }, dairy_protein: { kcal: 100, protein: 11, carbs: 3.4, fat: 4.5 },
+  yogurt: { kcal: 70, protein: 5, carbs: 6, fat: 3 }, milk: { kcal: 61, protein: 3.2, carbs: 4.8, fat: 3.3 },
+  legumes: { kcal: 116, protein: 9, carbs: 20, fat: 0.4 }, grain: { kcal: 135, protein: 3, carbs: 28, fat: 0.5 },
+  bread: { kcal: 265, protein: 9, carbs: 49, fat: 3.2 }, cereal: { kcal: 380, protein: 7, carbs: 84, fat: 1 },
+  starch_veg: { kcal: 85, protein: 1.8, carbs: 19, fat: 0.1 }, vegetable: { kcal: 20, protein: 1, carbs: 4, fat: 0.2 },
+  fruit: { kcal: 60, protein: 0.5, carbs: 15, fat: 0.2 }, nuts: { kcal: 580, protein: 21, carbs: 20, fat: 50 },
+  tahini: { kcal: 600, protein: 17, carbs: 21, fat: 54 }, oil: { kcal: 884, protein: 0, carbs: 0, fat: 100 },
+  coffee: { kcal: 2, protein: 0.2, carbs: 0, fat: 0 }, tea: { kcal: 1, protein: 0, carbs: 0.2, fat: 0 },
+};
+const NAMED_REFERENCE = [
+  [/צהוב|מוצרלה|בולגרית|צפתית|פרמזן|עמק/, { kcal: 350, protein: 25, carbs: 1, fat: 27 }],
+  [/טופו/, { kcal: 120, protein: 13, carbs: 2, fat: 7 }],
+  [/טונה/, { kcal: 116, protein: 26, carbs: 0, fat: 1 }],
+  [/סלמון/, { kcal: 208, protein: 20, carbs: 0, fat: 13 }],
+];
+
+function referenceFor(p) {
+  const named = NAMED_REFERENCE.find(([re]) => re.test(p.name_he || ''));
+  return named ? named[1] : REFERENCE[p.group] || null;
+}
 
 // Portions are "as eaten": a dry-weight density for rice/pasta/legumes is converted to cooked.
 const COOKED_FACTOR = { grain: 2.7, legumes: 3 };
@@ -30,7 +65,10 @@ const MIN_GRAMS = {
 const FIXED_GROUPS = new Set(["vegetable", "coffee", "tea"]);
 const SNACK_FILLERS = ["fruit", "nuts", "yogurt"];
 
-/** Parses "1.2 ק״ג", "500 ג", "1 ליטר", "250 מ״ל", "2 × 500 ג", "30 יחידות" (eggs) to grams. */
+/**
+ * Parses "1.2 ק״ג", "500 ג", "1 ליטר", "250 מ״ל", "2 × 500 ג", "30 יחידות" (eggs)
+ * — and the same with Latin units ("400g", "2×160g", "1kg", "500ml") — to grams.
+ */
 export function parseQuantityGrams(text, group) {
   const s = String(text || "").replace(/[״"]/g, '"').replace(/[׳']/g, "'").replace(/,/g, ".");
   const mult = Number(s.match(/(\d+)\s*[×x*]\s*\d/)?.[1]) || 1;
@@ -40,10 +78,11 @@ export function parseQuantityGrams(text, group) {
   };
   let g = null;
   let v;
-  if ((v = num(/(\d+(?:\.\d+)?)\s*(?:ק"ג|קג|קילו)/)) != null) g = v * 1000;
-  else if ((v = num(/(\d+(?:\.\d+)?)\s*(?:מ"ל|מל)(?![א-ת])/)) != null) g = v;
-  else if ((v = num(/(\d+(?:\.\d+)?)\s*(?:ליטר|ל'|ל(?![א-ת]))/)) != null) g = v * 1000;
+  if ((v = num(/(\d+(?:\.\d+)?)\s*(?:ק"ג|קג|קילו|kg)(?![a-z])/i)) != null) g = v * 1000;
+  else if ((v = num(/(\d+(?:\.\d+)?)\s*(?:מ"ל|מל(?![א-ת])|ml(?![a-z]))/i)) != null) g = v;
+  else if ((v = num(/(\d+(?:\.\d+)?)\s*(?:ליטר|ל'|ל(?![א-ת])|l(?![a-z])|lt(?![a-z])|liter)/i)) != null) g = v * 1000;
   else if ((v = num(/(\d+(?:\.\d+)?)\s*(?:גרם|גר'?|ג'?)(?![א-ת])/)) != null) g = v;
+  else if ((v = num(/(\d+(?:\.\d+)?)\s*(?:g|gr|gram|grams)(?![a-z])/i)) != null) g = v;
   else if (group === "eggs" && (v = num(/(\d+)\s*(?:יחידות|יח'|ביצים)/)) != null) g = v * 60;
   if (g == null && group === "eggs") {
     const n = num(/(?:תבנית|מארז)\s*(\d+)/);
@@ -67,9 +106,10 @@ export function quantityCandidates(text, group) {
   return each ? [g * count, g] : [g, g * count];
 }
 
-const inRange = (group, kcal) => {
+const inRange = (group, kcal, protein) => {
   const [lo, hi] = KCAL_RANGE[group] || KCAL_RANGE.other;
-  return kcal >= lo && kcal <= hi;
+  const [plo, phi] = PROTEIN_RANGE[group] || PROTEIN_RANGE.other;
+  return kcal >= lo && kcal <= hi && (protein == null || (protein >= plo && protein <= phi));
 };
 
 function median(values) {
@@ -105,7 +145,7 @@ export function buildDensities(catalog, plan) {
         for (const k of ["kcal", "protein", "carbs", "fat"]) d[k] /= cooked;
         if (d.pricePerGram) d.pricePerGram /= cooked;
       }
-      if (inRange(p.group, d.kcal)) { fromList = d; break; }
+      if (inRange(p.group, d.kcal, d.protein)) { fromList = d; break; }
     }
 
     const items = aiItems.get(p.id) || [];
@@ -115,8 +155,16 @@ export function buildDensities(catalog, plan) {
       pricePerGram: median(items.map(i => (Number(i.estimated_cost) || 0) / Number(i.grams))),
     } : null;
 
-    const d = fromList || (fromAi && inRange(p.group, fromAi.kcal) ? fromAi : null);
-    if (d) densities.set(p.id, { ...d, source: fromList ? "list" : "ai", pricePerGram: d.pricePerGram || fromAi?.pricePerGram || null });
+    const aiOk = fromAi && inRange(p.group, fromAi.kcal, fromAi.protein);
+    const ref = !fromList && !aiOk ? referenceFor(p) : null;
+    const d = fromList || (aiOk ? fromAi : ref);
+    if (d) {
+      densities.set(p.id, {
+        ...d,
+        source: fromList ? "list" : aiOk ? "ai" : "reference",
+        pricePerGram: d.pricePerGram || fromList?.pricePerGram || fromAi?.pricePerGram || null,
+      });
+    }
   }
   return densities;
 }
@@ -218,6 +266,57 @@ export function balanceCalories(plan, catalog, densities, target) {
     }
     const after = dayCalories(day);
     report.push({ day: day.day_name, target, before, after, deviation: Math.round(((after - target) / target) * 1000) / 10 });
+  }
+  return report;
+}
+
+// Protein-dense groups whose portions may grow, and calorie sources that may
+// shrink to make room (carbs/fat), when a day is short on protein.
+const PROTEIN_GROUPS = new Set(["meat", "fish", "eggs", "dairy_protein", "legumes", "yogurt"]);
+const REDUCIBLE_GROUPS = new Set(["grain", "bread", "starch_veg", "cereal", "fruit", "oil", "tahini", "nuts"]);
+
+const dayProtein = day => day.meals.reduce((s, m) => s + m.items.reduce((t, i) => t + (Number(i.protein) || 0), 0), 0);
+
+/**
+ * Moves days that fall below 90% of the protein target toward it without
+ * leaving the calorie range: grows existing protein-dense portions (never past
+ * their realistic cap) and shrinks carb/fat portions (never below the minimum)
+ * to free the calories. No products are added, so meal composition and
+ * meat/dairy separation stay as generated. Returns a per-day report.
+ */
+export function balanceProtein(plan, catalog, densities, { calories: kcalTarget, protein: proteinTarget }) {
+  const report = [];
+  const product = i => catalog.find(p => p.id === i.product_id);
+  for (const day of plan.days) {
+    const before = Math.round(dayProtein(day));
+    if (proteinTarget && before < proteinTarget * 0.9) {
+      for (let pass = 0; pass < 3; pass++) {
+        const deficit = proteinTarget * 0.95 - dayProtein(day);
+        if (deficit <= 1) break;
+        const all = day.meals.flatMap(m => m.items).map(item => ({ item, p: product(item), d: densities.get(item.product_id) }));
+        // 1. grow protein portions, proportionally to how much protein each can still add
+        const growable = all.filter(e => e.p && e.d && PROTEIN_GROUPS.has(e.p.group) && e.d.protein >= 4)
+          .map(e => ({ ...e, room: Math.max(0, (portionCap(e.p) || Number(e.item.grams)) - Number(e.item.grams)) }))
+          .filter(e => e.room > 0);
+        const capacity = growable.reduce((s, e) => s + e.room * e.d.protein / 100, 0);
+        if (capacity <= 0) break;
+        const share = Math.min(1, deficit / capacity);
+        for (const e of growable) setGrams(e.item, roundGrams(Number(e.item.grams) + e.room * share), e.d);
+        // 2. shrink carb/fat portions to return to the calorie target
+        const excess = dayCalories(day) - kcalTarget;
+        const reducible = all.filter(e => e.p && e.d && REDUCIBLE_GROUPS.has(e.p.group) && Number(e.item.calories) > 0);
+        const reducibleKcal = reducible.reduce((s, e) => s + Number(e.item.calories), 0);
+        if (excess > 0 && reducibleKcal > 0) {
+          const f = Math.max(0, 1 - excess / reducibleKcal);
+          for (const e of reducible) {
+            const min = Math.min(Number(e.item.grams), MIN_GRAMS[e.p.group] || 10);
+            setGrams(e.item, roundGrams(Math.max(min, Number(e.item.grams) * f)), e.d);
+          }
+        }
+      }
+    }
+    const after = Math.round(dayProtein(day));
+    report.push({ day: day.day_name, proteinTarget, before, after, pctOfTarget: proteinTarget ? Math.round(after / proteinTarget * 100) : null, calories: Math.round(dayCalories(day)) });
   }
   return report;
 }
