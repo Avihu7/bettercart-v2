@@ -4,6 +4,7 @@
  * Runs on http://localhost:3001
  */
 
+import './env.js'; // must stay first: loads server settings (.env.local) into process.env
 import express from 'express';
 import cors from 'cors';
 import { existsSync } from 'fs';
@@ -15,7 +16,9 @@ import {
   requireAuth, sessionUser, createSession, destroySession, createUser, verifyCredentials,
   findUserByEmail, normalizeEmail, isValidEmail, passwordError,
   loginBlocked, recordLoginFailure, clearLoginFailures,
+  createPasswordReset, resetPasswordWithToken, resetRequestAllowed, RESET_MINUTES,
 } from './auth.js';
+import { sendPasswordResetEmail } from './email.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -260,6 +263,32 @@ app.get('/api/products/search', (req, res) => {
     FROM products
     WHERE is_food = 1
   `;
+
+  // match=prefix: names that START with the query (e.g. "טונה" → canned tuna,
+  // not "קינואה+טונה"), one row per product name, priced items with nutrition first.
+  // Used to look up replacement candidates for a basket item.
+  if (req.query.match === 'prefix') {
+    try {
+      const like = `${query}%`;
+      const rows = productsDb.prepare(`
+        ${SELECT_COLS}
+          AND (normalized_product_name LIKE ? OR original_product_name LIKE ?)
+          AND price > 0
+          ${chainClause}
+        GROUP BY original_product_name
+        ORDER BY calories_per_100g IS NULL, overall_score DESC
+        LIMIT ${limitN}
+      `).all(like, like, chainFilter);
+      return res.json({
+        query,
+        active_catalog_chain: ACTIVE_CATALOG_CHAIN,
+        total: rows.length,
+        results: rows.map(r => ({ ...r, match_type: 'prefix' })),
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err.message, results: [] });
+    }
+  }
 
   try {
     // 1 — Exact match on normalized_product_name
@@ -612,6 +641,35 @@ app.get('/api/auth/me', (req, res) => {
   const user = sessionUser(req);
   if (!user) return res.status(401).json({ error: 'לא מחובר' });
   res.json({ user });
+});
+
+// Forgot password: the answer is the same whether or not the email is registered,
+// and the email is sent in the background so timing doesn't reveal it either.
+const RESET_REQUEST_MESSAGE = 'אם האימייל רשום במערכת, נשלח אליו קישור לאיפוס הסיסמה. הקישור תקף ל-' + RESET_MINUTES + ' דקות.';
+const APP_URL = () => (process.env.APP_URL || 'http://localhost:5173').replace(/\/$/, '');
+
+app.post('/api/auth/forgot-password', (req, res) => {
+  const email = normalizeEmail(req.body?.email);
+  if (!isValidEmail(email)) return res.status(400).json({ error: 'כתובת האימייל אינה תקינה' });
+  if (!resetRequestAllowed(`${req.ip}|${email}`)) {
+    return res.status(429).json({ error: 'נשלחו יותר מדי בקשות. נסו שוב מאוחר יותר.' });
+  }
+  const user = findUserByEmail(email);
+  if (user) {
+    const token = createPasswordReset(user.id);
+    sendPasswordResetEmail(user.email, `${APP_URL()}/reset-password?token=${encodeURIComponent(token)}`, RESET_MINUTES)
+      .catch(() => console.error('[auth] password reset email failed'));
+  }
+  res.json({ message: RESET_REQUEST_MESSAGE });
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  const { token, password } = req.body || {};
+  const pwError = passwordError(password);
+  if (pwError) return res.status(400).json({ error: pwError });
+  const ok = await resetPasswordWithToken(token, password);
+  if (!ok) return res.status(400).json({ error: 'הקישור אינו תקף או שפג תוקפו. בקשו קישור חדש.' });
+  res.json({ message: 'הסיסמה עודכנה. אפשר להתחבר עם הסיסמה החדשה.' });
 });
 
 // ─── Legacy guest data ───────────────────────────────────────────────────────

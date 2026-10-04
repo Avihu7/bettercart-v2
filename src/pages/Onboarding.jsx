@@ -32,8 +32,11 @@ const STRENGTH_LABELS = {
   none:  "ללא אימוני כוח",
   "1-2": "1–2 פעמים בשבוע",
   "3-5": "3–5 פעמים בשבוע",
-  "5+":  "5+ פעמים בשבוע",
+  "6-7": "6–7 פעמים בשבוע",
+  elite: "אימוני כוח אינטנסיביים מאוד (ספורטאי)",
+  "5+":  "5+ פעמים בשבוע", // legacy value, shown for older profiles
 };
+const STRENGTH_OPTIONS = ["none", "1-2", "3-5", "6-7", "elite"];
 
 const GOAL_LABELS = {
   weight_loss: "ירידה במשקל",
@@ -79,7 +82,7 @@ export default function Onboarding() {
         age: p.age || "", gender: p.gender || "male",
         height: p.height || "", weight: p.weight || "",
         activity_level: p.activity_level || "moderately_active",
-        strength_training: p.strength_training || "none",
+        strength_training: p.strength_training === "5+" ? "6-7" : (p.strength_training || "none"),
         goal: p.goal || "maintenance",
         allergies: p.allergies || [], dietary_preferences: p.dietary_preferences || [],
         favorite_foods: p.favorite_foods || [], disliked_foods: p.disliked_foods || [],
@@ -119,7 +122,7 @@ export default function Onboarding() {
   const bmr = form.weight && form.height && form.age
     ? calculateBMR(Number(form.weight), Number(form.height), Number(form.age), form.gender) : 0;
   const dailyCalories = bmr ? calculateDailyCalories(bmr, form.activity_level, form.goal) : 0;
-  const macros = dailyCalories ? calculateMacros(dailyCalories, form.goal, Number(form.weight)) : { protein: 0, carbs: 0, fat: 0 };
+  const macros = dailyCalories ? calculateMacros(dailyCalories, form.goal, Number(form.weight), form.strength_training) : { protein: 0, carbs: 0, fat: 0 };
   const budgetPerPurchase = calculateBudgetPerPurchase(Number(form.monthly_budget) || 0, Number(form.purchases_per_month) || 1);
   // Base fitness score: BMI + activity + strength only (no receipt/calorie data yet at onboarding)
   const healthScore = bmi
@@ -258,7 +261,7 @@ export default function Onboarding() {
                 </div>
               </div>
               <div>
-                <Label>רמת פעילות גופנית</Label>
+                <Label>רמת פעילות שבועית (כולל אימוני כוח)</Label>
                 <Select value={form.activity_level} onValueChange={v => set("activity_level", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -269,17 +272,17 @@ export default function Onboarding() {
                 </Select>
               </div>
               <div>
-                <Label>אימוני כוח (אופציונלי)</Label>
+                <Label>תדירות אימוני כוח מתוך הפעילות השבועית</Label>
                 <Select value={form.strength_training} onValueChange={v => set("strength_training", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {Object.entries(STRENGTH_LABELS).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
+                    {STRENGTH_OPTIONS.map(k => (
+                      <SelectItem key={k} value={k}>{STRENGTH_LABELS[k]}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground mt-1">
-                  משפיע על ציון הכושר — BMI גבוה ממסת שריר לא נחשב כחסרון.
+                  קובע את יעד החלבון ומשפיע על ציון הכושר (BMI גבוה ממסת שריר לא נחשב כחסרון). הקלוריות נקבעות לפי רמת הפעילות השבועית, כך שאימוני הכוח לא נספרים פעמיים.
                 </p>
               </div>
             </div>

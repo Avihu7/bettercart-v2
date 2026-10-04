@@ -29,7 +29,9 @@ const GROUPS = [
   { group: "bread",     terms: ["לחם", "פיתה", "לחמני", "טורטיה", "באגט", "חלה", "פריכיות", "טוסט", "כריך", "סנדוויץ"] },
   { group: "grain",     terms: ["אורז", "פסטה", "ספגטי", "פתיתים", "קוסקוס", "בורגול", "קינואה", "אטריות", "נודלס"] },
   { group: "starch_veg", terms: ["תפוחי אדמה", "תפוח אדמה", "בטט", "תירס"] },
-  { group: "fruit",     terms: ["בננ", "תפוח", "תפוז", "אגס", "ענב", "אבטיח", "מלון", "קלמנטינ", "תות", "אפרסק", "מנגו", "אננס", "פרי", "פירות", "אבוקדו"] },
+  // Avocado is a fat, eaten on bread or in a salad — not a sweet fruit snack
+  { group: "avocado",   terms: ["אבוקדו"] },
+  { group: "fruit",     terms: ["בננ", "תפוח", "תפוז", "אגס", "ענב", "אבטיח", "מלון", "קלמנטינ", "תות", "אפרסק", "מנגו", "אננס", "פרי", "פירות"] },
   { group: "vegetable", terms: ["עגבני", "מלפפון", "ברוקולי", "גזר", "פלפל", "חסה", "בצל", "כרוב", "קישוא", "חציל", "תרד", "ירק", "סלט", "פטריות", "כרובית", "סלק"] },
 ];
 
@@ -50,6 +52,7 @@ const ROLES = {
   starch_veg:    ["Lunch", "Dinner"],
   vegetable:     ["Breakfast", "Lunch", "Dinner"],
   fruit:         ["Breakfast", "Snacks"],
+  avocado:       ["Breakfast", "Lunch", "Dinner"],
   nuts:          ["Snacks", "Breakfast"],
   tahini:        ["Lunch", "Dinner", "Breakfast"],
   oil:           ["Lunch", "Dinner", "Breakfast"],
@@ -58,12 +61,12 @@ const ROLES = {
 
 // Groups that must never appear in a snack (plain milk, plain bread, raw
 // staples, cooking fats, main proteins). Coffee is a drink, not a snack food.
-const NOT_SNACK = new Set(["milk", "bread", "grain", "starch_veg", "meat", "fish", "legumes", "oil", "tahini", "cereal", "eggs"]);
+const NOT_SNACK = new Set(["milk", "bread", "grain", "starch_veg", "meat", "fish", "legumes", "oil", "tahini", "cereal", "eggs", "avocado"]);
 // Realistic single-meal portion ceilings (grams) per food group.
 const PORTION_CAP = {
   bread: 150, cereal: 100, milk: 300, yogurt: 250, dairy_protein: 250, eggs: 200,
   meat: 300, fish: 250, legumes: 250, grain: 300, starch_veg: 350, vegetable: 300,
-  fruit: 250, nuts: 60, tahini: 60, oil: 25, coffee: 20, tea: 10,
+  fruit: 250, avocado: 100, nuts: 60, tahini: 60, oil: 25, coffee: 20, tea: 10,
 };
 const HARD_CHEESE = /צהוב|מוצרלה|בולגרית|צפתית|פרמזן/;
 
@@ -232,6 +235,11 @@ export function checkMeal(meal, catalog) {
   if (products.some(p => p.kosher === "meat") && products.some(p => p.kosher === "dairy")) {
     issues.push("meat and dairy in the same meal");
   }
+  // One main animal protein per plate; meat/poultry with fish is also not kosher
+  if (groups.includes("meat") && groups.includes("fish")) issues.push("meat and fish in the same meal");
+  else if (new Set(products.filter(p => p.group === "meat" || p.group === "fish").map(p => p.id)).size > 1) {
+    issues.push("more than one main meat/fish protein in the meal");
+  }
   const phantom = mealNameMismatches(meal.meal_name, meal.items, catalog);
   if (phantom.length) issues.push(`meal_name mentions foods not in the meal: ${phantom.join(", ")}`);
   for (const item of meal.items) {
@@ -291,7 +299,7 @@ export function mealNameMismatches(mealName, items, catalog) {
   return found;
 }
 
-function shortProductName(name) {
+export function shortProductName(name) {
   return String(name)
     .replace(/\s*[×x]\s*\d+.*$/, "")
     .replace(/\s+(?:מארז|תבנית)\s+\d+.*$/, "")
@@ -344,6 +352,12 @@ export function forceRepair(plan, catalog) {
       const kinds = meal.items.map(i => product(i)?.kosher);
       if (kinds.includes("meat") && kinds.includes("dairy")) {
         meal.items = meal.items.filter(i => product(i)?.kosher !== "dairy");
+      }
+      // Keep only the largest meat/fish portion (meat with fish is not served together)
+      const mains = meal.items.filter(i => ["meat", "fish"].includes(product(i)?.group));
+      if (mains.length > 1) {
+        const keep = mains.reduce((a, b) => (Number(b.grams) > Number(a.grams) ? b : a));
+        meal.items = meal.items.filter(i => !mains.includes(i) || i === keep);
       }
       if (meal.meal_type === "Snacks") {
         const kept = meal.items.filter(i => !NOT_SNACK.has(product(i)?.group));

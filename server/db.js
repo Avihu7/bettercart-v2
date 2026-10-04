@@ -167,6 +167,16 @@ db.exec(`
   );
   CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 
+  -- One-time password-reset links: only a SHA-256 hash of the emailed token is stored
+  CREATE TABLE IF NOT EXISTS password_resets (
+    token_hash TEXT PRIMARY KEY,
+    user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    used_at    TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_password_resets_user ON password_resets(user_id);
+
   CREATE INDEX IF NOT EXISTS idx_userProfile_owner    ON userProfile(created_by);
   CREATE INDEX IF NOT EXISTS idx_receipts_owner       ON receipts(created_by);
   CREATE INDEX IF NOT EXISTS idx_receiptItems_owner   ON receiptItems(created_by);

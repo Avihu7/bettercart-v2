@@ -103,7 +103,9 @@ export async function invokeLLM({ prompt, response_json_schema }) {
   }
 
   const schemaStr = JSON.stringify(response_json_schema, null, 2);
-  const fullPrompt = `${prompt}\n\nRespond with valid JSON matching this schema:\n${schemaStr}`;
+  // Ask for the data itself: with "matching this schema" the model sometimes
+  // echoed the schema's shape back ({"type": "object", "properties": {...}})
+  const fullPrompt = `${prompt}\n\nRespond with the JSON data only (an instance of the schema below — not the schema itself, and not wrapped in "type"/"properties" keys):\n${schemaStr}`;
   return callClaude(fullPrompt);
 }
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/api/localAPI";
 import { useAuth } from "@/lib/AuthContext";
@@ -6,14 +6,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   ShoppingCart, Loader2, ChevronLeft, Sparkles, RefreshCw,
-  Heart, AlertCircle, Upload
+  Heart, AlertCircle, Upload, Repeat2, Trash2, Info
 } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 import StatCard from "@/components/dashboard/StatCard";
 import { useFlowData, FLOW_QUERY_KEY } from "@/lib/flowData";
 import FlowSteps from "@/components/FlowSteps";
+import { isBasketReady, isUnresolved } from "@/lib/receiptReview";
+import { findAlternatives, buildReplacementItem, isDisliked, itemRole, familyLabel, missingStaples } from "@/lib/basketAlternatives";
 
 const MIN_FOOD_ITEMS = 3;
 
@@ -77,7 +80,7 @@ async function fetchComplementaryCandidates(missingGroups) {
 
 function getEffectiveItemData(item) {
   const hasStrongCatalogMatch =
-    item.catalog_match_status === "matched" && !item.catalog_needs_review;
+    ["matched", "approved"].includes(item.catalog_match_status) && !item.catalog_needs_review;
 
   return {
     ...item,
@@ -181,6 +184,88 @@ ${JSON.stringify(bad.map(({ index, item }) => ({ index, name: item.name, reason:
   });
 }
 
+// Basket totals after an item was removed or replaced
+function basketTotals(items) {
+  return {
+    total_estimated_cost: Math.round(items.reduce((s, i) => s + (Number(i.estimated_price) || 0), 0) * 100) / 100,
+    total_calories: Math.round(items.reduce((s, i) => s + (Number(i.calories) || 0), 0)),
+  };
+}
+
+// A basket this small, or without a protein, carb or vegetable, limits the weekly menu
+const MIN_VARIED_BASKET = 8;
+function basketLooksThin(items) {
+  const roles = new Set(items.map(itemRole));
+  return items.length < MIN_VARIED_BASKET || !["protein", "carb", "vegetable"].every(r => roles.has(r) || (r === "protein" && roles.has("dairy")));
+}
+
+function ReplaceDialog({ item, basketItems, profile, onClose, onSelect, saving }) {
+  const { data: options = [], isLoading, isError } = useQuery({
+    queryKey: ["basketAlternatives", item?.name, basketItems.map(i => i.name).join("|"), profile?.id],
+    queryFn: () => findAlternatives(item, basketItems, profile),
+    enabled: !!item,
+    staleTime: 5 * 60 * 1000,
+  });
+  const looksFor = item && familyLabel(item);
+
+  return (
+    <Dialog open={!!item} onOpenChange={open => !open && !saving && onClose()}>
+      <DialogContent
+        dir="rtl"
+        className="w-[calc(100%-2rem)] max-w-md max-h-[85vh] overflow-y-auto rounded-xl p-5 text-right [&>button:last-child]:right-auto [&>button:last-child]:left-4"
+      >
+        <DialogHeader className="text-right sm:text-right space-y-1">
+          <DialogTitle className="font-heading">החלפת מוצר</DialogTitle>
+          <DialogDescription>
+            במקום: <span className="font-medium text-foreground">{item?.name}</span>
+            {looksFor && <span className="block text-xs mt-1">נחפש {looksFor}, עם ערכים תזונתיים קרובים, מקטלוג שופרסל.</span>}
+          </DialogDescription>
+        </DialogHeader>
+
+        {isLoading && (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            <Loader2 className="w-6 h-6 animate-spin text-primary mx-auto mb-2" />
+            מחפשים חלופות מתאימות...
+          </div>
+        )}
+
+        {!isLoading && (isError || options.length === 0) && (
+          <p className="py-6 text-center text-sm text-muted-foreground">לא מצאנו כרגע חלופה דומה מספיק למוצר הזה.</p>
+        )}
+
+        {!isLoading && options.length > 0 && (
+          <ul className="space-y-2">
+            {options.map(o => (
+              <li key={o.product.product_id}>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => onSelect(o)}
+                  className="w-full text-right rounded-lg border p-3 hover:border-primary hover:bg-primary/5 transition-colors disabled:opacity-50 flex items-center gap-3"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm">{o.candidate.label}</p>
+                    <p className="text-xs text-muted-foreground truncate">{o.product.original_product_name}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      ל-100 גרם: {Math.round(o.per100.kcal)} קלוריות · {Math.round(o.per100.protein)} ג׳ חלבון
+                    </p>
+                  </div>
+                  <div className="shrink-0 text-left">
+                    <p className="text-sm font-semibold">₪{Number(o.product.price).toFixed(2)}</p>
+                    <p className="text-[11px] text-muted-foreground">{o.grams >= 1000 && o.grams % 1000 === 0 ? `${o.grams / 1000} ק"ג` : `${Math.round(o.grams)} גרם`}</p>
+                    <span className="text-xs text-primary font-medium">בחירה</span>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {saving && <p className="text-xs text-center text-muted-foreground">שומרים את הבחירה...</p>}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function ShoppingListPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -208,13 +293,17 @@ export default function ShoppingListPage() {
   // Use explicit receipt_id from URL; fall back to latest receipt for current user only
   const effectiveReceiptId = receiptId || latestReceipt?.id || null;
 
-  const { data: receiptItems = [], isLoading: itemsLoading } = useQuery({
+  const { data: foodReceiptItems = [], isLoading: itemsLoading } = useQuery({
     queryKey: ["approvedItems", effectiveReceiptId, user?.email],
     queryFn: () => effectiveReceiptId
-      ? api.entities.ReceiptItem.filter({ receipt_id: effectiveReceiptId, created_by: user.email, is_food: true, is_approved_for_menu: true })
+      ? api.entities.ReceiptItem.filter({ receipt_id: effectiveReceiptId, created_by: user.email, is_food: true })
       : Promise.resolve([]),
     enabled: !!user,
   });
+  // Only confidently recognized or user-approved food items feed the basket;
+  // items still awaiting review (or ignored / not food) never reach the AI
+  const receiptItems = foodReceiptItems.filter(isBasketReady);
+  const pendingReview = foodReceiptItems.filter(isUnresolved).length;
 
   const profile = profiles?.[0];
 
@@ -276,7 +365,7 @@ USER PROFILE:
 - Dietary preferences: ${dietaryRestrictions.join(", ") || "None"}
 - Allergies: ${allergies.join(", ") || "None"}
 - Favorite foods: ${(profile?.favorite_foods || []).join(", ") || "None"}
-- Disliked foods: ${(profile?.disliked_foods || []).join(", ") || "None"}
+- Disliked foods (NEVER include): ${(profile?.disliked_foods || []).join(", ") || "None"}
 
 RECEIPT ITEMS (user's actual purchases — a preference signal, not a strict limit; use items that comply with dietary restrictions above):
 ${itemsList || "No receipt data available"}
@@ -332,13 +421,21 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
 
       // Enforce budget hard cap - trim items if AI exceeded budget
       const budget = profile?.budget_per_purchase || 500;
+      // Disliked foods never enter the basket, even if the AI suggested them
+      const disliked = profile?.disliked_foods || [];
       let finalItems = await ensureHebrewReasons(
-        (result.items || []).map(item => ({ ...item, category: normalizeCategory(item.category) }))
+        (result.items || [])
+          .filter(item => !isDisliked(item.name, disliked))
+          .map(item => ({ ...item, category: normalizeCategory(item.category) }))
       );
+      // Bread/grains and a healthy fat are what lets the weekly menu reach the
+      // calorie target — complete them from the Shufersal catalog if missing
+      finalItems = [...finalItems, ...await missingStaples(finalItems, profile)];
       let runningTotal = finalItems.reduce((sum, i) => sum + (i.estimated_price || 0), 0);
-      while (runningTotal > budget && finalItems.length > 1) {
-        // Remove the most expensive item
-        const maxIdx = finalItems.reduce((mi, item, idx, arr) => item.estimated_price > arr[mi].estimated_price ? idx : mi, 0);
+      while (runningTotal > budget && finalItems.some(i => !i.added_staple)) {
+        // Remove the most expensive item (never an added staple)
+        const maxIdx = finalItems.reduce((mi, item, idx, arr) =>
+          !item.added_staple && (arr[mi].added_staple || item.estimated_price > arr[mi].estimated_price) ? idx : mi, 0);
         runningTotal -= finalItems[maxIdx].estimated_price || 0;
         finalItems = finalItems.filter((_, idx) => idx !== maxIdx);
       }
@@ -363,10 +460,45 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
   });
 
   // Baskets only — a final shopping list (step 4) is never shown here
-  const { basket: showList, completed } = useFlowData(user);
+  const { basket: showList, planBasket, planOutdated, completed } = useFlowData(user);
+
+  // Remove / replace a single basket item — the rest of the basket stays as is
+  const [replacing, setReplacing] = useState(null); // index of the item being replaced
+  const [removedSome, setRemovedSome] = useState(false);
+  const saveItemsMutation = useMutation({
+    mutationFn: items => api.entities.ShoppingList.update(showList.id, { items, ...basketTotals(items) }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [FLOW_QUERY_KEY] }),
+    onError: () => toast({ title: "השינוי לא נשמר", description: "נסו שוב בעוד רגע.", variant: "destructive" }),
+  });
+
+  const removeItem = index => {
+    const item = showList.items[index];
+    saveItemsMutation.mutate(showList.items.filter((_, i) => i !== index), {
+      onSuccess: () => {
+        setRemovedSome(true);
+        toast({ title: `${item.name} הוסר מהסל` });
+      },
+    });
+  };
+
+  const replaceItem = option => {
+    const index = replacing;
+    const old = showList.items[index];
+    const items = showList.items.map((it, i) => (i === index ? buildReplacementItem(option) : it));
+    saveItemsMutation.mutate(items, {
+      onSuccess: () => {
+        setReplacing(null);
+        toast({ title: `${old.name} הוחלף ב${option.candidate.label}` });
+      },
+    });
+  };
+
+  const disliked = profile?.disliked_foods || [];
+  // The weekly plan was built from an earlier version of this basket
+  const basketChangedSincePlan = planOutdated && planBasket?.id === showList?.id;
 
   const catalogMatchCount = receiptItems.filter(
-    i => i.catalog_match_status === "matched" && !i.catalog_needs_review
+    i => ["matched", "approved"].includes(i.catalog_match_status) && !i.catalog_needs_review
   ).length;
 
   return (
@@ -376,9 +508,20 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
         <div>
           <h1 className="font-heading text-2xl font-bold">סל מוצרים חכם</h1>
           <p className="text-sm text-muted-foreground">בחרנו עבורך מוצרים שמהם נבנה את התפריט השבועי</p>
+          {showList?.items?.length > 0 && (
+            <p className="text-sm text-muted-foreground">לא מתאים לך מוצר מסוים? אפשר להחליף או להסיר אותו לפני בניית התפריט.</p>
+          )}
           {effectiveReceiptId && (
             <p className="text-xs text-muted-foreground/70 mt-0.5">
               מבוסס על קבלה מ-{latestReceipt?.store_name || (receiptId ? "הקבלה שנבחרה" : "הקבלה האחרונה שהועלתה")}
+            </p>
+          )}
+          {effectiveReceiptId && pendingReview > 0 && (
+            <p className="text-xs text-amber-700 mt-0.5">
+              {pendingReview} פריטים מהקבלה עדיין דורשים בדיקה ולא ייכנסו לסל.{" "}
+              <button type="button" className="underline" onClick={() => navigate(`/receipt-results?id=${effectiveReceiptId}`)}>
+                לבדיקת הפריטים
+              </button>
             </p>
           )}
           {!effectiveReceiptId && !itemsLoading && (
@@ -484,50 +627,83 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
               <h2 className="font-heading font-semibold">המוצרים שנבחרו</h2>
               <span className="text-xs text-muted-foreground">הכמויות והעלות לקנייה יחושבו בסוף, לפי התפריט השבועי</span>
             </div>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>מוצר</TableHead>
-                    <TableHead>קטגוריה</TableHead>
-                    <TableHead>ציון</TableHead>
-                    <TableHead>סיבה</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {showList.items?.map((item, i) => (
-                    <TableRow key={i}>
-                      <TableCell className="font-medium text-sm">{item.name}</TableCell>
-                      <TableCell>
+            <ul className="divide-y">
+              {showList.items?.map((item, i) => (
+                <li key={`${i}-${item.name}`} className="p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className={`w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
+                      item.health_score >= 7 ? "bg-green-50 text-green-700" :
+                      item.health_score >= 4 ? "bg-amber-50 text-amber-700" :
+                      "bg-red-50 text-red-700"
+                    }`} title="ציון בריאות">
+                      {item.health_score ?? "–"}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-medium text-sm break-words">{item.name}</span>
                         <Badge className={`text-xs ${categoryColors[item.category] || categoryColors.other}`}>
                           {CATEGORY_LABELS[item.category] || item.category}
                         </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                          item.health_score >= 7 ? "bg-green-50 text-green-700" :
-                          item.health_score >= 4 ? "bg-amber-50 text-amber-700" :
-                          "bg-red-50 text-red-700"
-                        }`}>
-                          {item.health_score}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
-                        {isHebrewReason(item.reason) ? item.reason : ""}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                      </div>
+                      {isHebrewReason(item.reason) && (
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.reason}</p>
+                      )}
+                      {isDisliked(item.name, disliked) && (
+                        <p className="text-xs text-amber-700 mt-1">מופיע ברשימת המאכלים שציינת שאינך אוהב/ת</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 shrink-0 sm:mr-auto">
+                    <Button
+                      variant="outline" size="sm" className="flex-1 sm:flex-none min-h-9"
+                      onClick={() => setReplacing(i)}
+                      disabled={saveItemsMutation.isPending}
+                    >
+                      <Repeat2 className="w-4 h-4 ml-1.5" /> החלפה
+                    </Button>
+                    <Button
+                      variant="ghost" size="sm" className="flex-1 sm:flex-none min-h-9 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeItem(i)}
+                      disabled={saveItemsMutation.isPending}
+                    >
+                      <Trash2 className="w-4 h-4 ml-1.5" /> הסרה
+                    </Button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           </Card>
 
+          {removedSome && basketLooksThin(showList.items || []) && (
+            <div className="flex items-start gap-2 rounded-lg bg-amber-50 text-amber-800 text-sm p-3">
+              <Info className="w-4 h-4 mt-0.5 shrink-0" />
+              <span>הסרת מוצר עשויה להשפיע על מגוון התפריט.</span>
+            </div>
+          )}
+
           <Card className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <p className="text-sm text-muted-foreground">מהמוצרים האלה נבנה עבורכם תפריט תזונה שבועי מותאם.</p>
-            <Button onClick={() => navigate(`/nutrition-plan?list_id=${showList.id}`)} className="rounded-full">
+            <p className="text-sm text-muted-foreground">
+              {basketChangedSincePlan
+                ? "עדכנת את הסל — התפריט ייבנה מחדש מהמוצרים המעודכנים."
+                : "מהמוצרים האלה נבנה עבורכם תפריט תזונה שבועי מותאם."}
+            </p>
+            <Button
+              onClick={() => navigate(`/nutrition-plan?list_id=${showList.id}${basketChangedSincePlan ? "&rebuild=1" : ""}`)}
+              className="rounded-full"
+              disabled={!showList.items?.length || saveItemsMutation.isPending}
+            >
               בניית תפריט תזונה <ChevronLeft className="w-4 h-4 mr-1" />
             </Button>
           </Card>
+
+          <ReplaceDialog
+            item={replacing != null ? showList.items?.[replacing] : null}
+            basketItems={showList.items || []}
+            profile={profile}
+            saving={saveItemsMutation.isPending}
+            onClose={() => setReplacing(null)}
+            onSelect={replaceItem}
+          />
         </>
       )}
     </div>

@@ -171,7 +171,7 @@ function productUnit(item, group) {
   }
 }
 
-const WEIGHED_GROUPS = new Set(['meat', 'fish', 'vegetable', 'fruit', 'starch_veg']);
+const WEIGHED_GROUPS = new Set(['meat', 'fish', 'vegetable', 'fruit', 'avocado', 'starch_veg']);
 const LIQUID_GROUPS = new Set(['milk', 'oil']);
 
 function packLabel(grams, group) {

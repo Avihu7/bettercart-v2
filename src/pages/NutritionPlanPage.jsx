@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/api/localAPI";
 import { useAuth } from "@/lib/AuthContext";
@@ -54,7 +54,7 @@ export default function NutritionPlanPage() {
   const listId = urlParams.get("list_id");
 
   // Basket (step 2) this plan is built from, latest plan, and its final list (step 4)
-  const { profile, basket: sourceList, plan: latestPlan, finalList, completed } = useFlowData(user, { listId });
+  const { profile, basket: sourceList, plan: latestPlan, planOutdated, finalList, completed } = useFlowData(user, { listId });
 
   const generateMutation = useMutation({
     mutationFn: async () => {
@@ -109,7 +109,15 @@ export default function NutritionPlanPage() {
     },
   });
 
+  // A plan that still uses products removed/replaced in step 2 is not shown —
+  // it is rebuilt from the updated basket (automatically when coming from step 2)
   const showPlan = latestPlan;
+  const autoRebuilt = useRef(false);
+  useEffect(() => {
+    if (!planOutdated || urlParams.get("rebuild") !== "1" || autoRebuilt.current || !sourceList?.items?.length || !profile) return;
+    autoRebuilt.current = true;
+    generateMutation.mutate();
+  });
   const planDays = sortDays(showPlan?.days);
   const dailyTarget = showPlan?.daily_calories || profile?.daily_calories;
   const proteinTarget = profile?.protein_target;
@@ -157,9 +165,11 @@ export default function NutritionPlanPage() {
       {!generateMutation.isPending && !showPlan && (
         <Card className="p-10 text-center">
           <UtensilsCrossed className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-          <h2 className="font-heading font-semibold text-lg mb-2">עדיין אין תפריט</h2>
+          <h2 className="font-heading font-semibold text-lg mb-2">{planOutdated ? "סל המוצרים עודכן" : "עדיין אין תפריט"}</h2>
           <p className="text-sm text-muted-foreground mb-6">
-            {sourceList?.items?.length
+            {planOutdated
+              ? "החלפת או הסרת מוצרים מאז שהתפריט נבנה. נבנה תפריט חדש מהמוצרים המעודכנים."
+              : sourceList?.items?.length
               ? "נבנה תפריט שבועי אישי מהמוצרים שבסל המוצרים שלכם"
               : "כדי לבנות תפריט תזונה, קודם בונים סל מוצרים חכם."}
           </p>

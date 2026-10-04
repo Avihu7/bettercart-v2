@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/api/localAPI";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -9,11 +9,16 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Store, Calendar, Check, X, Pencil, Trash2,
   ShoppingCart, Lightbulb, ChevronLeft, TrendingUp,
-  Loader2, Zap
+  Loader2, Zap, AlertTriangle, Search
 } from "lucide-react";
+import {
+  isUnresolved, isExcluded, needsMatching, matchPatch, manualMatchPatch,
+  approvePatch, nonFoodPatch, ignorePatch, reviewReason,
+} from "@/lib/receiptReview";
 import { formatCurrency } from "@/lib/calculations";
 import { format } from "date-fns";
 import FlowSteps from "@/components/FlowSteps";
@@ -38,6 +43,16 @@ function CatalogBadge({ item }) {
     <div className="mt-1 space-y-0.5">
       <span className="inline-block bg-green-100 text-green-700 text-[10px] font-medium px-1.5 py-0.5 rounded-full">
         נמצא בקטלוג {confPct}
+      </span>
+      {item.matched_product_name && (
+        <p className="text-[10px] text-muted-foreground/60">מוצר קטלוג: {item.matched_product_name}</p>
+      )}
+    </div>
+  );
+  if (status === 'approved') return (
+    <div className="mt-1 space-y-0.5">
+      <span className="inline-block bg-green-100 text-green-700 text-[10px] font-medium px-1.5 py-0.5 rounded-full">
+        אושר על ידך
       </span>
       {item.matched_product_name && (
         <p className="text-[10px] text-muted-foreground/60">מוצר קטלוג: {item.matched_product_name}</p>
@@ -103,6 +118,60 @@ function fixInsightTerms(insights) {
   );
 }
 
+// "שינוי התאמה": a few Shufersal catalog candidates for the receipt text, searchable
+function ChangeMatchDialog({ item, onClose, onSelect, saving }) {
+  const initial = item ? (item.normalized_name || item.original_name || "") : "";
+  const [query, setQuery] = useState(initial);
+  const [term, setTerm] = useState(initial);
+  useEffect(() => { setQuery(initial); setTerm(initial); }, [initial]);
+  const { data: results = [], isLoading } = useQuery({
+    queryKey: ["catalogSearch", term],
+    queryFn: async () => {
+      if (term.trim().length < 2) return [];
+      const res = await fetch(`/api/products/search?${new URLSearchParams({ q: term.trim(), limit: "8" })}`);
+      if (!res.ok) return [];
+      const data = await res.json();
+      // one row per product name
+      const seen = new Set();
+      return (data.results || []).filter(p => !seen.has(p.original_product_name) && seen.add(p.original_product_name)).slice(0, 6);
+    },
+    enabled: !!item,
+  });
+  return (
+    <Dialog open={!!item} onOpenChange={open => !open && !saving && onClose()}>
+      <DialogContent dir="rtl" className="w-[calc(100%-2rem)] max-w-md max-h-[85vh] overflow-y-auto rounded-xl p-5 text-right [&>button:last-child]:right-auto [&>button:last-child]:left-4">
+        <DialogHeader className="text-right sm:text-right space-y-1">
+          <DialogTitle className="font-heading">שינוי התאמה</DialogTitle>
+          <DialogDescription>
+            מהקבלה: <span className="font-medium text-foreground">{item?.original_name}</span>
+            <span className="block text-xs mt-1">בחרו את המוצר הנכון מקטלוג שופרסל.</span>
+          </DialogDescription>
+        </DialogHeader>
+        <form className="flex gap-2" onSubmit={e => { e.preventDefault(); setTerm(query); }}>
+          <Input value={query} onChange={e => setQuery(e.target.value)} placeholder="חיפוש בקטלוג" className="h-9" />
+          <Button type="submit" variant="outline" size="sm" className="h-9 shrink-0"><Search className="w-4 h-4" /></Button>
+        </form>
+        {isLoading && <p className="py-4 text-center text-sm text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin inline ml-2" />מחפשים בקטלוג...</p>}
+        {!isLoading && results.length === 0 && <p className="py-4 text-center text-sm text-muted-foreground">לא נמצאו מוצרים מתאימים. נסו מילת חיפוש אחרת.</p>}
+        <ul className="space-y-2">
+          {results.map(p => (
+            <li key={p.product_id}>
+              <button type="button" disabled={saving} onClick={() => onSelect(p)}
+                className="w-full text-right rounded-lg border p-3 hover:border-primary hover:bg-primary/5 transition-colors disabled:opacity-50 flex items-center gap-3">
+                <span className="flex-1 min-w-0 text-sm font-medium break-words">{p.original_product_name}</span>
+                <span className="shrink-0 text-left">
+                  <span className="block text-sm font-semibold">{formatCurrency(p.price)}</span>
+                  <span className="text-xs text-primary font-medium">בחירה</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function ReceiptResults() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -112,6 +181,7 @@ export default function ReceiptResults() {
   const receiptId = urlParams.get("id");
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
+  const [rematching, setRematching] = useState(null); // item in "שינוי התאמה"
 
   const { data: receipt, isFetched: receiptFetched } = useQuery({
     queryKey: ["receipt", receiptId, user?.email],
@@ -135,7 +205,10 @@ export default function ReceiptResults() {
   });
 
   const foodItems = items.filter(i => i.is_food);
-  const nonFoodItems = items.filter(i => !i.is_food);
+  // Unsure items wait for the user and never reach the smart basket on their own
+  const reviewItems = items.filter(isUnresolved);
+  const recognizedItems = foodItems.filter(i => !isUnresolved(i) && !isExcluded(i));
+  const nonFoodItems = items.filter(isExcluded);
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => api.entities.ReceiptItem.update(id, data),
@@ -152,10 +225,12 @@ export default function ReceiptResults() {
 
   const matchCatalogMutation = useMutation({
     mutationFn: async () => {
-      if (!receipt || !user || foodItems.length === 0) throw new Error('אין פריטים להתאמה');
+      // Items the user already decided on (approved / not food / ignored) are kept as they are
+      const toMatch = items.filter(needsMatching);
+      if (!receipt || !user || toMatch.length === 0) throw new Error('אין פריטים להתאמה');
       const chain = detectChain(receipt.store_name);
       const payload = {
-        items: foodItems.map(item => ({
+        items: toMatch.map(item => ({
           name: item.normalized_name || item.original_name,
           normalized_name: item.normalized_name,
           chain,
@@ -170,46 +245,29 @@ export default function ReceiptResults() {
       const { matches } = await res.json();
 
       await Promise.all(
-        foodItems.map(async (item, idx) => {
-          const match = matches[idx];
-          if (!match) return;
-          const patch = {};
-          if (match.matched) {
-            patch.matched_product_id      = match.matched_product_id;
-            patch.matched_product_name    = match.matched_name;
-            patch.catalog_chain           = match.chain;
-            patch.catalog_price           = match.price ?? null;
-            patch.catalog_price_per_100g  = match.price_per_100g ?? null;
-            patch.catalog_category        = match.category ?? null;
-            patch.catalog_calories_per_100g = match.calories_per_100g ?? null;
-            patch.catalog_protein_per_100g  = match.protein_per_100g ?? null;
-            patch.catalog_carbs_per_100g    = match.carbs_per_100g ?? null;
-            patch.catalog_fat_per_100g      = match.fat_per_100g ?? null;
-            patch.catalog_match_type        = match.match_type;
-            patch.catalog_match_confidence  = match.match_confidence;
-            patch.catalog_needs_review      = match.needs_review ? 1 : 0;
-            patch.catalog_match_status      = match.needs_review ? 'needs_review' : 'matched';
-            // Only fill missing AI nutrition when confidence is high (not needs_review)
-            if (!match.needs_review) {
-              if (item.calories_per_100g == null && match.calories_per_100g != null)
-                patch.calories_per_100g = match.calories_per_100g;
-              if (item.protein_per_100g == null && match.protein_per_100g != null)
-                patch.protein_per_100g = match.protein_per_100g;
-              if (item.carbs_per_100g == null && match.carbs_per_100g != null)
-                patch.carbs_per_100g = match.carbs_per_100g;
-              if (item.fat_per_100g == null && match.fat_per_100g != null)
-                patch.fat_per_100g = match.fat_per_100g;
-            }
-          } else {
-            patch.catalog_match_status = 'not_found';
-          }
-          return api.entities.ReceiptItem.update(item.id, patch);
-        })
+        toMatch.map((item, idx) => matches[idx] && api.entities.ReceiptItem.update(item.id, matchPatch(item, matches[idx])))
       );
       return matches;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["receiptItems", receiptId, user?.email] }),
   });
+
+  // Catalog matching runs by itself once for items that were never matched
+  const autoMatched = useRef(false);
+  useEffect(() => {
+    if (autoMatched.current || !receipt || !items.some(i => i.is_food && (i.catalog_match_status || "not_checked") === "not_checked")) return;
+    autoMatched.current = true;
+    matchCatalogMutation.mutate();
+  }, [receipt, items, matchCatalogMutation]);
+
+  const reviewMutation = useMutation({
+    mutationFn: ({ id, data }) => api.entities.ReceiptItem.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["receiptItems", receiptId] });
+      setRematching(null);
+    },
+  });
+  const decide = (item, data) => reviewMutation.mutate({ id: item.id, data });
 
   const startEdit = (item) => {
     setEditingId(item.id);
@@ -245,10 +303,76 @@ export default function ReceiptResults() {
           <h1 className="font-heading text-2xl font-bold">ניתוח הקבלה</h1>
           <p className="text-sm text-muted-foreground">תוצאות ניתוח AI של הקבלה שלכם</p>
         </div>
-        <Button onClick={() => navigate(`/shopping-list?receipt_id=${receiptId}`)} className="rounded-full">
-          בניית סל מוצרים חכם <ChevronLeft className="w-4 h-4 mr-1" />
-        </Button>
+        <div className="flex flex-col items-start sm:items-end gap-1">
+          <Button onClick={() => navigate(`/shopping-list?receipt_id=${receiptId}`)} className="rounded-full">
+            בניית סל מוצרים חכם <ChevronLeft className="w-4 h-4 mr-1" />
+          </Button>
+          {reviewItems.length > 0 && (
+            <span className="text-xs text-amber-700">נותרו {reviewItems.length} פריטים לבדיקה</span>
+          )}
+        </div>
       </div>
+
+      {/* Items the system is not sure about */}
+      {reviewItems.length > 0 && (
+        <Card className="overflow-hidden border-amber-300">
+          <div className="p-4 border-b bg-amber-50/60">
+            <h2 className="font-heading font-semibold flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" /> דורש בדיקה ({reviewItems.length})
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              לא הצלחנו לזהות בוודאות כמה פריטים מהקבלה. אשרו, תקנו או הסירו אותם לפני בניית הסל החכם.
+            </p>
+          </div>
+          <ul className="divide-y">
+            {reviewItems.map(item => (
+              <li key={item.id} className="p-4 space-y-3">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-sm break-words">{item.original_name}</span>
+                    <Badge className={`text-xs ${categoryColors[item.category] || categoryColors.other}`}>
+                      {CATEGORY_LABELS[item.category] || item.category}
+                    </Badge>
+                    <span className="text-xs text-amber-700">{reviewReason(item)}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 break-words">
+                    {item.matched_product_name
+                      ? <>התאמה אפשרית: {item.matched_product_name}{item.catalog_match_confidence ? ` (${Math.round(item.catalog_match_confidence * 100)}%)` : ""}</>
+                      : "לא נמצאה התאמה בקטלוג"}
+                    {item.price > 0 && <> · {formatCurrency(item.price)}</>}
+                    {item.quantity && <> · {item.quantity}</>}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+                  <Button size="sm" className="min-h-9" disabled={reviewMutation.isPending || !item.matched_product_name}
+                    onClick={() => decide(item, approvePatch())}>
+                    <Check className="w-4 h-4 ml-1" /> אישור
+                  </Button>
+                  <Button size="sm" variant="outline" className="min-h-9" disabled={reviewMutation.isPending}
+                    onClick={() => setRematching(item)}>
+                    <Search className="w-4 h-4 ml-1" /> שינוי התאמה
+                  </Button>
+                  <Button size="sm" variant="outline" className="min-h-9" disabled={reviewMutation.isPending}
+                    onClick={() => decide(item, nonFoodPatch())}>
+                    לא מזון
+                  </Button>
+                  <Button size="sm" variant="ghost" className="min-h-9 text-muted-foreground" disabled={reviewMutation.isPending}
+                    onClick={() => decide(item, ignorePatch())}>
+                    התעלמות
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      <ChangeMatchDialog
+        item={rematching}
+        saving={reviewMutation.isPending}
+        onClose={() => setRematching(null)}
+        onSelect={product => decide(rematching, manualMatchPatch(product))}
+      />
 
       {/* Receipt Summary */}
       <div className="grid sm:grid-cols-3 gap-4">
@@ -287,14 +411,14 @@ export default function ReceiptResults() {
       <Card className="overflow-hidden">
         <div className="p-4 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h2 className="font-heading font-semibold">המוצרים שנכנסו לניתוח ({foodItems.length})</h2>
+            <h2 className="font-heading font-semibold">מוצרים שזוהו ({recognizedItems.length})</h2>
             <p className="text-xs text-muted-foreground mt-0.5">פריטי מזון שזוהו ויכנסו לסל הקניות ולניתוח התזונתי</p>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => matchCatalogMutation.mutate()}
-            disabled={matchCatalogMutation.isPending || foodItems.length === 0}
+            disabled={matchCatalogMutation.isPending || !items.some(needsMatching)}
             className="shrink-0 gap-1.5"
           >
             {matchCatalogMutation.isPending
@@ -333,7 +457,7 @@ export default function ReceiptResults() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {foodItems.map(item => (
+              {recognizedItems.map(item => (
                 <TableRow key={item.id}>
                   <TableCell>
                     <div>
@@ -424,7 +548,7 @@ export default function ReceiptResults() {
         <Card className="overflow-hidden">
           <div className="p-4 border-b">
             <h2 className="font-heading font-semibold">שורות שלא נכנסו לניתוח ({nonFoodItems.length})</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">פריטים שסוננו — לא מזון, שורות מבצע, סיכומים ופריטים לא מזוהים</p>
+            <p className="text-xs text-muted-foreground mt-0.5">פריטים שסוננו — לא מזון, שורות מבצע, סיכומים ופריטים שהוחרגו</p>
           </div>
           <div className="p-4 space-y-2">
             {nonFoodItems.map(item => (
@@ -436,7 +560,17 @@ export default function ReceiptResults() {
                       {item.reasoning}
                     </span>
                   )}
-                  {!item.reasoning && (
+                  {item.catalog_match_status === 'non_food' && (
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-background border border-border/60 text-muted-foreground text-xs">
+                      סומן על ידך כלא מזון
+                    </span>
+                  )}
+                  {item.catalog_match_status === 'ignored' && (
+                    <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-background border border-border/60 text-muted-foreground text-xs">
+                      הוחרג על ידך מהסל
+                    </span>
+                  )}
+                  {!item.reasoning && !['non_food', 'ignored'].includes(item.catalog_match_status) && (
                     <span className="inline-block mt-1 px-2 py-0.5 rounded-full bg-background border border-border/60 text-muted-foreground text-xs">
                       לא מזון
                     </span>
@@ -503,7 +637,11 @@ export default function ReceiptResults() {
       )}
       {/* Next step */}
       <Card className="p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <p className="text-sm text-muted-foreground">בשלב הבא נבחר עבורכם מוצרים מתאימים מהקבלה ומקטלוג שופרסל.</p>
+        <p className="text-sm text-muted-foreground">
+          {reviewItems.length > 0
+            ? `נותרו ${reviewItems.length} פריטים לבדיקה. עד שתבחרו עבורם, הם לא ייכנסו לסל המוצרים החכם.`
+            : "בשלב הבא נבחר עבורכם מוצרים מתאימים מהקבלה ומקטלוג שופרסל."}
+        </p>
         <Button onClick={() => navigate(`/shopping-list?receipt_id=${receiptId}`)} className="rounded-full">
           בניית סל מוצרים חכם <ChevronLeft className="w-4 h-4 mr-1" />
         </Button>

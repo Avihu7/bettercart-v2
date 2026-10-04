@@ -12,7 +12,7 @@ import {
   MEAL_TYPES, buildProductCatalog, canonicalizePlan, validatePlan,
   forceRepair, recomputeTotals, portionCap,
 } from '@/lib/mealPlanRules';
-import { buildDensities, applyDensities, balanceCalories, balanceProtein } from '@/lib/mealPlanCalories';
+import { buildDensities, applyDensities, finalizeDays, closeCalories } from '@/lib/mealPlanCalories';
 import { WEEK_DAYS } from '@/lib/weekDays';
 
 // Israeli week: Sunday is day 1
@@ -83,7 +83,7 @@ function calorieRules(profile) {
   const target = profile?.daily_calories || 2000;
   const budget = Object.entries(MEAL_SHARE).map(([m, f]) => `${m} ≈ ${Math.round(target * f)} kcal`).join(", ");
   return `CALORIES (the primary constraint):
-- The daily calorie target is ${target} kcal. Every day's total must be within ±10% (${Math.round(target * 0.9)}–${Math.round(target * 1.1)} kcal). Do not exceed it.
+- The daily calorie target is ${target} kcal. Every day's total must be within ±5% (${Math.round(target * 0.95)}–${Math.round(target * 1.05)} kcal) — falling short is as wrong as exceeding it.
 - Per-meal budget: ${budget}.
 - Size portions from per_100g: item calories = grams × per_100g.calories / 100. Add up each day before answering.
 - Calories come first. Within that range, protein is the next priority (see PROTEIN).
@@ -94,12 +94,14 @@ function proteinRules(profile) {
   const protein = profile?.protein_target;
   if (!protein) return "";
   const carbs = profile?.carbs_target;
+  const fat = profile?.fat_target;
   const budget = Object.entries(MEAL_SHARE).map(([m, f]) => `${m} ≈ ${Math.round(protein * f)}g`).join(", ");
   return `PROTEIN:
-- Daily protein target: ${protein}g. Every day must reach at least ${Math.round(protein * 0.9)}g, using per_100g.protein to compute it.
+- Daily protein target: ${protein}g. Aim for 90–110% of it every day (${Math.round(protein * 0.9)}–${Math.round(protein * 1.1)}g), using per_100g.protein to compute it.
 - Per-meal protein budget: ${budget}. Every main meal and breakfast needs a real protein source from the catalog (fish, poultry, eggs, cottage/cheese/yogurt, tuna, legumes) in a meaningful portion.
-- Reach protein by choosing protein-dense products and portions, and make room within the calorie range by using less rice/pasta/bread/oil — not by adding calories.${carbs ? `
-- Keep daily carbs near ${carbs}g; do not exceed ${Math.round(carbs * 1.2)}g.` : ""}
+- Once protein is in range, do not add more protein foods to reach calories.${fat ? `
+- Fat: about ${fat}g per day (at most ${Math.round(fat * 1.15)}g). Keep oil, tahini, nuts and yellow cheese to modest amounts.` : ""}${carbs ? `
+- Carbs supply the remaining energy: about ${carbs}g per day. Reach the calorie target mainly with carbohydrate sides spread over the meals (bread at breakfast/dinner, rice/pasta/potatoes at lunch/dinner, fruit at breakfast/snacks).` : ""}
 - Portions stay realistic (never above max_grams_per_meal).`;
 }
 
@@ -129,9 +131,10 @@ const MEAL_COMPOSITION_RULES = `HOW TO BUILD THE MEALS (most important):
 - Breakfast is a recognizable Israeli breakfast, e.g. bread + cottage/cheese + vegetables + coffee with milk; an omelette with bread and salad; yogurt with fruit and nuts; cornflakes with milk and banana. Only use products that exist in the catalog.
 - Coffee (if in the catalog) appears naturally, usually at breakfast (optionally a daytime snack), as a drink next to food — never as a meal by itself and never at dinner. If both coffee and milk exist, serve coffee with milk.
 - Milk is used as an ingredient/drink: in coffee, with cereal, or as a breakfast beverage alongside food — never as a snack by itself.
-- Snacks are real snack foods: fruit, nuts, yogurt, a small dairy item, or a small sandwich. NEVER as snacks: plain milk, plain bread, raw rice/pasta, chicken/meat/fish, cooking oil, tahini alone.
+- Snacks are real snack foods: fruit, nuts, yogurt, a small dairy item, or a small sandwich. NEVER as snacks: plain milk, plain bread, raw rice/pasta, chicken/meat/fish, cooking oil, tahini alone, avocado (avocado goes on bread at breakfast or in a salad at lunch/dinner, about half an avocado).
 - Respect each product's "meal_roles" — place products only in the meal types listed for them.
 - Never put a product with kosher "meat" and a product with kosher "dairy" in the same meal (e.g. chicken + cheese is NOT allowed). Dairy breakfast, meat lunch, dairy dinner is fine.
+- One main protein per plate: never two meats/fish in the same meal, and never meat/poultry together with fish (e.g. chicken + fish fillet is NOT allowed). Fill the plate with a carb side and vegetables instead.
 - Variety across the week: vary breakfasts, lunches and dinners; do not repeat the same meal_name more than twice. Rotate proteins (poultry, fish, tuna, eggs, cottage/cheese, legumes) — do not use the same protein source at more than 3 lunches.`;
 
 const NAMING_RULES = `NAMING (strict):
@@ -248,6 +251,59 @@ const REPAIR_SCHEMA = {
  * Generates a validated nutrition plan for a shopping list.
  * Returns { days, weekly_calories, estimated_weekly_cost, validation }.
  */
+export const PLAN_FAILED_MESSAGE = "לא הצלחנו ליצור את התפריט כרגע. נסו שוב.";
+const RETRY_NOTE = "\n\nIMPORTANT: return exactly 7 days (Sunday to Saturday), each with Breakfast, Lunch, Dinner and Snacks meals that have items. Top-level JSON object: {\"days\": [...]}.";
+
+/**
+ * The plan's days from the AI answer. Besides the expected {"days": [...]},
+ * accepts only the shape actually observed from the model: the data wrapped
+ * like the schema, {"type": "object", "properties": {"days": [...]}}.
+ */
+export function planDays(raw) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+  if (Array.isArray(raw.days)) return raw.days;
+  if (raw.type === "object" && Array.isArray(raw.properties?.days)) return raw.properties.days;
+  return [];
+}
+
+/** True for at least 7 days, each with meals that all contain items. */
+export function isCompleteWeek(days) {
+  return Array.isArray(days) && days.length >= 7 && days.slice(0, 7).every(d =>
+    Array.isArray(d?.meals) && d.meals.length >= 3 &&
+    d.meals.every(m => Array.isArray(m?.items) && m.items.length > 0));
+}
+
+const describeAnswer = raw => raw == null ? "no JSON"
+  : `keys: ${Object.keys(raw).join(", ") || "none"}, days: ${planDays(raw).length}`;
+
+/**
+ * Generates one day again (for a day the closure pass could not bring within
+ * ±3%) and runs it through the same repair and balancing. Returns
+ * { day, report } when the new day is within range, otherwise null.
+ */
+async function regenerateDay({ dayIndex, catalog, densities, listDensities, profile, targets }) {
+  let raw;
+  try {
+    raw = await invokeLLM({
+      prompt: buildPlanPrompt({ catalog, densities: listDensities, profile, daysToGenerate: 1 }),
+      response_json_schema: PLAN_SCHEMA,
+    });
+  } catch (err) {
+    if (err.status) throw err;
+    return null;
+  }
+  const days = planDays(raw);
+  const one = days[0];
+  if (!one || !Array.isArray(one.meals) || one.meals.length < 3 || !one.meals.every(m => Array.isArray(m?.items) && m.items.length)) return null;
+  const single = { days: [{ ...one, day_name: DAY_NAMES[dayIndex] }] };
+  canonicalizePlan(single, catalog);
+  forceRepair(single, catalog);
+  applyDensities(single, densities);
+  finalizeDays(single, catalog, densities, targets);
+  const [report] = closeCalories(single, catalog, densities, targets);
+  return report.ok ? { day: single.days[0], report } : null;
+}
+
 export async function generateNutritionPlan({ list, profile }) {
   // The plan is always a full Israeli week (Sunday → Saturday). The basket's
   // shopping_period_days is about how often the user shops (e.g. 30/6 = 5 days)
@@ -258,17 +314,40 @@ export async function generateNutritionPlan({ list, profile }) {
   // Per-100g values from the shopping list alone (before any AI output exists)
   const listDensities = buildDensities(catalog, { days: [] });
 
-  const raw = await invokeLLM({
-    prompt: buildPlanPrompt({ catalog, densities: listDensities, profile, daysToGenerate }),
-    response_json_schema: PLAN_SCHEMA,
-  });
+  const requestPlan = async retry => {
+    try {
+      return await invokeLLM({
+        prompt: buildPlanPrompt({ catalog, densities: listDensities, profile, daysToGenerate }) + (retry ? RETRY_NOTE : ""),
+        response_json_schema: PLAN_SCHEMA,
+      });
+    } catch (err) {
+      // API errors (auth, billing, rate limit) are reported as they are;
+      // a truncated or non-JSON answer counts as an invalid plan
+      if (err.status) throw err;
+      console.warn(`[nutrition plan] unreadable AI answer: ${err.message}`);
+      return null;
+    }
+  };
+  // A plan is only usable with 7 days that each have meals with items. One
+  // regeneration, then an error — an empty or partial plan is never returned.
+  let raw = await requestPlan(false);
+  let days = planDays(raw);
+  if (!IS_DEMO_MODE && !isCompleteWeek(days)) {
+    console.warn(`[nutrition plan] invalid AI plan (${describeAnswer(raw)}), regenerating once`);
+    raw = await requestPlan(true);
+    days = planDays(raw);
+  }
+  if (!IS_DEMO_MODE && !isCompleteWeek(days)) {
+    console.warn(`[nutrition plan] invalid AI plan after retry (${describeAnswer(raw)})`);
+    throw new Error(PLAN_FAILED_MESSAGE);
+  }
 
   // Demo responses aren't tied to the user's list — return them unchanged
   if (IS_DEMO_MODE) return raw;
 
   // Day names come from position (Sunday first), not from the AI's labels
   const plan = {
-    days: (raw.days || []).slice(0, daysToGenerate).map((day, i) => ({ ...day, day_name: DAY_NAMES[i] })),
+    days: days.slice(0, daysToGenerate).map((day, i) => ({ ...day, day_name: DAY_NAMES[i] })),
   };
   const dropped = canonicalizePlan(plan, catalog);
   let problems = validatePlan(plan, catalog);
@@ -298,11 +377,29 @@ export async function generateNutritionPlan({ list, profile }) {
   const densities = buildDensities(catalog, plan);
   applyDensities(plan, densities);
   const itemDailyCalories = dailyCalories();
-  const calories = balanceCalories(plan, catalog, densities, target);
-  // Protein next: grow protein portions / shrink carbs within the calorie range,
-  // then re-check calories in case a day could not shrink carbs enough
-  const protein = balanceProtein(plan, catalog, densities, { calories: target, protein: profile?.protein_target });
-  balanceCalories(plan, catalog, densities, target);
+  // One deterministic pass per day: protein into range → excess fat down →
+  // missing calories mostly from carbs (see finalizeDays)
+  const targets = { calories: target, protein: profile?.protein_target, fat: profile?.fat_target };
+  const balanced = finalizeDays(plan, catalog, densities, targets);
+  // Calories are a hard constraint (±3%), together with protein 90–110%,
+  // fat 85–115% and realistic portions
+  let calories = closeCalories(plan, catalog, densities, targets);
+
+  // A day that cannot meet all of them is generated again on its own (once)
+  // instead of being forced; if that fails too, the whole plan is rejected
+  for (const report of calories.filter(r => !r.ok)) {
+    const dayIndex = plan.days.findIndex(d => d.day_name === report.day);
+    console.warn(`[nutrition plan] ${report.day}: ${report.failures.join(", ")} (${report.after} kcal, P${report.protein}, F${report.fat}) — regenerating the day`);
+    const fresh = await regenerateDay({ dayIndex, catalog, densities, listDensities, profile, targets });
+    if (fresh) {
+      plan.days[dayIndex] = fresh.day;
+      calories = calories.map(r => (r.day === report.day ? fresh.report : r));
+    }
+  }
+  if (calories.some(r => !r.ok)) {
+    console.warn("[nutrition plan] days still invalid after regeneration:", calories.filter(r => !r.ok));
+    throw new Error(PLAN_FAILED_MESSAGE);
+  }
   problems = validatePlan(plan, catalog);
 
   if (dropped.length) console.warn("[nutrition plan] dropped items not in shopping list:", dropped);
@@ -319,8 +416,8 @@ export async function generateNutritionPlan({ list, profile }) {
       target_calories: target,
       ai_daily_calories: aiDailyCalories,
       item_daily_calories: itemDailyCalories,
+      balanced,
       calories,
-      protein,
     },
   };
 }

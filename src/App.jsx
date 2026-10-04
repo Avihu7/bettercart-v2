@@ -16,7 +16,7 @@ import FinalResults from './pages/FinalResults';
 import PrintExport from './pages/PrintExport';
 import DebugView from './pages/DebugView';
 import AppLayout from './components/layout/AppLayout';
-import { LoginPage, RegisterPage, RequireAuth } from './pages/AuthPages';
+import { LoginPage, RegisterPage, ForgotPasswordPage, ResetPasswordPage, RequireAuth } from './pages/AuthPages';
 
 function App() {
   return (
@@ -27,6 +27,8 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/onboarding" element={<RequireAuth><Onboarding /></RequireAuth>} />
             <Route element={<RequireAuth><AppLayout /></RequireAuth>}>
               <Route path="/dashboard" element={<Dashboard />} />

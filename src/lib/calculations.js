@@ -38,32 +38,45 @@ export function calculateDailyCalories(bmr, activityLevel, goal) {
   }
 }
 
-// Macro targets (grams) based on daily calories and goal
-export function calculateMacros(dailyCalories, goal, weight) {
-  let proteinRatio, carbsRatio, fatRatio;
+// Protein g per kg body weight, by goal and strength-training frequency.
+// Resistance-training evidence: ~1.6 g/kg covers most muscle gain, up to ~2.0
+// in practice; higher (up to 2.2) helps preserve lean mass in a calorie deficit.
+// "5+" is the legacy option, treated as 6–7 sessions.
+const PROTEIN_FACTORS = {
+  standard: { none: 1.6, '1-2': 1.7, '3-5': 1.8, '6-7': 1.9, '5+': 1.9, elite: 2.0 },
+  weight_loss: { none: 1.8, '1-2': 1.9, '3-5': 2.0, '6-7': 2.1, '5+': 2.1, elite: 2.2 },
+};
+const MAX_PROTEIN_PER_KG = 2.2;
 
-  switch (goal) {
-    case "weight_loss":
-      proteinRatio = 0.35;
-      carbsRatio = 0.35;
-      fatRatio = 0.30;
-      break;
-    case "weight_gain":
-      proteinRatio = 0.30;
-      carbsRatio = 0.45;
-      fatRatio = 0.25;
-      break;
-    default:
-      proteinRatio = 0.30;
-      carbsRatio = 0.40;
-      fatRatio = 0.30;
+// Fat stays a share of calories (unchanged); carbs take the remaining calories.
+const FAT_RATIO = { weight_loss: 0.30, weight_gain: 0.25, maintenance: 0.30 };
+
+export function proteinFactor(goal, strengthTraining = 'none') {
+  const table = goal === 'weight_loss' ? PROTEIN_FACTORS.weight_loss : PROTEIN_FACTORS.standard;
+  return Math.min(table[strengthTraining] ?? table.none, MAX_PROTEIN_PER_KG);
+}
+
+// Macro targets (grams). Protein first from body weight (never above 2.2 g/kg),
+// fat as a share of calories, carbs get the remaining calories.
+export function calculateMacros(dailyCalories, goal, weight, strengthTraining = 'none') {
+  const fatRatio = FAT_RATIO[goal] ?? FAT_RATIO.maintenance;
+  const protein = weight > 0
+    ? Math.round(weight * proteinFactor(goal, strengthTraining))
+    : Math.round((dailyCalories * 0.3) / 4); // no weight yet: fall back to 30% of calories
+  const fat = Math.round((dailyCalories * fatRatio) / 9);
+  const carbs = Math.max(0, Math.round((dailyCalories - protein * 4 - fat * 9) / 4));
+  return { protein, carbs, fat };
+}
+
+/**
+ * The macro targets for a saved profile, always from the current formula —
+ * so profiles saved under an older formula show and use consistent targets.
+ */
+export function profileMacroTargets(profile) {
+  if (!profile?.daily_calories) {
+    return { protein: profile?.protein_target, carbs: profile?.carbs_target, fat: profile?.fat_target };
   }
-
-  return {
-    protein: Math.round((dailyCalories * proteinRatio) / 4),
-    carbs: Math.round((dailyCalories * carbsRatio) / 4),
-    fat: Math.round((dailyCalories * fatRatio) / 9),
-  };
+  return calculateMacros(profile.daily_calories, profile.goal, Number(profile.weight), profile.strength_training || 'none');
 }
 
 // Budget per purchase
@@ -173,14 +186,14 @@ export function calculateFitnessScore({
   score += activityScores[activityLevel] ?? 9;
 
   // Strength training component (0–12)
-  const strengthScores = { none: 0, '1-2': 4, '3-5': 10, '5+': 12 };
+  const strengthScores = { none: 0, '1-2': 4, '3-5': 10, '5+': 12, '6-7': 12, elite: 12 };
   score += strengthScores[strengthTraining] ?? 0;
 
   // Muscle–BMI interaction bonus (0–6):
   // Applied only when BMI is in the penalised 25–29.9 "overweight" range.
   // High-frequency training suggests elevated muscle mass rather than excess fat.
   if (bmi >= 25 && bmi <= 29.9) {
-    const highTraining  = strengthTraining === '3-5' || strengthTraining === '5+';
+    const highTraining  = ['3-5', '5+', '6-7', 'elite'].includes(strengthTraining);
     const activeEnough  = ['moderately_active', 'very_active', 'extra_active'].includes(activityLevel);
     if (highTraining && activeEnough) score += 6;
     else if (highTraining || activeEnough) score += 3;

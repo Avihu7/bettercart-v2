@@ -153,3 +153,56 @@ export function recordLoginFailure(key) {
 export function clearLoginFailures(key) {
   failedLogins.delete(key);
 }
+
+// ─── Password reset ──────────────────────────────────────────────────────────
+// The emailed link carries a random 256-bit token; only its SHA-256 hash is
+// stored. A token works once, expires after RESET_MINUTES, and requesting a new
+// one cancels older unused ones. Completing a reset signs the user out everywhere.
+
+export const RESET_MINUTES = 30;
+
+/** Creates a one-time reset token for the user and returns the raw token (for the email only). */
+export function createPasswordReset(userId) {
+  const token = crypto.randomBytes(32).toString('base64url');
+  const now = new Date();
+  db.transaction(() => {
+    db.prepare('DELETE FROM password_resets WHERE user_id = ? AND used_at IS NULL').run(userId);
+    db.prepare('INSERT INTO password_resets (token_hash, user_id, created_at, expires_at) VALUES (?, ?, ?, ?)')
+      .run(hashToken(token), userId, now.toISOString(), new Date(now.getTime() + RESET_MINUTES * 60_000).toISOString());
+  })();
+  return token;
+}
+
+/** Sets a new password if the token is valid, unused and unexpired. Returns true on success. */
+export async function resetPasswordWithToken(token, newPassword) {
+  if (typeof token !== 'string' || !token) return false;
+  const tokenHash = hashToken(token);
+  const row = db.prepare('SELECT user_id, expires_at, used_at FROM password_resets WHERE token_hash = ?').get(tokenHash);
+  if (!row || row.used_at || new Date(row.expires_at) <= new Date()) return false;
+  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
+  const now = nowIso();
+  return db.transaction(() => {
+    // Claim the token atomically so two simultaneous requests can't both use it
+    const claimed = db.prepare('UPDATE password_resets SET used_at = ? WHERE token_hash = ? AND used_at IS NULL').run(now, tokenHash).changes;
+    if (!claimed) return false;
+    db.prepare('UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?').run(passwordHash, now, row.user_id);
+    db.prepare('DELETE FROM sessions WHERE user_id = ?').run(row.user_id);
+    db.prepare('DELETE FROM password_resets WHERE user_id = ? AND used_at IS NULL').run(row.user_id);
+    return true;
+  })();
+}
+
+// Reset-request throttle (in-memory, per IP + email)
+const resetRequests = new Map();
+const RESET_WINDOW_MS = 60 * 60 * 1000;
+const MAX_RESET_REQUESTS = 5;
+
+export function resetRequestAllowed(key) {
+  const entry = resetRequests.get(key);
+  if (!entry || Date.now() - entry.first > RESET_WINDOW_MS) {
+    resetRequests.set(key, { first: Date.now(), count: 1 });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= MAX_RESET_REQUESTS;
+}
