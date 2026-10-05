@@ -88,9 +88,41 @@ async function callClaude(prompt, systemPrompt) {
   // Responses may lead with a "thinking" block — find the text block by type.
   const text = data.content?.find(block => block.type === 'text')?.text || '{}';
 
-  // Strip markdown code fences if present
-  const cleaned = text.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim();
-  return JSON.parse(cleaned);
+  return parseJsonAnswer(text);
+}
+
+/**
+ * Parses the JSON in a model answer. Code fences are stripped; when the model
+ * adds a note after the JSON (or before it), only the first complete JSON
+ * object/array is taken — found by bracket balancing that respects strings.
+ * Anything that is still not valid JSON throws, as before.
+ */
+export function parseJsonAnswer(text) {
+  const cleaned = String(text || '{}').replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch (err) {
+    const start = cleaned.search(/[{[]/);
+    if (start === -1) throw err;
+    let depth = 0;
+    let inString = false;
+    for (let i = start; i < cleaned.length; i++) {
+      const ch = cleaned[i];
+      if (inString) {
+        if (ch === '\\') i++;
+        else if (ch === '"') inString = false;
+      } else if (ch === '"') inString = true;
+      else if (ch === '{' || ch === '[') depth++;
+      else if (ch === '}' || ch === ']') {
+        depth--;
+        if (depth === 0) {
+          console.warn(`[Claude API] ignored ${cleaned.length - i - 1} characters after the JSON answer`);
+          return JSON.parse(cleaned.slice(start, i + 1));
+        }
+      }
+    }
+    throw err;
+  }
 }
 
 /**
@@ -195,8 +227,7 @@ export async function extractDataFromFile({ file_url, json_schema }) {
     console.error('[Claude Vision] response truncated at max_tokens');
     throw new Error('Claude Vision response was truncated');
   }
-  const cleaned = text.replace(/^```(?:json)?\n?/m, '').replace(/\n?```$/m, '').trim();
-  return { output: JSON.parse(cleaned) };
+  return { output: parseJsonAnswer(text) };
 }
 
 function blobToBase64(blob) {

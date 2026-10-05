@@ -251,6 +251,9 @@ const REPAIR_SCHEMA = {
  * Generates a validated nutrition plan for a shopping list.
  * Returns { days, weekly_calories, estimated_weekly_cost, validation }.
  */
+const PLAIN_WATER = /^\s*(מים|מי ברז|מי מעיין|סודה|מים מוגזים|מי סודה|מי עדן|נביעות|מי נביעות|נביעות טבעיות)(?![א-ת])/;
+const isPlainWater = name => PLAIN_WATER.test(String(name || ""));
+
 export const PLAN_FAILED_MESSAGE = "לא הצלחנו ליצור את התפריט כרגע. נסו שוב.";
 const RETRY_NOTE = "\n\nIMPORTANT: return exactly 7 days (Sunday to Saturday), each with Breakfast, Lunch, Dinner and Snacks meals that have items. Top-level JSON object: {\"days\": [...]}.";
 
@@ -275,6 +278,20 @@ export function isCompleteWeek(days) {
 
 const describeAnswer = raw => raw == null ? "no JSON"
   : `keys: ${Object.keys(raw).join(", ") || "none"}, days: ${planDays(raw).length}`;
+
+/** Hebrew notes for a day that misses a target, with its real numbers. */
+function targetWarnings(report, { calories, protein, fat }) {
+  const notes = [];
+  const basketLimited = report.limits?.includes("protein limited by basket");
+  for (const f of report.failures || []) {
+    if (f.startsWith("calories")) notes.push(`קלוריות: ${report.after} — ${report.after > calories ? "מעל ה" : "מתחת ל"}יעד של ${calories}`);
+    else if (f.startsWith("protein") && report.protein > protein) notes.push(`חלבון: ${report.protein} גרם — מעל יעד של ${protein} גרם`);
+    else if (f.startsWith("protein")) notes.push(`חלבון: ${report.protein} גרם — מתחת ליעד של ${protein} גרם`);
+    else if (f.startsWith("fat")) notes.push(`שומן: ${report.fat} גרם — ${report.fat > fat ? "מעל ה" : "מתחת ל"}יעד של ${fat} גרם`);
+  }
+  if (basketLimited) notes.push(`חלבון: ${report.protein} גרם — מתחת ליעד של ${protein} גרם, כי מקורות החלבון שבסל לא מספיקים בתוך יעד הקלוריות`);
+  return notes;
+}
 
 /**
  * Generates one day again (for a day the closure pass could not bring within
@@ -310,7 +327,8 @@ export async function generateNutritionPlan({ list, profile }) {
   // and must not shorten the weekly menu.
   const daysToGenerate = 7;
   const target = profile?.daily_calories || 2000;
-  const catalog = buildProductCatalog(list.items);
+  // Plain water adds nothing to a meal — it stays in the basket, not the menu
+  const catalog = buildProductCatalog(list.items.filter(i => !isPlainWater(i.name)));
   // Per-100g values from the shopping list alone (before any AI output exists)
   const listDensities = buildDensities(catalog, { days: [] });
 
@@ -386,7 +404,9 @@ export async function generateNutritionPlan({ list, profile }) {
   let calories = closeCalories(plan, catalog, densities, targets);
 
   // A day that cannot meet all of them is generated again on its own (once)
-  // instead of being forced; if that fails too, the whole plan is rejected
+  // instead of being forced. If it still cannot (the basket does not hold
+  // enough of the right food), the best version of the day is kept and the
+  // shortfall is written on the day, so the user still gets a menu and sees why.
   for (const report of calories.filter(r => !r.ok)) {
     const dayIndex = plan.days.findIndex(d => d.day_name === report.day);
     console.warn(`[nutrition plan] ${report.day}: ${report.failures.join(", ")} (${report.after} kcal, P${report.protein}, F${report.fat}) — regenerating the day`);
@@ -396,9 +416,13 @@ export async function generateNutritionPlan({ list, profile }) {
       calories = calories.map(r => (r.day === report.day ? fresh.report : r));
     }
   }
+  for (const report of calories) {
+    const day = plan.days.find(d => d.day_name === report.day);
+    const warnings = targetWarnings(report, targets);
+    if (day && warnings.length) day.target_warnings = warnings;
+  }
   if (calories.some(r => !r.ok)) {
-    console.warn("[nutrition plan] days still invalid after regeneration:", calories.filter(r => !r.ok));
-    throw new Error(PLAN_FAILED_MESSAGE);
+    console.warn("[nutrition plan] saved with days below their targets:", calories.filter(r => !r.ok));
   }
   problems = validatePlan(plan, catalog);
 

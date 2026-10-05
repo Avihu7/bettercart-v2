@@ -12,6 +12,8 @@ export const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner", "Snacks"];
 // Order matters: the first matching group wins (e.g. "קפה" before "חלב" so
 // "קפה עם חלב" style names classify as coffee; "חמאת בוטנים" before dairy).
 const GROUPS = [
+  // Plant drinks before nuts/legumes/milk: "חלב שקדים" is a drink, not almonds or dairy
+  { group: "plant_milk", terms: ["חלב שקדים", "משקה שקדים", "חלב סויה", "משקה סויה", "חלב שיבולת", "משקה שיבולת", "חלב אורז", "משקה אורז", "חלב קוקוס", "משקה קוקוס"] },
   { group: "coffee",    terms: ["קפה", "נס קפה", "אספרסו"] },
   { group: "tea",       terms: [" תה "] },
   { group: "nuts",      terms: ["שקד", "אגוז", "קשיו", "פיסטוק", "בוטנים", "גרעינים", "צימוקים", "תמרים"] },
@@ -19,13 +21,15 @@ const GROUPS = [
   { group: "oil",       terms: ["שמן"] },
   { group: "cereal",    terms: ["קורנפלקס", "גרנולה", "שיבולת שועל", "דגני בוקר", "קוואקר", "מוזלי"] },
   { group: "yogurt",    terms: ["יוגורט", "מעדן", "אקטיביה", "יופלה", "דנונה"] },
+  // Legumes before dairy cheeses: "שעועית לבנה" (white beans) is not "לבנה" (labneh)
+  { group: "legumes",   terms: ["עדשים", "חומוס", "שעועית", "אפונה", "פול", "טופו", "סויה", "סייטן"] },
   { group: "dairy_protein", terms: ["קוטג", "גבינ", "לבנה", "בולגרית", "צפתית", "ריקוטה", "מוצרלה", "שמנת", "חמאה"] },
-  // Name only: categories like "חלבון חלבי" contain "חלב" but aren't milk
-  { group: "milk",      terms: ["חלב", "שוקו"], nameOnly: true },
+  // Name only: categories like "חלבון חלבי" contain "חלב" but aren't milk.
+  // " שוקו " as a whole word, so "שוקולד" is not read as chocolate milk
+  { group: "milk",      terms: ["חלב", " שוקו "], nameOnly: true },
   { group: "eggs",      terms: ["ביצ", "חביתה", "שקשוקה"] },
   { group: "fish",      terms: ["סלמון", "דג", "טונה", "אמנון", "מושט", "בקלה", "סרדין"] },
   { group: "meat",      terms: ["עוף", "הודו", "בקר", "בשר", " כבש ", "שניצל", "קבב", "המבורגר", "פרגית", "שוקיים", "כרעיים", "נקניק"] },
-  { group: "legumes",   terms: ["עדשים", "חומוס", "שעועית", "אפונה", "פול", "טופו", "סויה"] },
   { group: "bread",     terms: ["לחם", "פיתה", "לחמני", "טורטיה", "באגט", "חלה", "פריכיות", "טוסט", "כריך", "סנדוויץ"] },
   { group: "grain",     terms: ["אורז", "פסטה", "ספגטי", "פתיתים", "קוסקוס", "בורגול", "קינואה", "אטריות", "נודלס"] },
   { group: "starch_veg", terms: ["תפוחי אדמה", "תפוח אדמה", "בטט", "תירס"] },
@@ -40,6 +44,7 @@ const ROLES = {
   coffee:        ["Breakfast", "Snacks"],
   tea:           ["Breakfast", "Snacks"],
   milk:          ["Breakfast"],
+  plant_milk:    ["Breakfast"],
   cereal:        ["Breakfast"],
   bread:         ["Breakfast", "Dinner"],
   eggs:          ["Breakfast", "Dinner"],
@@ -61,10 +66,10 @@ const ROLES = {
 
 // Groups that must never appear in a snack (plain milk, plain bread, raw
 // staples, cooking fats, main proteins). Coffee is a drink, not a snack food.
-const NOT_SNACK = new Set(["milk", "bread", "grain", "starch_veg", "meat", "fish", "legumes", "oil", "tahini", "cereal", "eggs", "avocado"]);
+const NOT_SNACK = new Set(["milk", "plant_milk", "bread", "grain", "starch_veg", "meat", "fish", "legumes", "oil", "tahini", "cereal", "eggs", "avocado"]);
 // Realistic single-meal portion ceilings (grams) per food group.
 const PORTION_CAP = {
-  bread: 150, cereal: 100, milk: 300, yogurt: 250, dairy_protein: 250, eggs: 200,
+  bread: 150, cereal: 100, milk: 300, plant_milk: 300, yogurt: 250, dairy_protein: 250, eggs: 200,
   meat: 300, fish: 250, legumes: 250, grain: 300, starch_veg: 350, vegetable: 300,
   fruit: 250, avocado: 100, nuts: 60, tahini: 60, oil: 25, coffee: 20, tea: 10,
 };
@@ -77,7 +82,7 @@ export function portionCap(product) {
 
 const MAIN_PROTEIN = new Set(["meat", "fish", "eggs", "dairy_protein", "legumes", "yogurt"]);
 const MAIN_BASE = new Set(["bread", "grain", "starch_veg", "vegetable", "cereal"]);
-const DRINKS = new Set(["coffee", "tea", "milk"]);
+const DRINKS = new Set(["coffee", "tea", "milk", "plant_milk"]);
 const DAIRY = new Set(["milk", "yogurt", "dairy_protein"]);
 
 // Final letter forms (ך ם ן ף ץ) → regular, so "מלפפון" matches "מלפפונים"
@@ -122,7 +127,8 @@ export function buildProductCatalog(items) {
       category: item.category || "",
       quantity: item.quantity || "",
       group,
-      meal_roles: ROLES[group],
+      // Tofu is also a breakfast food (tofu scramble); other legumes stay lunch/dinner
+      meal_roles: group === "legumes" && /טופו/.test(item.name) ? ["Breakfast", ...ROLES[group]] : ROLES[group],
       kosher: kosherType(group),
       // per-list totals, used by the AI to estimate per-portion macros
       calories: item.calories,

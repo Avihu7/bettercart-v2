@@ -152,7 +152,8 @@ function isSoldDry(item, group) {
 function productUnit(item, group) {
   const name = item.name || '';
   switch (group) {
-    case 'milk': return { grams: 1000, label: '1 ליטר' };
+    case 'milk':
+    case 'plant_milk': return { grams: 1000, label: '1 ליטר' };
     case 'yogurt': return { grams: 200, label: '200 גרם' };
     case 'dairy_protein':
       if (/קוטג/.test(name)) return { grams: 250, label: '250 גרם' };
@@ -172,7 +173,7 @@ function productUnit(item, group) {
 }
 
 const WEIGHED_GROUPS = new Set(['meat', 'fish', 'vegetable', 'fruit', 'avocado', 'starch_veg']);
-const LIQUID_GROUPS = new Set(['milk', 'oil']);
+const LIQUID_GROUPS = new Set(['milk', 'plant_milk', 'oil']);
 
 function packLabel(grams, group) {
   if (LIQUID_GROUPS.has(group)) return grams >= 1000 ? `${grams / 1000} ליטר` : `${grams} מ"ל`;
