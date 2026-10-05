@@ -9,7 +9,7 @@
  * snack, and finally nudged toward the protein target (see balanceProtein).
  */
 
-import { portionCap, shortProductName } from '@/lib/mealPlanRules';
+import { portionCap, shortProductName, mealNameMismatches, nameFromItems } from '@/lib/mealPlanRules';
 
 // Plausible kcal/100g "as eaten" per food group; values outside are treated as bad data.
 const KCAL_RANGE = {
@@ -388,13 +388,13 @@ function growCapacity(entries) {
  * how far each may still move (portion cap / minimum portion), for at most
  * |kcal| calories. Returns the calories actually moved.
  */
-function moveCalories(entries, kcal, sideShare = SIDE_SHARE) {
+function moveCalories(entries, kcal, sideShare = SIDE_SHARE, floorOf = null) {
   const grow = kcal > 0;
   // A carb side added to a meal that already had one stays a modest portion
   const maxGrams = e => (SIDE_ITEMS.has(e.item) ? sideShare : 1) * (portionCap(e.p) || Number(e.item.grams));
   const room = e => grow
     ? Math.max(0, maxGrams(e) - Number(e.item.grams))
-    : Math.max(0, Number(e.item.grams) - Math.min(Number(e.item.grams), MIN_GRAMS[e.p.group] || 10));
+    : Math.max(0, Number(e.item.grams) - Math.min(Number(e.item.grams), floorOf ? floorOf(e) : (MIN_GRAMS[e.p.group] || 10)));
   const movable = entries.map(e => ({ ...e, room: room(e) })).filter(e => e.room > 0 && e.d.kcal > 0);
   const capacity = movable.reduce((s, e) => s + e.room * e.d.kcal / 100, 0);
   if (capacity <= 0) return 0;
@@ -708,31 +708,40 @@ export function closeCalories(plan, catalog, densities, { calories: target, prot
   const report = [];
   for (const day of plan.days) {
     const startGrams = new Map(day.meals.flatMap(m => m.items).map(i => [i, Number(i.grams) || 0]));
-    const entries = groups => day.meals.flatMap(m => m.items)
-      .map(item => ({ item, p: product(item), d: densities.get(item.product_id) }))
+    const entries = groups => day.meals.flatMap(m => m.items.map(item => ({ item, meal: m, p: product(item), d: densities.get(item.product_id) })))
       .filter(e => e.p && e.d && groups.has(e.p.group) && Number(e.item.grams) > 0);
     const kcal = () => sumOf(day, "calories");
+    // Protein outranks carbs: when protein needs the room, carb portions may go
+    // below their usual minimum, even out of a plate — except breakfast bread/
+    // cereal, snack fruit, and a plate's only base (no vegetables beside it)
+    const carbFloor = e => {
+      if (["bread", "cereal"].includes(e.p.group) || e.meal.meal_type === "Snacks") return MIN_GRAMS[e.p.group] || 10;
+      const hasVegetable = e.meal.items.some(i => product(i)?.group === "vegetable");
+      return hasVegetable ? 0 : MIN_GRAMS[e.p.group] || 10;
+    };
+    const proteinCarbRoom = () => entries(CARB_GROUPS).reduce((s, e) =>
+      s + Math.max(0, Number(e.item.grams) - carbFloor(e)) * e.d.kcal / 100, 0);
     const before = Math.round(kcal());
 
     // Protein under 90%: grow the day's protein portions, then add a protein
     // food from the basket to a plate without one — but only within the
     // calorie budget (calories come first): what the day is still short, plus
     // what carbs and fat can give back above their minimum portions
-    if (proteinTarget && sumOf(day, "protein") < proteinTarget * 0.9) {
-      const shrinkable = [...entries(CARB_GROUPS), ...entries(FAT_GROUPS)].reduce((s, e) =>
+    if (proteinTarget && sumOf(day, "protein") < proteinTarget * 0.95) {
+      const fatSpare = entries(FAT_GROUPS).reduce((s, e) =>
         s + Math.max(0, Number(e.item.grams) - (MIN_GRAMS[e.p.group] || 10)) * e.d.kcal / 100, 0);
-      let budget = Math.max(0, target - kcal()) + shrinkable * 0.9;
+      let budget = Math.max(0, target - kcal()) + (proteinCarbRoom() + fatSpare) * 0.9;
       const protein = entries(PROTEIN_GROUPS);
       const kcalPerProtein = protein.reduce((s, e) => s + e.d.kcal, 0) / Math.max(1, protein.reduce((s, e) => s + e.d.protein, 0));
-      budget -= moveCalories(protein, Math.min(budget, (proteinTarget * 0.93 - sumOf(day, "protein")) * kcalPerProtein));
-      if (sumOf(day, "protein") < proteinTarget * 0.9 && budget > 50) {
-        addProteinSides(day, proteinTarget * 0.93 - sumOf(day, "protein"), catalog, densities, budget);
+      budget -= moveCalories(protein, Math.min(budget, (proteinTarget * 0.98 - sumOf(day, "protein")) * kcalPerProtein));
+      if (sumOf(day, "protein") < proteinTarget * 0.95 && budget > 50) {
+        addProteinSides(day, proteinTarget * 0.98 - sumOf(day, "protein"), catalog, densities, budget);
       }
     }
 
     // Still short of protein: same calories, denser protein foods
-    if (proteinTarget && sumOf(day, "protein") < proteinTarget * 0.92) {
-      densifyProtein(day, proteinTarget * 0.95 - sumOf(day, "protein"), catalog, densities);
+    if (proteinTarget && sumOf(day, "protein") < proteinTarget * 0.95) {
+      densifyProtein(day, proteinTarget * 0.98 - sumOf(day, "protein"), catalog, densities);
     }
 
     // Fat above 110%: trim fat sources, the calories go back to carbs below
@@ -780,13 +789,17 @@ export function closeCalories(plan, catalog, densities, { calories: target, prot
         if (fatTarget && kcal() - target > target * CLOSURE_AIM && sumOf(day, "fat") > fatTarget * 0.88) {
           moved -= moveCalories(entries(FAT_GROUPS), -Math.min(kcal() - target, (sumOf(day, "fat") - fatTarget * 0.88) * 9));
         }
-        // Carbs already at their minimum: protein portions come down too.
-        // Calories come first — above 92% protein freely, and below it only as
-        // far as needed to bring the day back within ±3%
+        // Protein outranks carbs: before any protein is cut, carbs go below
+        // their usual minimum portion (see carbFloor)
+        if (proteinTarget && kcal() - target > target * CLOSURE_AIM && sumOf(day, "protein") <= proteinTarget * 1.05) {
+          moved -= moveCalories(entries(CARB_GROUPS), -(kcal() - target), SIDE_SHARE, carbFloor);
+        }
+        // Only then protein: above the target freely, below it only as far as
+        // needed to bring the day back within ±3% (calories come first)
         if (proteinTarget && kcal() - target > target * CLOSURE_AIM) {
           const protein = entries(PROTEIN_GROUPS);
           const kcalPerProtein = protein.reduce((s, e) => s + e.d.kcal, 0) / Math.max(1, protein.reduce((s, e) => s + e.d.protein, 0));
-          const spare = Math.max(0, sumOf(day, "protein") - proteinTarget * 0.92) * kcalPerProtein;
+          const spare = Math.max(0, sumOf(day, "protein") - proteinTarget) * kcalPerProtein;
           const over = kcal() - target;
           const needed = over > target * CLOSURE_TOLERANCE ? over - target * CLOSURE_TOLERANCE * 0.5 : 0;
           moved -= moveCalories(protein, -Math.max(Math.min(over, spare), needed));
@@ -800,6 +813,15 @@ export function closeCalories(plan, catalog, densities, { calories: target, prot
         moved -= moveCalories(protein, -(sumOf(day, "protein") - proteinTarget * 1.05) * kcalPerProtein);
       }
       if (Math.abs(moved) < 1) break;
+    }
+
+    // Carb portions cut to nothing leave the plate; dish names follow the plate
+    for (const meal of day.meals) {
+      const kept = meal.items.filter(i => Number(i.grams) >= 5 || !CARB_GROUPS.has(product(i)?.group));
+      if (kept.length !== meal.items.length && kept.length) {
+        meal.items = kept;
+        if (mealNameMismatches(meal.meal_name, meal.items, catalog).length) meal.meal_name = nameFromItems(meal.items);
+      }
     }
 
     const adjustments = day.meals.flatMap(m => m.items).map(i => ({
