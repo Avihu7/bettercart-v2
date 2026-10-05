@@ -140,6 +140,12 @@ try {
   db.exec("ALTER TABLE shoppingLists ADD COLUMN complementary_added INTEGER DEFAULT 0");
 } catch { /* column already exists — skip */ }
 
+// Basket changes the user confirmed although they leave the basket unable to
+// meet the profile's targets (JSON list of { key, text, item }) (safe migration)
+try {
+  db.exec("ALTER TABLE shoppingLists ADD COLUMN basket_warnings TEXT DEFAULT '[]'");
+} catch { /* column already exists — skip */ }
+
 // Final shopping lists (status 'final') point at the nutrition plan whose
 // weekly usage their quantities were calculated from (safe migration)
 try {

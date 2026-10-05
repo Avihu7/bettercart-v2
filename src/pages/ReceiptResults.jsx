@@ -304,7 +304,7 @@ export default function ReceiptResults() {
           <p className="text-sm text-muted-foreground">תוצאות ניתוח AI של הקבלה שלכם</p>
         </div>
         <div className="flex flex-col items-start sm:items-end gap-1">
-          <Button onClick={() => navigate(`/shopping-list?receipt_id=${receiptId}`)} className="rounded-full">
+          <Button onClick={() => navigate(`/shopping-list?receipt_id=${receiptId}&build=1`)} className="rounded-full">
             בניית סל מוצרים חכם <ChevronLeft className="w-4 h-4 mr-1" />
           </Button>
           {reviewItems.length > 0 && (
@@ -642,7 +642,7 @@ export default function ReceiptResults() {
             ? `נותרו ${reviewItems.length} פריטים לבדיקה. עד שתבחרו עבורם, הם לא ייכנסו לסל המוצרים החכם.`
             : "בשלב הבא נבחר עבורכם מוצרים מתאימים מהקבלה ומקטלוג שופרסל."}
         </p>
-        <Button onClick={() => navigate(`/shopping-list?receipt_id=${receiptId}`)} className="rounded-full">
+        <Button onClick={() => navigate(`/shopping-list?receipt_id=${receiptId}&build=1`)} className="rounded-full">
           בניית סל מוצרים חכם <ChevronLeft className="w-4 h-4 mr-1" />
         </Button>
       </Card>

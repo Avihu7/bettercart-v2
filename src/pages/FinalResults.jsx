@@ -259,7 +259,7 @@ export default function FinalResults() {
                     <p className="text-xs text-muted-foreground mb-1">הוצאה חודשית</p>
                     <p className="text-xl font-heading font-bold text-green-600">{formatCurrency(ba.estimated_new_monthly_spending)}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {formatCurrency(planBasket?.total_estimated_cost)} × {profile?.purchases_per_month || "?"} ביקורים
+                      {formatCurrency(planBasket?.total_estimated_cost)} לשבוע × כ-4.3 שבועות
                     </p>
                   </div>
                   <div className="p-4 rounded-xl bg-green-50 border border-green-100 text-center">

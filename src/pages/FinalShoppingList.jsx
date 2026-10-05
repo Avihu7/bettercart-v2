@@ -124,6 +124,9 @@ export default function FinalShoppingList() {
               <h2 className="font-heading font-semibold">מה לקנות השבוע</h2>
               <Badge variant="secondary">ל-{finalList.shopping_period_days} ימים</Badge>
             </div>
+            <p className="px-4 pt-3 text-xs text-muted-foreground">
+              הסל מחושב לשבוע שלם, לפי התפריט השבועי. אם אתם קונים יותר מפעם בשבוע, אפשר לחלק אותו בין הביקורים.
+            </p>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>

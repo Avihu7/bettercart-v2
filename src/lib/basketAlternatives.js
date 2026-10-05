@@ -11,14 +11,14 @@
  * or disliked foods, or that are already in the basket, are never offered.
  */
 
-import { classifyProduct, normalizeHebrew } from "@/lib/mealPlanRules";
-import { parseQuantityGrams, plausiblePer100g } from "@/lib/mealPlanCalories";
+import { classifyProduct, normalizeHebrew, buildProductCatalog, portionCap } from "@/lib/mealPlanRules";
+import { parseQuantityGrams, plausiblePer100g, buildDensities } from "@/lib/mealPlanCalories";
 
 // Nutritional role of a basket item, from its meal-planning food group
 const ROLE_BY_GROUP = {
   meat: "protein", fish: "protein", eggs: "protein", legumes: "protein",
   dairy_protein: "dairy", yogurt: "dairy",
-  milk: "milk",
+  milk: "milk", plant_milk: "milk",
   grain: "carb", bread: "carb", starch_veg: "carb", cereal: "carb",
   vegetable: "vegetable",
   fruit: "fruit",
@@ -37,7 +37,7 @@ const ROLE_HEALTH = { protein: 9, dairy: 8, milk: 7, carb: 7, vegetable: 10, fru
 // food's culinary use and kosher type (meat / dairy / parve) never change.
 const FAMILY_BY_GROUP = {
   meat: "meat_protein", fish: "fish_protein", eggs: "egg_protein", legumes: "plant_protein",
-  dairy_protein: "dairy_protein", yogurt: "dairy_protein", milk: "milk",
+  dairy_protein: "dairy_protein", yogurt: "dairy_protein", milk: "milk", plant_milk: "plant_drink",
   grain: "carbohydrate", bread: "carbohydrate", starch_veg: "carbohydrate", cereal: "carbohydrate",
   vegetable: "vegetable", fruit: "fruit",
   nuts: "fat", tahini: "fat", oil: "fat", avocado: "fat",
@@ -83,6 +83,13 @@ const CANDIDATES = [
   { label: "טופו", term: "טופו", role: "protein", category: "protein", allergens: ["סויה"], skip: /קריספי|בטעם|מטוגן/ },
   { label: "עדשים", term: "עדשים", role: "protein", category: "protein", skip: /שימורי|מבושל|מרק/ },
   { label: "גרגירי חומוס", term: "גרגירי חומוס", role: "protein", category: "protein" },
+  // Dense plant proteins (values as eaten: soaked / cooked)
+  { label: "חלבון סויה מיובש", term: "חלבון סויה", group: "legumes", role: "protein", category: "protein", allergens: ["סויה"],
+    ref: { kcal: 110, protein: 17, carbs: 6, fat: 1 } },
+  { label: "פולי סויה", term: "פולי סויה", group: "legumes", role: "protein", category: "protein", allergens: ["סויה"],
+    ref: { kcal: 173, protein: 17, carbs: 10, fat: 9 } },
+  { label: "סייטן", term: "סייטן", group: "legumes", role: "protein", category: "protein", gluten: true, allergens: ["חיטה"],
+    ref: { kcal: 140, protein: 25, carbs: 6, fat: 2 } },
   // explicit group: "לבנה" would otherwise read as the dairy spread
   { label: "שעועית לבנה", term: "שעועית לבנה", group: "legumes", role: "protein", category: "protein", skip: /מוקפאת|ברוטב/ },
   // Protein-rich dairy
@@ -103,6 +110,8 @@ const CANDIDATES = [
   // Milk / plant drinks
   { label: "חלב", term: "חלב 3%", role: "milk", category: "dairy", animal: "dairy", allergens: ["חלב"] },
   { label: "חלב 1%", term: "חלב 1%", role: "milk", category: "dairy", animal: "dairy", allergens: ["חלב"] },
+  { label: "משקה סויה מועשר חלבון", term: "משקה סויה מועשר", group: "plant_milk", role: "milk", family: "plant_drink", category: "drink", allergens: ["סויה"],
+    ref: { kcal: 45, protein: 3.5, carbs: 2, fat: 2 } },
   { label: "משקה סויה", term: "משקה סויה", role: "milk", family: "plant_drink", category: "drink", allergens: ["סויה"], skip: /שוקולד|וניל|קפה|אגוזי|GO/i, grams: 1000 },
   { label: "משקה שיבולת שועל", term: "משקה שיבולת שועל", role: "milk", family: "plant_drink", category: "drink", gluten: true, skip: /וניל|הקצפה|קקאו/ },
   // Carbs
@@ -112,6 +121,11 @@ const CANDIDATES = [
   { label: "בורגול", term: "בורגול", role: "carb", category: "carb", gluten: true, allergens: ["חיטה"] },
   { label: "קינואה", term: "קינואה", role: "carb", category: "carb", skip: /טונה|\+/ },
   { label: "לחם מלא", term: "לחם מלא", role: "carb", category: "carb", gluten: true, allergens: ["חיטה"] },
+  // Gluten-free breakfast carbs
+  { label: "פריכיות אורז", term: "פריכיות אורז", group: "bread", role: "carb", category: "carb",
+    ref: { kcal: 387, protein: 8, carbs: 81, fat: 3 } },
+  { label: "פריכיות תירס", term: "פריכיות תירס", group: "bread", role: "carb", category: "carb",
+    ref: { kcal: 380, protein: 8, carbs: 80, fat: 3 } },
   { label: "פיתות", term: "פיתות", group: "bread", role: "carb", category: "carb", gluten: true, allergens: ["חיטה"] },
   { label: "תפוחי אדמה", term: "תפוח אדמה", role: "carb", category: "carb", same: /תפוחי? אדמה/, skip: /מיקרו|יחידה|בייבי/ },
   { label: "בטטה", term: "בטטה", role: "carb", category: "carb", skip: /צ'?יפס|ציפס|קריספי|מוקפא|פריפלצת/ },
@@ -156,6 +170,51 @@ function violatesProfile(c, profile) {
   if ((has(diet, "ללא גלוטן") || has(allergies, "חיטה")) && c.gluten) return true;
   if (has(allergies, "פירות ים") && c.animal === "fish" && /שרימפ|קלמר/.test(c.label)) return true;
   return (c.allergens || []).some(a => allergies.includes(a));
+}
+
+// Supplements and powders are not meal ingredients — never basket food
+const SUPPLEMENT = /ספירולינה|כלורלה|אבקת חלבון|חלבון מי גבינה|פרוטאין|protein|ויטמין|מולטי ויטמין|תוסף|קולגן|כמוסות|טבליות|כורכומין|אבקת סופרפוד|סופרפוד|גריל חלבון|whey|BCAA|קריאטין/i;
+export const isSupplement = item => SUPPLEMENT.test(String(item?.name || ""));
+
+// ─── Diet / allergy check for any basket or receipt item ────────────────────
+const ANIMAL_BY_GROUP = { meat: "meat", fish: "fish", eggs: "egg", dairy_protein: "dairy", yogurt: "dairy", milk: "dairy" };
+// Plant-based versions of dairy-looking products ("יוגורט סויה", "גבינה טבעונית")
+const PLANT_BASED = /סויה|שקדים|שיבולת|קוקוס|צמחי|טבעוני|אורז/;
+const GLUTEN = /לחם|פיתה|פיתות|פסטה|ספגטי|בורגול|קוסקוס|פתיתים|לחמני|טורטיה|באגט|חלה|קמח|אטריות|נודלס|סייטן|שיבולת שועל|קורנפלקס|גרנולה|עוגיות|עוגה|ופל|בייגל|קרקר/;
+const ALLERGEN_NAMES = {
+  "בוטנים": /בוטנ|במבה/, "אגוזים": /אגוז|שקד|קשיו|פקאן|פיסטוק|לוז/,
+  "סויה": /סויה|טופו|אדממה/, "פירות ים": /שרימפ|קלמר|פירות ים|סרטן|לובסטר/,
+};
+const DIET_LABEL = { vegan: "הטבעונית", vegetarian: "הצמחונית" };
+
+/**
+ * Why an item cannot be in this user's basket, or null:
+ * { kind: "allergy" | "diet", text } — allergies (milk, eggs, fish, wheat,
+ * peanuts, nuts, soy, seafood) and diets (vegan, vegetarian, lactose-free,
+ * gluten-free), from the item's food group and name.
+ */
+export function profileConflict(item, profile) {
+  const name = String(item?.name || "");
+  const diet = profile?.dietary_preferences || [];
+  const allergies = profile?.allergies || [];
+  const group = itemGroup({ name, category: item?.category });
+  const animal = ANIMAL_BY_GROUP[group] === "dairy" && PLANT_BASED.test(name) ? null : ANIMAL_BY_GROUP[group];
+  // Breads/cakes made from rice, corn or buckwheat (or labelled gluten-free) are fine
+  const glutenFreeGrain = /ללא גלוטן|אורז|תירס|כוסמת/.test(name);
+  const gluten = !glutenFreeGrain && (GLUTEN.test(name) || group === "bread");
+
+  if (allergies.includes("חלב") && animal === "dairy") return { kind: "allergy", text: "מכיל אלרגן: חלב" };
+  if (allergies.includes("ביצים") && animal === "egg") return { kind: "allergy", text: "מכיל אלרגן: ביצים" };
+  if (allergies.includes("דגים") && animal === "fish") return { kind: "allergy", text: "מכיל אלרגן: דגים" };
+  if (allergies.includes("חיטה") && gluten) return { kind: "allergy", text: "מכיל אלרגן: חיטה" };
+  for (const [allergen, re] of Object.entries(ALLERGEN_NAMES)) {
+    if (allergies.includes(allergen) && re.test(name)) return { kind: "allergy", text: `מכיל אלרגן: ${allergen}` };
+  }
+  if (has(diet, "vegan", "טבעוני") && (animal || /דבש/.test(name))) return { kind: "diet", text: `לא מתאים לתזונה ${DIET_LABEL.vegan} שלך` };
+  if (has(diet, "vegetarian", "צמחוני") && ["meat", "fish"].includes(animal)) return { kind: "diet", text: `לא מתאים לתזונה ${DIET_LABEL.vegetarian} שלך` };
+  if (has(diet, "ללא לקטוז") && animal === "dairy") return { kind: "diet", text: "מכיל לקטוז" };
+  if (has(diet, "ללא גלוטן") && gluten) return { kind: "diet", text: "מכיל גלוטן" };
+  return null;
 }
 
 // Disliked entries that mean a whole food family rather than one product
@@ -303,14 +362,24 @@ export async function findAlternatives(item, basketItems, profile, { max = 5 } =
 
   const current = itemPer100g(item, itemGroup(item));
   const pricePer100 = o => o.product.price / o.grams * 100;
+  // For protein foods: the daily protein the basket can still reach after the swap
+  const proteinTarget = profile?.protein_target;
+  const kcalTarget = profile?.daily_calories;
+  const proteinFamily = ["meat_protein", "fish_protein", "egg_protein", "plant_protein", "dairy_protein"].includes(family);
   return found
-    .map(o => ({
-      ...o,
-      family,
+    .map(o => {
+      const option = { ...o, family };
+      if (proteinFamily && proteinTarget && kcalTarget) {
+        const swapped = basketItems.map(b => (b === item ? buildReplacementItem(o) : b));
+        option.proteinAfter = proteinCeiling(swapped, kcalTarget);
+        option.keepsProteinGoal = option.proteinAfter >= proteinTarget * 0.9;
+      }
       // closest per-100g nutrition first; price only breaks near-ties
-      score: (current ? nutritionDistance(current, o.per100) : 0) + pricePer100(o) / 1000,
-    }))
-    .sort((a, b) => a.score - b.score)
+      option.score = (current ? nutritionDistance(current, o.per100) : 0) + pricePer100(o) / 1000;
+      return option;
+    })
+    // options that keep the protein goal reachable come first
+    .sort((a, b) => Number(b.keepsProteinGoal ?? true) - Number(a.keepsProteinGoal ?? true) || a.score - b.score)
     .slice(0, max);
 }
 
@@ -361,7 +430,7 @@ export const familyLabel = item => FAMILY_LABELS[itemFamily(item)] || null;
 // or a healthy fat cannot reach the calorie target. These needs are checked
 // after the AI builds the basket and filled from the Shufersal catalog.
 const STAPLE_NEEDS = [
-  { groups: ["bread", "cereal"], count: 1, labels: ["לחם מלא", "פיתות", "שיבולת שועל"],
+  { groups: ["bread", "cereal"], count: 1, labels: ["לחם מלא", "פיתות", "שיבולת שועל", "פריכיות אורז", "פריכיות תירס"],
     reason: "הוספנו לחם לארוחות הבוקר והערב, כדי שהתפריט יגיע ליעד הקלורי שלך." },
   { groups: ["grain", "starch_veg"], count: 2, labels: ["אורז", "פסטה", "תפוחי אדמה", "בטטה", "אורז מלא", "בורגול", "קינואה"],
     reason: "הוספנו מקור פחמימה לארוחות הצהריים והערב, כדי שהתפריט יגיע ליעד הקלורי שלך." },
@@ -392,6 +461,100 @@ export async function missingStaples(basketItems, profile) {
       added.push(item);
       have++;
     }
+  }
+  added.push(...await missingProtein(items, profile));
+  return added;
+}
+
+// ─── Basket sufficiency ──────────────────────────────────────────────────────
+// A weekly menu can only use basket products. These checks estimate whether
+// the basket can feed the profile's targets at all, so a basket that cannot
+// (e.g. a vegan basket with too few protein sources) is completed when built,
+// and a remove/replace that would break it is flagged before it happens.
+
+const MEAL_SHARE = { Breakfast: 0.25, Lunch: 0.35, Dinner: 0.27, Snacks: 0.13 };
+// Share of a meal's calories its protein food may realistically take
+const PROTEIN_FOOD_SHARE = 0.6;
+const PROTEIN_SOURCES = new Set(["meat", "fish", "eggs", "dairy_protein", "yogurt", "legumes", "milk", "plant_milk"]);
+
+/**
+ * Highest daily protein (g) a realistic menu from these basket items can reach
+ * within the calorie target: per meal, the most protein-dense product allowed
+ * in it, at a realistic portion; the rest of the day adds ~3 g per 100 kcal.
+ */
+export function proteinCeiling(items, kcalTarget) {
+  if (!kcalTarget) return null;
+  const catalog = buildProductCatalog(items);
+  const densities = buildDensities(catalog, { days: [] });
+  let protein = 0;
+  let kcalUsed = 0;
+  for (const [meal, share] of Object.entries(MEAL_SHARE)) {
+    const budget = kcalTarget * share * PROTEIN_FOOD_SHARE;
+    let best = null;
+    for (const p of catalog) {
+      const d = densities.get(p.id);
+      if (!PROTEIN_SOURCES.has(p.group) || !p.meal_roles?.includes(meal) || !d || d.kcal <= 0) continue;
+      const grams = Math.min(portionCap(p) || 200, budget * 100 / d.kcal);
+      const option = { protein: grams * d.protein / 100, kcal: grams * d.kcal / 100 };
+      if (!best || option.protein > best.protein) best = option;
+    }
+    if (best) { protein += best.protein; kcalUsed += best.kcal; }
+  }
+  protein += Math.max(0, kcalTarget - kcalUsed) * 0.03;
+  return Math.round(protein);
+}
+
+/**
+ * Can a good weekly menu be built from this basket for this profile?
+ * Returns { ok, issues: [{ key, text }], proteinCeiling }.
+ */
+export function basketSufficiency(items, profile) {
+  const groups = items.map(itemGroup);
+  const count = set => groups.filter(g => set.includes(g)).length;
+  const issues = [];
+  if (!count(["bread", "cereal"])) issues.push({ key: "bread", text: "אין בסל לחם או דגני בוקר לארוחות הבוקר והערב" });
+  if (!count(["grain", "starch_veg"])) issues.push({ key: "carb", text: "אין בסל אורז, פסטה או תפוחי אדמה לארוחות הצהריים והערב" });
+  if (!count(["oil", "tahini", "nuts", "avocado"])) issues.push({ key: "fat", text: "אין בסל מקור שומן בריא (שמן זית, טחינה, אגוזים)" });
+  const target = profile?.protein_target;
+  const ceiling = proteinCeiling(items, profile?.daily_calories);
+  // The ceiling is an optimistic estimate (real menus land ~10% lower), so the
+  // basket needs a margin above the target for the menu to reach it day after day
+  if (target && ceiling != null && ceiling < target * 1.1) {
+    issues.push({ key: "protein", text: `עם המוצרים בסל אפשר להגיע לכ-${ceiling} גרם חלבון ביום, מתוך יעד של ${target} גרם` });
+  }
+  return { ok: issues.length === 0, issues, proteinCeiling: ceiling };
+}
+
+/**
+ * Real Shufersal protein sources to add when the basket cannot reach the
+ * profile's protein target (at most 3, the ones that raise the ceiling most).
+ * Respects diet, allergies, disliked foods and products already in the basket.
+ */
+async function missingProtein(basketItems, profile) {
+  const target = profile?.protein_target;
+  const kcal = profile?.daily_calories;
+  if (!target || !kcal || proteinCeiling(basketItems, kcal) >= target * 1.2) return [];
+  const disliked = profile?.disliked_foods || [];
+  const eligible = CANDIDATES.filter(c =>
+    (["protein", "dairy"].includes(c.role) || c.label === "משקה סויה מועשר חלבון") &&
+    !violatesProfile(c, profile) &&
+    !isDisliked(c.label, disliked, candidateGroup(c)) &&
+    !basketItems.some(b => mentions(b.name, c)));
+  const options = (await Promise.all(eligible.map(c => searchCandidate(c).catch(() => null))))
+    .filter(o => o && !isDisliked(o.product.original_product_name, disliked, o.group))
+    .map(o => catalogItem(o, { reason: "הוספנו מקור חלבון כדי שהתפריט יגיע ליעד החלבון שלך.", added_staple: true }));
+  const items = [...basketItems];
+  const added = [];
+  for (let n = 0; n < 3 && proteinCeiling(items, kcal) < target * 1.2; n++) {
+    let best = null;
+    for (const o of options) {
+      if (added.includes(o)) continue;
+      const gain = proteinCeiling([...items, o], kcal);
+      if (!best || gain > best.gain || (gain === best.gain && o.estimated_price < best.item.estimated_price)) best = { item: o, gain };
+    }
+    if (!best || best.gain <= proteinCeiling(items, kcal)) break;
+    items.push(best.item);
+    added.push(best.item);
   }
   return added;
 }

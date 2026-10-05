@@ -407,6 +407,9 @@ export default function Onboarding() {
                 {purchasesEntered && !purchasesValid && (
                   <p className="text-xs text-destructive mt-1">מספר הביקורים חייב להיות בין 1 ל-31</p>
                 )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  BetterCart בונה תפריט וסל קניות לשבוע שלם. אם אתם קונים יותר מפעם בשבוע, אפשר לחלק את הסל השבועי בין הביקורים.
+                </p>
               </div>
               {form.monthly_budget && form.purchases_per_month && budgetValid && purchasesValid && (
                 <div className="p-4 rounded-xl bg-accent text-accent-foreground">

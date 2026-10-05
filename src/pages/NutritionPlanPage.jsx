@@ -20,6 +20,7 @@ import { generateNutritionPlan } from "@/lib/nutritionPlanGenerator";
 import { sortDays, dayLabel } from "@/lib/weekDays";
 import { useFlowData, FLOW_QUERY_KEY } from "@/lib/flowData";
 import FlowSteps from "@/components/FlowSteps";
+import { basketSufficiency } from "@/lib/basketAlternatives";
 import StatCard from "@/components/dashboard/StatCard";
 
 const mealIcons = {
@@ -54,7 +55,7 @@ export default function NutritionPlanPage() {
   const listId = urlParams.get("list_id");
 
   // Basket (step 2) this plan is built from, latest plan, and its final list (step 4)
-  const { profile, basket: sourceList, plan: latestPlan, planOutdated, finalList, completed } = useFlowData(user, { listId });
+  const { profile, basket: sourceList, plan: latestPlan, planOutdated, finalList, completed, isLoading: flowLoading } = useFlowData(user, { listId });
 
   const generateMutation = useMutation({
     mutationFn: async () => {
@@ -64,12 +65,13 @@ export default function NutritionPlanPage() {
       const result = await generateNutritionPlan({ list, profile });
 
       // Calculate before_after from real user data
-      const purchasesPerMonth = profile?.purchases_per_month || 4;
+      // The basket is a weekly basket: a month is 30/7 weeks
+      const weeksPerMonth = 30 / 7;
       const listCost = list.total_estimated_cost || 0;
       // "Before" = what they actually spend monthly (their stated monthly budget)
-      const previousMonthlySpending = profile?.monthly_budget || (listCost * purchasesPerMonth);
-      // "After" = the new optimized shopping list cost × purchases per month
-      const estimatedNewMonthlySpending = listCost * purchasesPerMonth;
+      const previousMonthlySpending = profile?.monthly_budget || (listCost * weeksPerMonth);
+      // "After" = the new weekly basket cost × weeks per month
+      const estimatedNewMonthlySpending = listCost * weeksPerMonth;
       const monthlySavings = Math.max(0, previousMonthlySpending - estimatedNewMonthlySpending);
       const previousHealthScore = profile?.health_score || 50;
       // New health score: based on avg health_score of shopping list items (scale 0-10 → 0-100)
@@ -112,11 +114,25 @@ export default function NutritionPlanPage() {
   // A plan that still uses products removed/replaced in step 2 is not shown —
   // it is rebuilt from the updated basket (automatically when coming from step 2)
   const showPlan = latestPlan;
-  const autoRebuilt = useRef(false);
+  // The basket cannot meet the profile's targets — say so, and say why
+  const sufficiency = sourceList?.items?.length && profile ? basketSufficiency(sourceList.items, profile) : { ok: true, issues: [] };
+  const userWarnings = sourceList?.basket_warnings || [];
+  const changedItems = [...new Set(userWarnings.map(w => w.item).filter(Boolean))];
+  // Days the menu could not bring to every target with the basket as it is
+  const shortDays = (showPlan?.days || []).filter(d => d.target_warnings?.length);
+  const planProtein = showPlan?.days?.length
+    ? Math.round(showPlan.days.reduce((s, d) => s + (Number(d.total_protein) || 0), 0) / showPlan.days.length)
+    : null;
+  // One click from the basket: arriving with ?build=1 builds the menu right
+  // away, unless the current menu was already built from this basket and is
+  // still up to date. Runs once; the flag is dropped from the address.
+  const autoBuilt = useRef(false);
   useEffect(() => {
-    if (!planOutdated || urlParams.get("rebuild") !== "1" || autoRebuilt.current || !sourceList?.items?.length || !profile) return;
-    autoRebuilt.current = true;
-    generateMutation.mutate();
+    const flag = urlParams.get("build") === "1" || urlParams.get("rebuild") === "1";
+    if (autoBuilt.current || !flag || flowLoading || !sourceList?.items?.length || !profile || generateMutation.isPending) return;
+    autoBuilt.current = true;
+    window.history.replaceState(null, "", window.location.pathname + (listId ? `?list_id=${listId}` : ""));
+    if (planOutdated || !latestPlan || latestPlan.shopping_list_id !== sourceList.id) generateMutation.mutate();
   });
   const planDays = sortDays(showPlan?.days);
   const dailyTarget = showPlan?.daily_calories || profile?.daily_calories;
@@ -147,6 +163,44 @@ export default function NutritionPlanPage() {
           <Loader2 className="w-10 h-10 animate-spin text-primary mx-auto mb-4" />
           <h2 className="font-heading font-semibold text-lg">יוצרים את התפריט שלכם...</h2>
           <p className="text-sm text-muted-foreground">מייעלים ארוחות למטרות ולתקציב שלכם</p>
+        </Card>
+      )}
+
+      {(!sufficiency.ok || shortDays.length > 0) && !generateMutation.isPending && (
+        <Card className="p-4 border-amber-300 bg-amber-50/60 space-y-2">
+          <p className="font-medium text-sm flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 mt-0.5 text-amber-600 shrink-0" />
+            {shortDays.length > 0
+              ? (sufficiency.ok && !changedItems.length
+                ? `ב-${shortDays.length} מתוך ${showPlan.days.length} הימים התפריט יצא קרוב ליעדים, אבל לא בתוכם`
+                : `התפריט נבנה מהמוצרים שיש בסל, אבל ב-${shortDays.length} מתוך ${showPlan.days.length} הימים לא הצלחנו לעמוד בכל היעדים`)
+              : changedItems.length
+                ? "התפריט לא יעמוד בכל היעדים שלך, כי לפי בחירתך הוסרו או הוחלפו מוצרים בסל"
+                : "סל המוצרים הנוכחי לא מספיק כדי לבנות תפריט שעומד בכל היעדים שלך"}
+          </p>
+          {shortDays.length > 0 && (
+            <p className="text-sm text-muted-foreground">
+              {changedItems.length
+                ? "הסיבה: לפי בחירתך הוסרו או הוחלפו מוצרים בסל, ולכן חסרים בו מוצרים מסוגים מסוימים."
+                : !sufficiency.ok
+                  ? "הסיבה: בסל אין מספיק מזון מכל הסוגים לשבוע. הימים האלה מסומנים בתפריט, עם המספרים בפועל."
+                  : "יש בסל מספיק מזון לשבוע — בימים האלה האיזון פשוט לא יצא מדויק. הימים מסומנים בתפריט עם המספרים בפועל, ואפשר לבנות את התפריט מחדש."}
+            </p>
+          )}
+          {changedItems.length > 0 && (
+            <p className="text-sm text-muted-foreground">שינויים שבחרת: {changedItems.join(", ")}</p>
+          )}
+          <ul className="text-sm text-muted-foreground list-disc pr-5 space-y-0.5">
+            {sufficiency.issues.map(i => <li key={i.key}>{i.text}</li>)}
+          </ul>
+          {planProtein != null && proteinTarget && planProtein < proteinTarget * 0.9 && (
+            <p className="text-sm text-muted-foreground">בתפריט הנוכחי: בממוצע {planProtein} גרם חלבון ביום, מתוך יעד של {proteinTarget} גרם.</p>
+          )}
+          {(!sufficiency.ok || changedItems.length > 0) && (
+            <Button size="sm" variant="outline" onClick={() => navigate("/shopping-list")}>
+              <ShoppingCart className="w-4 h-4 ml-2" /> חזרה לסל המוצרים להשלמה
+            </Button>
+          )}
         </Card>
       )}
 
@@ -209,6 +263,17 @@ export default function NutritionPlanPage() {
               const status = targetStatus(day.total_calories, dailyTarget);
               return (
               <TabsContent key={day.day_name} value={day.day_name} className="mt-4 space-y-4">
+                {day.target_warnings?.length > 0 && (
+                  <div className="flex items-start gap-2 rounded-lg bg-amber-50 text-amber-800 text-sm p-3">
+                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                    <div>
+                      <p className="font-medium">ביום הזה לא הצלחנו לעמוד בכל היעדים עם המוצרים שבסל</p>
+                      <ul className="list-disc pr-5 mt-1 space-y-0.5">
+                        {day.target_warnings.map(w => <li key={w}>{w}</li>)}
+                      </ul>
+                    </div>
+                  </div>
+                )}
                 {/* Day Summary */}
                 <div className="grid grid-cols-4 gap-2">
                   <div className="p-3 rounded-lg bg-muted text-center">

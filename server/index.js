@@ -109,7 +109,7 @@ const JSON_FIELDS = {
   userProfile:   ['allergies', 'dietary_preferences', 'favorite_foods', 'disliked_foods'],
   receipts:      ['insights'],
   receiptItems:  [],
-  shoppingLists: ['items'],
+  shoppingLists: ['items', 'basket_warnings'],
   nutritionPlans: ['days', 'before_after'],
 };
 

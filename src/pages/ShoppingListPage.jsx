@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/api/localAPI";
 import { useAuth } from "@/lib/AuthContext";
@@ -8,15 +8,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   ShoppingCart, Loader2, ChevronLeft, Sparkles, RefreshCw,
-  Heart, AlertCircle, Upload, Repeat2, Trash2, Info
+  Heart, AlertCircle, Upload, Repeat2, Trash2, Info, Plus
 } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import StatCard from "@/components/dashboard/StatCard";
 import { useFlowData, FLOW_QUERY_KEY } from "@/lib/flowData";
 import FlowSteps from "@/components/FlowSteps";
 import { isBasketReady, isUnresolved } from "@/lib/receiptReview";
-import { findAlternatives, buildReplacementItem, isDisliked, itemRole, familyLabel, missingStaples } from "@/lib/basketAlternatives";
+import { classifyProduct, normalizeHebrew } from "@/lib/mealPlanRules";
+import { parseQuantityGrams } from "@/lib/mealPlanCalories";
+import { findAlternatives, buildReplacementItem, isDisliked, itemRole, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement } from "@/lib/basketAlternatives";
 
 const MIN_FOOD_ITEMS = 3;
 
@@ -77,6 +83,49 @@ async function fetchComplementaryCandidates(missingGroups) {
   }
   return candidates;
 }
+
+// Pack size assumed when a receipt line has no readable quantity
+const DEFAULT_PACK_GRAMS = 500;
+
+/**
+ * A recognized receipt item as a basket item: the receipt is the basis of the
+ * basket, so these go in directly (catalog values when the match is confirmed).
+ */
+function receiptToBasketItem(raw) {
+  const i = getEffectiveItemData(raw);
+  const name = i.normalized_name || i.original_name;
+  const category = normalizeCategory(i.category);
+  const group = classifyProduct(name, category);
+  const parsed = parseQuantityGrams(i.quantity, group) || parseQuantityGrams(i.matched_product_name, group);
+  const grams = parsed || DEFAULT_PACK_GRAMS;
+  const f = grams / 100;
+  const per = v => (v == null ? null : Math.round(Number(v) * f * 10) / 10);
+  return {
+    name,
+    category,
+    quantity: parsed && i.quantity ? i.quantity : `${grams} גרם`,
+    estimated_price: Number(i.effective_price ?? i.price ?? 0) || 0,
+    calories: Math.round((Number(i.effective_calories_per_100g) || 0) * f),
+    protein: per(i.effective_protein_per_100g),
+    carbs: per(i.effective_carbs_per_100g),
+    fat: per(i.effective_fat_per_100g),
+    health_score: i.health_score ?? null,
+    reason: "נמצא בקבלה שלך, ולכן נשאר בסל.",
+    from_receipt: true,
+    receipt_item_id: i.id,
+    ...(i.data_source === "catalog" ? {
+      catalog_product_id: i.matched_product_id ?? null,
+      catalog_chain: i.catalog_chain ?? null,
+      catalog_name: i.matched_product_name ?? null,
+      catalog_price: i.catalog_price ?? null,
+    } : {}),
+  };
+}
+
+const sameFood = (a, b) => {
+  const [x, y] = [normalizeHebrew(a), normalizeHebrew(b)];
+  return !!x && !!y && (x === y || x.includes(y) || y.includes(x));
+};
 
 function getEffectiveItemData(item) {
   const hasStrongCatalogMatch =
@@ -249,6 +298,14 @@ function ReplaceDialog({ item, basketItems, profile, onClose, onSelect, saving }
                     <p className="text-[11px] text-muted-foreground mt-0.5">
                       ל-100 גרם: {Math.round(o.per100.kcal)} קלוריות · {Math.round(o.per100.protein)} ג׳ חלבון
                     </p>
+                    {o.keepsProteinGoal === true && (
+                      <p className="text-[11px] text-emerald-700 mt-0.5">שומר על יעד החלבון שלך</p>
+                    )}
+                    {o.keepsProteinGoal === false && (
+                      <p className="text-[11px] text-amber-700 mt-0.5">
+                        עם ההחלפה הסל יגיע לכ-{o.proteinAfter} ג׳ חלבון ביום (יעד {profile?.protein_target} ג׳)
+                      </p>
+                    )}
                   </div>
                   <div className="shrink-0 text-left">
                     <p className="text-sm font-semibold">₪{Number(o.product.price).toFixed(2)}</p>
@@ -309,12 +366,32 @@ export default function ShoppingListPage() {
 
   const generateMutation = useMutation({
     mutationFn: async () => {
-      const enrichedItems = receiptItems.map(getEffectiveItemData);
+      // Receipt items that break the diet or allergies never reach the AI or the basket
+      const receiptName = i => ({ name: i.normalized_name || i.original_name, category: i.category });
+      const enrichedItems = receiptItems
+        .filter(i => !profileConflict(receiptName(i), profile) && !isSupplement(receiptName(i)))
+        .map(getEffectiveItemData);
       const itemsList = enrichedItems.map(i =>
         `${i.normalized_name || i.original_name} (${i.category}, ${i.effective_calories_per_100g} cal/100g, protein:${i.effective_protein_per_100g}g, carbs:${i.effective_carbs_per_100g}g, fat:${i.effective_fat_per_100g}g, ₪${i.effective_price}, source:${i.data_source})`
       ).join("\n");
-      const daysPerPurchase = profile?.purchases_per_month ? Math.round(30 / profile.purchases_per_month) : 7;
+      // BetterCart plans a full week: one weekly menu and one weekly basket,
+      // whatever the shopping frequency (which only splits the budget)
+      const daysPerPurchase = 7;
       const totalCaloriesNeeded = (profile?.daily_calories || 2000) * daysPerPurchase;
+      const weeklyBudget = Math.round(profile?.monthly_budget
+        ? profile.monthly_budget * 7 / 30
+        : (profile?.budget_per_purchase || 500) * Math.max(1, (profile?.purchases_per_month || 4) / 4.3));
+      // The receipt is the basis of the basket: its recognized, menu-fit food
+      // items (not disliked) go in as they are; the AI only adds around them
+      const receiptBasket = [];
+      for (const item of receiptItems.map(receiptToBasketItem)) {
+        if (isDisliked(item.name, profile?.disliked_foods || [])) continue;
+        if (profileConflict(item, profile) || isSupplement(item)) continue;
+        if (receiptBasket.some(b => sameFood(b.name, item.name))) continue;
+        receiptBasket.push(item);
+      }
+      const receiptCost = receiptBasket.reduce((s, i) => s + (i.estimated_price || 0), 0);
+      const addBudget = Math.max(Math.round(weeklyBudget * 0.3), Math.round(weeklyBudget - receiptCost));
 
       const dietaryRestrictions = profile?.dietary_preferences || [];
       const allergies = profile?.allergies || [];
@@ -349,7 +426,7 @@ Any item violating these restrictions must be replaced with a compliant alternat
 
       const prompt = `You are a smart shopping list generator. Create an optimized, VARIED shopping list based on the user's profile and receipt history.
 
-The RECEIPT ITEMS below are a signal of the user's habits and preferences — they are a STARTING POINT, not a strict limit. You must actively diversify beyond them using realistic Israeli Shufersal products (the CATALOG COMPLEMENTARY OPTIONS below, if given, are real catalog products you can draw from or use as inspiration).
+The basket is built around the user's receipt: the RECEIPT ITEMS below are ALREADY IN THE BASKET. Your job is to ADD the items that complete a balanced, varied week around them, using realistic Israeli Shufersal products (the CATALOG COMPLEMENTARY OPTIONS below, if given, are real catalog products you can draw from or use as inspiration).
 
 ${restrictionWarning}
 
@@ -359,15 +436,15 @@ USER PROFILE:
 - Carbs target: ${profile?.carbs_target || 200}g/day
 - Fat target: ${profile?.fat_target || 67}g/day
 - Goal: ${profile?.goal || "maintenance"}
-- Budget per purchase: ₪${profile?.budget_per_purchase || 500}
-- Shopping period: ${daysPerPurchase} days
+- Weekly budget: ₪${weeklyBudget}
+- Shopping period: ${daysPerPurchase} days (one weekly basket)
 - Total calories needed: ${totalCaloriesNeeded}
 - Dietary preferences: ${dietaryRestrictions.join(", ") || "None"}
 - Allergies: ${allergies.join(", ") || "None"}
 - Favorite foods: ${(profile?.favorite_foods || []).join(", ") || "None"}
 - Disliked foods (NEVER include): ${(profile?.disliked_foods || []).join(", ") || "None"}
 
-RECEIPT ITEMS (user's actual purchases — a preference signal, not a strict limit; use items that comply with dietary restrictions above):
+RECEIPT ITEMS — ALREADY IN THE BASKET (do NOT list them again):
 ${itemsList || "No receipt data available"}
 
 CATALOG COMPLEMENTARY OPTIONS (real products from the active Shufersal catalog, offered to fill protein-group gaps the receipt is missing — use some of these, or similar realistic Shufersal products, to diversify):
@@ -375,20 +452,21 @@ ${complementaryList || "None needed — receipt already covers enough protein va
 
 RULES:
 1. FIRST AND FOREMOST: strictly follow all dietary restrictions above - no exceptions.
-2. The receipt reflects habits, not a ceiling — actively diversify beyond it. Do NOT build the list around chicken/poultry and eggs as the only protein sources.
+2. Only ADD items: never repeat a receipt item. Add what the week still needs around it — do NOT build around chicken/poultry and eggs as the only protein sources.
 3. Protein source diversity (REQUIRED): include items from AT LEAST 3 different protein source groups among: ${eligibleGroupLabels}. Use the CATALOG COMPLEMENTARY OPTIONS above (or similar real Shufersal products) to cover groups missing from the receipt.
 4. Category variety targets for a ${daysPerPurchase}-day list: at least 4 different vegetables, 2+ fruits, 2+ healthy fat sources, 2-3 different carb sources.
-5. Give priority to favorite foods and compliant receipt items, but do not let them crowd out the diversity requirements above.
+5. Give priority to favorite foods and to products that go well with the receipt items.
 6. Add healthier alternatives where needed.
-7. ⚠️ STRICT BUDGET LIMIT: The SUM of all estimated_price values MUST be under ₪${profile?.budget_per_purchase || 500}. No exceptions. Reduce quantities or item count if needed — prefer trimming duplicate/overlapping items over dropping an entire protein group.
+7. ⚠️ STRICT BUDGET LIMIT: The SUM of the estimated_price values of the items you ADD MUST be under ₪${addBudget}. No exceptions. Reduce quantities or item count if needed — prefer trimming duplicate/overlapping items over dropping an entire protein group.
 8. Ensure enough calories for ${daysPerPurchase} days (${totalCaloriesNeeded} cal total).
 9. Balance protein, carbs, and fats.
+9b. Only regular groceries that are cooked or eaten in meals. NEVER supplements, protein powders, superfood powders (e.g. spirulina), vitamins, capsules or tablets.
 10. If the user keeps kosher, keep meat/poultry items and dairy-protein items as distinct shopping items (they must be usable in separate meals, never combined).
 11. Each item needs: name, category, quantity, estimated_price, calories (total for quantity), protein, carbs, fat, health_score (0-10), and reason.
 12. LANGUAGE (strict): "name" is the Hebrew product name as sold in Israeli supermarkets. "category" is exactly one of: ${SHOPPING_CATEGORIES.join(", ")}. "reason" is one short, natural Hebrew sentence explaining why the item is on the list — Hebrew only, never English.
-13. Before returning, verify: sum of all estimated_price < ₪${profile?.budget_per_purchase || 500}.
+13. Before returning, verify: sum of the added items' estimated_price < ₪${addBudget}.
 
-Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Israeli supermarket product names. MAX BUDGET: ₪${profile?.budget_per_purchase || 500}.`;
+Generate ${receiptBasket.length ? "6-12 additional items" : "a practical, realistic, VARIED shopping list with 12-18 items"}. Use Israeli supermarket product names. MAX BUDGET FOR THESE ITEMS: ₪${addBudget}.`;
 
       const result = await api.integrations.Core.InvokeLLM({
         prompt,
@@ -420,22 +498,31 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
       });
 
       // Enforce budget hard cap - trim items if AI exceeded budget
-      const budget = profile?.budget_per_purchase || 500;
+      const budget = weeklyBudget;
       // Disliked foods never enter the basket, even if the AI suggested them
       const disliked = profile?.disliked_foods || [];
-      let finalItems = await ensureHebrewReasons(
+      const aiItems = await ensureHebrewReasons(
         (result.items || [])
           .filter(item => !isDisliked(item.name, disliked))
+          // the AI must follow the diet too — anything that breaks it is dropped
+          .filter(item => !profileConflict(item, profile))
+          // regular groceries only — supplements and powders are not meal food
+          .filter(item => !isSupplement(item))
+          // never a second copy of something the receipt already put in
+          .filter(item => !receiptBasket.some(r => sameFood(r.name, item.name)))
           .map(item => ({ ...item, category: normalizeCategory(item.category) }))
       );
+      let finalItems = [...receiptBasket, ...aiItems];
       // Bread/grains and a healthy fat are what lets the weekly menu reach the
       // calorie target — complete them from the Shufersal catalog if missing
       finalItems = [...finalItems, ...await missingStaples(finalItems, profile)];
       let runningTotal = finalItems.reduce((sum, i) => sum + (i.estimated_price || 0), 0);
+      // Over budget: drop the most expensive AI addition first, receipt items
+      // only as a last resort, added staples never
+      const trimRank = i => (i.added_staple ? 0 : i.from_receipt ? 1 : 2);
       while (runningTotal > budget && finalItems.some(i => !i.added_staple)) {
-        // Remove the most expensive item (never an added staple)
         const maxIdx = finalItems.reduce((mi, item, idx, arr) =>
-          !item.added_staple && (arr[mi].added_staple || item.estimated_price > arr[mi].estimated_price) ? idx : mi, 0);
+          trimRank(item) > trimRank(arr[mi]) || (trimRank(item) === trimRank(arr[mi]) && item.estimated_price > arr[mi].estimated_price) ? idx : mi, 0);
         runningTotal -= finalItems[maxIdx].estimated_price || 0;
         finalItems = finalItems.filter((_, idx) => idx !== maxIdx);
       }
@@ -460,21 +547,86 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
   });
 
   // Baskets only — a final shopping list (step 4) is never shown here
-  const { basket: showList, planBasket, planOutdated, completed } = useFlowData(user);
+  const { basket: showList, planBasket, planOutdated, completed, isLoading: flowLoading } = useFlowData(user);
+
+  // One click from the receipt: arriving with ?build=1 builds the basket right
+  // away, unless a basket for this receipt already exists. Runs once; the flag
+  // is dropped from the address so a refresh does not build again.
+  const autoBuilt = useRef(false);
+  useEffect(() => {
+    if (autoBuilt.current || urlParams.get("build") !== "1") return;
+    if (flowLoading || itemsLoading || !profile || generateMutation.isPending) return;
+    autoBuilt.current = true;
+    window.history.replaceState(null, "", window.location.pathname + (receiptId ? `?receipt_id=${receiptId}` : ""));
+    if (!showList || (effectiveReceiptId && showList.receipt_id !== effectiveReceiptId)) generateMutation.mutate();
+  });
 
   // Remove / replace a single basket item — the rest of the basket stays as is
   const [replacing, setReplacing] = useState(null); // index of the item being replaced
   const [removedSome, setRemovedSome] = useState(false);
   const saveItemsMutation = useMutation({
-    mutationFn: items => api.entities.ShoppingList.update(showList.id, { items, ...basketTotals(items) }),
+    mutationFn: ({ items, warnings }) => api.entities.ShoppingList.update(showList.id, {
+      items, ...basketTotals(items), ...(warnings ? { basket_warnings: warnings } : {}),
+    }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [FLOW_QUERY_KEY] }),
     onError: () => toast({ title: "השינוי לא נשמר", description: "נסו שוב בעוד רגע.", variant: "destructive" }),
   });
 
+  // Can the basket still feed a good weekly menu for this profile?
+  const sufficiency = showList?.items && profile ? basketSufficiency(showList.items, profile) : { ok: true, issues: [] };
+  const savedWarnings = showList?.basket_warnings || [];
+  // A change that would leave the basket short waits for the user's confirmation
+  const [pendingChange, setPendingChange] = useState(null); // { items, issues, item, done, title }
+
+  // Receipt food the user bought that is not in the basket (less healthy,
+  // disliked, removed or trimmed for budget) — one tap puts it back
+  const leftOutFromReceipt = showList?.items ? (() => {
+    const seen = [];
+    return foodReceiptItems
+      .filter(i => ["matched", "approved"].includes(i.catalog_match_status))
+      .filter(i => {
+        const name = i.normalized_name || i.original_name;
+        if (showList.items.some(b => sameFood(b.name, name)) || seen.some(n => sameFood(n, name))) return false;
+        seen.push(name);
+        return true;
+      });
+  })() : [];
+  const conflictOf = i => profileConflict({ name: i.normalized_name || i.original_name, category: i.category }, profile);
+  const leftOutReason = i => {
+    const name = i.normalized_name || i.original_name;
+    const conflict = conflictOf(i);
+    if (conflict) return conflict.text;
+    if (isSupplement({ name })) return "תוסף תזונה — לא חלק מהתפריט";
+    if (!i.is_approved_for_menu) return "פחות מתאים לתפריט בריא";
+    if (isDisliked(name, profile?.disliked_foods || [])) return "ברשימת המאכלים שציינת שאינך אוהב/ת";
+    return "לא נכנס לסל";
+  };
+  const addFromReceipt = raw => {
+    const item = { ...receiptToBasketItem(raw), reason: "הוספת מהקבלה שלך.", user_added: true };
+    applyChange({
+      items: [...showList.items, item],
+      done: () => toast({ title: `${item.name} נוסף לסל`, description: "כדי שייכנס לתפריט, בנו את התפריט מחדש." }),
+    });
+  };
+
+  const applyChange = ({ items, issues = [], item, done }) => {
+    const warnings = issues.length ? [...savedWarnings, ...issues.map(i => ({ ...i, item }))] : undefined;
+    saveItemsMutation.mutate({ items, warnings }, { onSuccess: done });
+  };
+  const requestChange = change => {
+    const before = new Set(sufficiency.issues.map(i => i.key));
+    const issues = basketSufficiency(change.items, profile).issues.filter(i => !before.has(i.key));
+    if (issues.length) setPendingChange({ ...change, issues });
+    else applyChange(change);
+  };
+
   const removeItem = index => {
     const item = showList.items[index];
-    saveItemsMutation.mutate(showList.items.filter((_, i) => i !== index), {
-      onSuccess: () => {
+    requestChange({
+      items: showList.items.filter((_, i) => i !== index),
+      item: item.name,
+      title: `הסרת ${item.name}`,
+      done: () => {
         setRemovedSome(true);
         toast({ title: `${item.name} הוסר מהסל` });
       },
@@ -485,13 +637,28 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
     const index = replacing;
     const old = showList.items[index];
     const items = showList.items.map((it, i) => (i === index ? buildReplacementItem(option) : it));
-    saveItemsMutation.mutate(items, {
-      onSuccess: () => {
-        setReplacing(null);
-        toast({ title: `${old.name} הוחלף ב${option.candidate.label}` });
-      },
+    setReplacing(null);
+    requestChange({
+      items,
+      item: old.name,
+      title: `החלפת ${old.name}`,
+      done: () => toast({ title: `${old.name} הוחלף ב${option.candidate.label}` }),
     });
   };
+
+  // "השלמת הסל": add only what is missing (no new basket), and clear old warnings
+  const completeMutation = useMutation({
+    mutationFn: async () => {
+      const added = await missingStaples(showList.items, profile);
+      const items = [...showList.items, ...added];
+      await api.entities.ShoppingList.update(showList.id, { items, ...basketTotals(items), basket_warnings: [] });
+      return added;
+    },
+    onSuccess: added => {
+      queryClient.invalidateQueries({ queryKey: [FLOW_QUERY_KEY] });
+      toast({ title: added.length ? `נוספו לסל ${added.length} מוצרים` : "לא נמצאו מוצרים מתאימים להשלמה" });
+    },
+  });
 
   const disliked = profile?.disliked_foods || [];
   // The weekly plan was built from an earlier version of this basket
@@ -539,6 +706,11 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
           {effectiveReceiptId && catalogMatchCount > 0 && (
             <p className="text-[11px] text-muted-foreground/50 mt-0.5">
               נתוני הקטלוג מבוססים כרגע על שופרסל
+            </p>
+          )}
+          {showList?.items?.some(i => i.from_receipt) && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {showList.items.filter(i => i.from_receipt).length} מוצרים בסל הגיעו מהקבלה שלך, והשאר נוספו כדי להשלים שבוע מאוזן
             </p>
           )}
           {showList?.complementary_added && (
@@ -641,12 +813,18 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium text-sm break-words">{item.name}</span>
+                        {item.from_receipt && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">מהקבלה</Badge>
+                        )}
                         <Badge className={`text-xs ${categoryColors[item.category] || categoryColors.other}`}>
                           {CATEGORY_LABELS[item.category] || item.category}
                         </Badge>
                       </div>
                       {isHebrewReason(item.reason) && (
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.reason}</p>
+                      )}
+                      {profileConflict(item, profile) && (
+                        <p className="text-xs text-destructive mt-1">{profileConflict(item, profile).text} — מומלץ להסיר מהסל</p>
                       )}
                       {isDisliked(item.name, disliked) && (
                         <p className="text-xs text-amber-700 mt-1">מופיע ברשימת המאכלים שציינת שאינך אוהב/ת</p>
@@ -674,7 +852,49 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
             </ul>
           </Card>
 
-          {removedSome && basketLooksThin(showList.items || []) && (
+          {leftOutFromReceipt.length > 0 && (
+            <Card className="overflow-hidden">
+              <div className="p-4 border-b">
+                <h2 className="font-heading font-semibold">מהקבלה שלך — לא נכנסו לסל</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">ליד כל מוצר כתוב למה הוא לא נכנס. מוצר שמתאים לתזונה שלך אפשר להוסיף לסל בלחיצה.</p>
+              </div>
+              <ul className="divide-y">
+                {leftOutFromReceipt.map(i => (
+                  <li key={i.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <span className="font-medium text-sm break-words">{i.normalized_name || i.original_name}</span>
+                      <p className="text-xs text-muted-foreground mt-0.5">{leftOutReason(i)}</p>
+                    </div>
+                    {conflictOf(i) || isSupplement({ name: i.normalized_name || i.original_name }) ? (
+                      <span className="text-xs text-muted-foreground shrink-0">לא ניתן להוסיף</span>
+                    ) : (
+                      <Button variant="outline" size="sm" className="min-h-9 shrink-0" disabled={saveItemsMutation.isPending}
+                        onClick={() => addFromReceipt(i)}>
+                        <Plus className="w-4 h-4 ml-1.5" /> הוספה לסל
+                      </Button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {!sufficiency.ok && (
+            <Card className="p-4 border-amber-300 bg-amber-50/60 space-y-2">
+              <p className="font-medium text-sm flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" /> עם הסל הנוכחי לא נוכל לבנות תפריט שעומד ביעדים שלך
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pr-5 space-y-0.5">
+                {sufficiency.issues.map(i => <li key={i.key}>{i.text}</li>)}
+              </ul>
+              <Button size="sm" variant="outline" onClick={() => completeMutation.mutate()} disabled={completeMutation.isPending}>
+                {completeMutation.isPending ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Sparkles className="w-4 h-4 ml-2" />}
+                השלמת הסל
+              </Button>
+            </Card>
+          )}
+
+          {removedSome && sufficiency.ok && basketLooksThin(showList.items || []) && (
             <div className="flex items-start gap-2 rounded-lg bg-amber-50 text-amber-800 text-sm p-3">
               <Info className="w-4 h-4 mt-0.5 shrink-0" />
               <span>הסרת מוצר עשויה להשפיע על מגוון התפריט.</span>
@@ -688,13 +908,36 @@ Generate a practical, realistic, VARIED shopping list with 12-18 items. Use Isra
                 : "מהמוצרים האלה נבנה עבורכם תפריט תזונה שבועי מותאם."}
             </p>
             <Button
-              onClick={() => navigate(`/nutrition-plan?list_id=${showList.id}${basketChangedSincePlan ? "&rebuild=1" : ""}`)}
+              onClick={() => navigate(`/nutrition-plan?list_id=${showList.id}&build=1`)}
               className="rounded-full"
               disabled={!showList.items?.length || saveItemsMutation.isPending}
             >
               בניית תפריט תזונה <ChevronLeft className="w-4 h-4 mr-1" />
             </Button>
           </Card>
+
+          <AlertDialog open={!!pendingChange} onOpenChange={open => !open && setPendingChange(null)}>
+            <AlertDialogContent dir="rtl" className="w-[calc(100%-2rem)] max-w-md rounded-xl text-right">
+              <AlertDialogHeader className="text-right sm:text-right">
+                <AlertDialogTitle>{pendingChange?.title}</AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>אחרי השינוי הזה לא נוכל לבנות תפריט שבועי שעומד ביעדים שלך:</p>
+                    <ul className="list-disc pr-5 space-y-0.5">
+                      {pendingChange?.issues.map(i => <li key={i.key}>{i.text}</li>)}
+                    </ul>
+                    <p>אפשר להמשיך בכל זאת — התפריט ייבנה מהמוצרים שיישארו, וזה יצוין בו.</p>
+                  </div>
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-2 sm:justify-start">
+                <AlertDialogCancel className="mt-0">ביטול</AlertDialogCancel>
+                <AlertDialogAction onClick={() => { const c = pendingChange; setPendingChange(null); applyChange(c); }}>
+                  להמשיך בכל זאת
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           <ReplaceDialog
             item={replacing != null ? showList.items?.[replacing] : null}
