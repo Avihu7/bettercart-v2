@@ -126,9 +126,24 @@ export function matchPatch(item, match) {
 }
 
 /** Item patch when the user picks a catalog product in "שינוי התאמה". */
-export function manualMatchPatch(product) {
+// First word of a product name, without quotes/final letters ("קוטג' תנובה" → "קוטג")
+const headWord = name => String(name || "").replace(/[׳'"״]/g, "").trim().split(/\s+/)[0]
+  ?.replace(/[ךםןףץ]/g, c => ({ ך: "כ", ם: "מ", ן: "נ", ף: "פ", ץ: "צ" })[c]) || "";
+
+export function manualMatchPatch(product, item = null) {
+  // The receipt reading's nutrition describes what the AI read. When the user
+  // picks a different product (e.g. "קורנפלקס" → "פתיתים אורז"), take the
+  // catalog's nutrition instead. (The health score is recomputed by the server
+  // from the chosen product on save — src/lib/healthScore.js.)
+  const differentProduct = item && headWord(product.original_product_name) !== headWord(item.normalized_name || item.original_name);
   return {
     ...EMPTY_CATALOG,
+    ...(differentProduct ? {
+      calories_per_100g: product.calories_per_100g ?? null,
+      protein_per_100g: product.protein_per_100g ?? null,
+      carbs_per_100g: product.carbs_per_100g ?? null,
+      fat_per_100g: product.fat_per_100g ?? null,
+    } : {}),
     // the item is now known by the product the user chose (the receipt text stays in original_name)
     normalized_name: product.original_product_name,
     matched_product_id: String(product.product_id),

@@ -22,7 +22,8 @@ import FlowSteps from "@/components/FlowSteps";
 import { isBasketReady, isUnresolved, receiptItemName } from "@/lib/receiptReview";
 import { classifyProduct, normalizeHebrew } from "@/lib/mealPlanRules";
 import { parseQuantityGrams } from "@/lib/mealPlanCalories";
-import { findAlternatives, buildReplacementItem, isDisliked, itemRole, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement } from "@/lib/basketAlternatives";
+import { productHealthScore } from "@/lib/healthScore";
+import { findAlternatives, buildReplacementItem, isDisliked, itemRole, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement, proteinShortText } from "@/lib/basketAlternatives";
 
 const MIN_FOOD_ITEMS = 3;
 
@@ -109,7 +110,8 @@ function receiptToBasketItem(raw) {
     protein: per(i.effective_protein_per_100g),
     carbs: per(i.effective_carbs_per_100g),
     fat: per(i.effective_fat_per_100g),
-    health_score: i.health_score ?? null,
+    // deterministic, from the product (the same score the receipt table shows)
+    health_score: productHealthScore(name),
     reason: "נמצא בקבלה שלך, ולכן נשאר בסל.",
     from_receipt: true,
     receipt_item_id: i.id,
@@ -120,6 +122,28 @@ function receiptToBasketItem(raw) {
       catalog_price: i.catalog_price ?? null,
     } : {}),
   };
+}
+
+// ─── Purchase history (soft preference) ──────────────────────────────────────
+// Scores come from GET /api/purchase-history (server/purchaseHistory.js).
+// History never overrides diet, allergies, disliked foods, nutrition or budget:
+// candidates are filtered by those first, and history only reorders/adds
+// among what already fits.
+const HISTORY_TOP = 10;
+// A product counts as a "regular" — added to the basket by itself — only with
+// a strong combined score AND decent quality (frequent alone is not enough)
+const REGULAR_MIN_SCORE = 0.72;
+const REGULAR_MIN_QUALITY = 0.6;
+const MAX_REGULARS = 5;
+
+async function fetchPurchaseHistory() {
+  try {
+    const res = await fetch("/api/purchase-history", { credentials: "include" });
+    if (!res.ok) return [];
+    return (await res.json()).products || [];
+  } catch {
+    return [];
+  }
 }
 
 const sameFood = (a, b) => {
@@ -303,7 +327,7 @@ function ReplaceDialog({ item, basketItems, profile, onClose, onSelect, saving }
                     )}
                     {o.keepsProteinGoal === false && (
                       <p className="text-[11px] text-amber-700 mt-0.5">
-                        עם ההחלפה הסל יגיע לכ-{o.proteinAfter} ג׳ חלבון ביום (יעד {profile?.protein_target} ג׳)
+                        עם ההחלפה: {proteinShortText(o.proteinAfter, profile?.protein_target)}
                       </p>
                     )}
                   </div>
@@ -390,8 +414,39 @@ export default function ShoppingListPage() {
         if (receiptBasket.some(b => sameFood(b.name, item.name))) continue;
         receiptBasket.push(item);
       }
-      const receiptCost = receiptBasket.reduce((s, i) => s + (i.estimated_price || 0), 0);
+      // Purchase history: only products that fit this user at all, above neutral.
+      // A single receipt is not a pattern — history needs at least 2 (confidence 0.4).
+      const history = (await fetchPurchaseHistory())
+        .filter(h => h.confidence >= 0.4 && h.history_score > 0.5)
+        .filter(h => !profileConflict({ name: h.name, category: h.latest_item?.category }, profile))
+        .filter(h => !isSupplement({ name: h.name }) && !isDisliked(h.name, profile?.disliked_foods || []));
+      const historyCandidates = history.slice(0, HISTORY_TOP);
+      // Strong regulars go in by themselves (like receipt items), unless already there
+      const historyBasket = [];
+      for (const h of historyCandidates) {
+        if (historyBasket.length >= MAX_REGULARS) break;
+        if (h.history_score < REGULAR_MIN_SCORE || h.quality_score < REGULAR_MIN_QUALITY || !h.latest_item) continue;
+        if ([...receiptBasket, ...historyBasket].some(b => sameFood(b.name, h.name))) continue;
+        historyBasket.push({
+          ...receiptToBasketItem(h.latest_item),
+          name: h.name,
+          reason: `רכשת את המוצר ב-${h.receipt_count} מתוך ${h.total_receipts} הקניות האחרונות, והוא מתאים לסל השבועי.`,
+          from_receipt: false,
+          from_history: true,
+          history_score: h.history_score,
+          history_receipt_count: h.receipt_count,
+          history_total_receipts: h.total_receipts,
+        });
+      }
+      const historyFor = name => historyCandidates.find(h => sameFood(h.name, name));
+      const receiptCost = [...receiptBasket, ...historyBasket].reduce((s, i) => s + (i.estimated_price || 0), 0);
       const addBudget = Math.max(Math.round(weeklyBudget * 0.3), Math.round(weeklyBudget - receiptCost));
+      // Prompt section (only once there is more than one receipt to learn from)
+      const historyLines = historyCandidates
+        .filter(h => ![...receiptBasket, ...historyBasket].some(b => sameFood(b.name, h.name)))
+        .map(h => `- ${h.name} — historyScore ${h.history_score}, bought in ${h.receipt_count}/${h.total_receipts} recent receipts, ` +
+          `avg health ${h.avg_health_score ?? "unknown"}/10, last bought ${h.days_since_last_seen} days ago`)
+        .join("\n");
 
       const dietaryRestrictions = profile?.dietary_preferences || [];
       const allergies = profile?.allergies || [];
@@ -445,7 +500,14 @@ USER PROFILE:
 - Disliked foods (NEVER include): ${(profile?.disliked_foods || []).join(", ") || "None"}
 
 RECEIPT ITEMS — ALREADY IN THE BASKET (do NOT list them again):
-${itemsList || "No receipt data available"}
+${[itemsList, ...historyBasket.map(i => `${i.name} (${i.category}, the user's regular purchase)`)].filter(Boolean).join("\n") || "No receipt data available"}
+${historyLines ? `
+HISTORICAL PURCHASE PREFERENCES (products this user buys repeatedly, already filtered for their diet, allergies and dislikes):
+${historyLines}
+Prefer these products when they fit the user's nutritional needs, diet, budget and basket variety.
+Do NOT add them only because they were purchased frequently.
+Do NOT override dietary restrictions, allergies, disliked foods, protein/calorie sufficiency or budget.
+` : ""}
 
 CATALOG COMPLEMENTARY OPTIONS (real products from the active Shufersal catalog, offered to fill protein-group gaps the receipt is missing — use some of these, or similar realistic Shufersal products, to diversify):
 ${complementaryList || "None needed — receipt already covers enough protein variety"}
@@ -508,18 +570,27 @@ Generate ${receiptBasket.length ? "6-12 additional items" : "a practical, realis
           .filter(item => !profileConflict(item, profile))
           // regular groceries only — supplements and powders are not meal food
           .filter(item => !isSupplement(item))
-          // never a second copy of something the receipt already put in
-          .filter(item => !receiptBasket.some(r => sameFood(r.name, item.name)))
-          .map(item => ({ ...item, category: normalizeCategory(item.category) }))
+          // never a second copy of something the receipt (or history) already put in
+          .filter(item => ![...receiptBasket, ...historyBasket].some(r => sameFood(r.name, item.name)))
+          .map(item => {
+            const h = historyFor(item.name);
+            return {
+              ...item,
+              category: normalizeCategory(item.category),
+              // the AI's own number is not used: same product → same score
+              health_score: productHealthScore(item.name),
+              ...(h ? { history_score: h.history_score, history_receipt_count: h.receipt_count, history_total_receipts: h.total_receipts } : {}),
+            };
+          })
       );
-      let finalItems = [...receiptBasket, ...aiItems];
+      let finalItems = [...receiptBasket, ...historyBasket, ...aiItems];
       // Bread/grains and a healthy fat are what lets the weekly menu reach the
       // calorie target — complete them from the Shufersal catalog if missing
-      finalItems = [...finalItems, ...await missingStaples(finalItems, profile)];
+      finalItems = [...finalItems, ...await missingStaples(finalItems, profile, historyCandidates)];
       let runningTotal = finalItems.reduce((sum, i) => sum + (i.estimated_price || 0), 0);
-      // Over budget: drop the most expensive AI addition first, receipt items
-      // only as a last resort, added staples never
-      const trimRank = i => (i.added_staple ? 0 : i.from_receipt ? 1 : 2);
+      // Over budget: drop the most expensive AI addition first, then history
+      // regulars, receipt items only as a last resort, added staples never
+      const trimRank = i => (i.added_staple ? 0 : i.from_receipt ? 1 : i.from_history ? 2 : 3);
       while (runningTotal > budget && finalItems.some(i => !i.added_staple)) {
         const maxIdx = finalItems.reduce((mi, item, idx, arr) =>
           trimRank(item) > trimRank(arr[mi]) || (trimRank(item) === trimRank(arr[mi]) && item.estimated_price > arr[mi].estimated_price) ? idx : mi, 0);
@@ -708,6 +779,11 @@ Generate ${receiptBasket.length ? "6-12 additional items" : "a practical, realis
               נתוני הקטלוג מבוססים כרגע על שופרסל
             </p>
           )}
+          {showList?.items?.some(i => i.from_history) && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              הסל מתחשב גם בהרגלי הקנייה שלך מ-{showList.items.find(i => i.from_history).history_total_receipts} הקבלות האחרונות
+            </p>
+          )}
           {showList?.items?.some(i => i.from_receipt) && (
             <p className="text-xs text-muted-foreground mt-0.5">
               {showList.items.filter(i => i.from_receipt).length} מוצרים בסל הגיעו מהקבלה שלך, והשאר נוספו כדי להשלים שבוע מאוזן
@@ -815,6 +891,9 @@ Generate ${receiptBasket.length ? "6-12 additional items" : "a practical, realis
                         <span className="font-medium text-sm break-words">{item.name}</span>
                         {item.from_receipt && (
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0">מהקבלה</Badge>
+                        )}
+                        {!item.from_receipt && item.history_score >= REGULAR_MIN_SCORE && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-300 text-emerald-700">קונה בקביעות</Badge>
                         )}
                         <Badge className={`text-xs ${categoryColors[item.category] || categoryColors.other}`}>
                           {CATEGORY_LABELS[item.category] || item.category}

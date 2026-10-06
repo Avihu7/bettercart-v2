@@ -128,7 +128,7 @@ function ChangeMatchDialog({ item, onClose, onSelect, saving }) {
     queryKey: ["catalogSearch", term],
     queryFn: async () => {
       if (term.trim().length < 2) return [];
-      const res = await fetch(`/api/products/search?${new URLSearchParams({ q: term.trim(), limit: "8" })}`);
+      const res = await fetch(`/api/products/search?${new URLSearchParams({ q: term.trim(), limit: "20" })}`);
       if (!res.ok) return [];
       const data = await res.json();
       // one row per product name
@@ -371,7 +371,7 @@ export default function ReceiptResults() {
         item={rematching}
         saving={reviewMutation.isPending}
         onClose={() => setRematching(null)}
-        onSelect={product => decide(rematching, manualMatchPatch(product))}
+        onSelect={product => decide(rematching, manualMatchPatch(product, rematching))}
       />
 
       {/* Receipt Summary */}
@@ -490,7 +490,15 @@ export default function ReceiptResults() {
                     {editingId === item.id ? (
                       <Input type="number" className="w-20 h-7 text-xs" value={editData.price} onChange={e => setEditData(d => ({ ...d, price: Number(e.target.value) }))} />
                     ) : (
-                      <span className="text-sm">{formatCurrency(item.price)}</span>
+                      item.price > 0 || !(item.catalog_price > 0) ? (
+                        <span className="text-sm">{formatCurrency(item.price)}</span>
+                      ) : (
+                        // No price on the receipt (e.g. a product added by hand): show the catalog price
+                        <span className="text-sm text-muted-foreground" title="מחיר משוער לפי הקטלוג">
+                          {formatCurrency(item.catalog_price)}
+                          <span className="block text-[10px]">לפי הקטלוג</span>
+                        </span>
+                      )
                     )}
                   </TableCell>
                   <TableCell className="text-sm">{item.calories_per_100g}</TableCell>
@@ -498,12 +506,13 @@ export default function ReceiptResults() {
                     {item.protein_per_100g}ג / {item.carbs_per_100g}ג / {item.fat_per_100g}ג
                   </TableCell>
                   <TableCell>
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                    <div title={item.health_score == null ? "אין ציון בריאות" : undefined} className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                      item.health_score == null ? "bg-muted text-muted-foreground" :
                       item.health_score >= 7 ? "bg-green-50 text-green-700" :
                       item.health_score >= 4 ? "bg-amber-50 text-amber-700" :
                       "bg-red-50 text-red-700"
                     }`}>
-                      {item.health_score}
+                      {item.health_score ?? "—"}
                     </div>
                   </TableCell>
                   <TableCell>

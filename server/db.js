@@ -186,6 +186,8 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_userProfile_owner    ON userProfile(created_by);
   CREATE INDEX IF NOT EXISTS idx_receipts_owner       ON receipts(created_by);
   CREATE INDEX IF NOT EXISTS idx_receiptItems_owner   ON receiptItems(created_by);
+  -- Purchase history joins every receipt's items (safe: created only if missing)
+  CREATE INDEX IF NOT EXISTS idx_receiptItems_receipt ON receiptItems(receipt_id);
   CREATE INDEX IF NOT EXISTS idx_shoppingLists_owner  ON shoppingLists(created_by);
   CREATE INDEX IF NOT EXISTS idx_nutritionPlans_owner ON nutritionPlans(created_by);
 `);

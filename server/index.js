@@ -19,6 +19,8 @@ import {
   createPasswordReset, resetPasswordWithToken, resetRequestAllowed, RESET_MINUTES,
 } from './auth.js';
 import { sendPasswordResetEmail } from './email.js';
+import { purchaseHistoryForUser } from './purchaseHistory.js';
+import { productHealthScore, healthScoreName } from '../src/lib/healthScore.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -148,6 +150,13 @@ function rowToRecord(entity, row) {
   return record;
 }
 
+// Receipt items get a deterministic health score from their product name on
+// every save — whatever score the client (or the receipt AI) sent is ignored
+function withHealthScore(entity, data) {
+  if (entity !== 'receiptItems') return data;
+  return { ...data, health_score: productHealthScore(healthScoreName(data)) };
+}
+
 // Convert JS record → SQLite row (stringify JSON, convert boolean → 0/1)
 function recordToRow(entity, data) {
   const row = { ...data };
@@ -223,6 +232,17 @@ app.get('/api/products/stats', (_req, res) => {
 });
 
 // Search
+// Purchase history of the signed-in user only (from the session, never a client id).
+// Must be declared before GET /api/:entity.
+app.get('/api/purchase-history', requireAuth, (req, res) => {
+  try {
+    res.json({ products: purchaseHistoryForUser(db, productsDb, req.userId) });
+  } catch (err) {
+    console.error('[purchase-history] failed:', err.message);
+    res.status(500).json({ error: 'history unavailable', products: [] });
+  }
+});
+
 app.get('/api/products/search', (req, res) => {
   if (!productsDb) {
     return res.status(503).json({ error: 'Products catalog DB not loaded', results: [] });
@@ -291,42 +311,37 @@ app.get('/api/products/search', (req, res) => {
   }
 
   try {
-    // 1 — Exact match on normalized_product_name
-    const exactParams = chainFilter ? [query, chainFilter] : [query];
-    const exactRows = productsDb.prepare(`
-      ${SELECT_COLS}
-        AND normalized_product_name = ?
-        ${chainClause}
-      ORDER BY overall_score DESC NULLS LAST
-      LIMIT ${limitN}
-    `).all(...exactParams);
-
-    const seen    = new Set(exactRows.map(r => r.product_id));
-    const results = exactRows.map(r => ({ ...r, match_type: 'exact', match_confidence: 'high' }));
-
-    // 2 — LIKE partial match for remaining slots
-    if (results.length < limitN) {
-      const remaining   = limitN - results.length;
-      const likeParam   = `%${query}%`;
-      const partialArgs = chainFilter
-        ? [likeParam, likeParam, chainFilter]
-        : [likeParam, likeParam];
-
-      const partialRows = productsDb.prepare(`
+    // One result per product name (the catalog has a row per store — keep the
+    // cheapest), ranked: exact name → name starts with the query → a word in
+    // the name starts with it → contains it anywhere. The query's stem also
+    // matches, so "עגבניות" finds "עגבנייה 500 גרם" and "עגבניות שרי" alike.
+    const stem = query.length >= 5 ? query.replace(/(?:ות|ים|יות|יה|ה)$/, '') : query;
+    const terms = stem.length >= 3 && stem !== query ? [query, stem] : [query];
+    const rank = `CASE
+        WHEN normalized_product_name = ? OR original_product_name = ? THEN 0
+        ${terms.map(() => `WHEN original_product_name LIKE ? OR normalized_product_name LIKE ? THEN 1`).join('\n        ')}
+        ${terms.map(() => `WHEN original_product_name LIKE ? OR normalized_product_name LIKE ? THEN 2`).join('\n        ')}
+        ELSE 3 END`;
+    const rankArgs = [
+      query, query,
+      ...terms.flatMap(t => [`${t}%`, `${t}%`]),
+      ...terms.flatMap(t => [`% ${t}%`, `% ${t}%`]),
+    ];
+    const rows = productsDb.prepare(`
+      SELECT * FROM (
         ${SELECT_COLS}
-          AND (normalized_product_name LIKE ? OR original_product_name LIKE ?)
+          AND (${terms.map(() => '(normalized_product_name LIKE ? OR original_product_name LIKE ?)').join(' OR ')})
           ${chainClause}
-        ORDER BY overall_score DESC NULLS LAST
-        LIMIT ${remaining * 4}
-      `).all(...partialArgs);
-
-      for (const row of partialRows) {
-        if (!seen.has(row.product_id) && results.length < limitN) {
-          seen.add(row.product_id);
-          results.push({ ...row, match_type: 'partial', match_confidence: 'medium' });
-        }
-      }
-    }
+      ) AS m
+      GROUP BY original_product_name
+      HAVING price = MIN(price) OR MIN(price) IS NULL
+      ORDER BY ${rank.replace(/normalized_product_name|original_product_name/g, 'm.$&')}, calories_per_100g IS NULL, length(original_product_name), price
+      LIMIT ${limitN}
+    `).all(...terms.flatMap(t => [`%${t}%`, `%${t}%`]), chainFilter, ...rankArgs);
+    const results = rows.map(r => {
+      const exact = r.normalized_product_name === query || r.original_product_name === query;
+      return { ...r, match_type: exact ? 'exact' : 'partial', match_confidence: exact ? 'high' : 'medium' };
+    });
 
     res.json({
       query,
@@ -754,12 +769,12 @@ app.post('/api/:entity', requireAuth, (req, res) => {
     }
   }
 
-  const data = {
+  const data = withHealthScore(entity, {
     ...withoutProtected(req.body),
     id: generateId(),
     created_date: new Date().toISOString(),
     created_by: req.userId,
-  };
+  });
   try {
     insertRow(entity, data);
     res.status(201).json(rowToRecord(entity, data));
@@ -775,7 +790,7 @@ app.post('/api/:entity/bulk', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Request body must be an array' });
   }
   const now = new Date().toISOString();
-  const created = req.body.map(item => ({
+  const created = req.body.map(item => withHealthScore(entity, {
     ...withoutProtected(item),
     id: generateId(),
     created_date: now,
@@ -805,7 +820,15 @@ app.patch('/api/:entity/:id', requireAuth, (req, res) => {
 
   try {
     db.prepare(`UPDATE "${entity}" SET ${setClauses} WHERE id = ? AND created_by = ?`).run(...values, id, req.userId);
-    const updated = db.prepare(`SELECT * FROM "${entity}" WHERE id = ? AND created_by = ?`).get(id, req.userId);
+    let updated = db.prepare(`SELECT * FROM "${entity}" WHERE id = ? AND created_by = ?`).get(id, req.userId);
+    // A changed name or catalog match can change the product → rescore
+    if (entity === 'receiptItems') {
+      const score = productHealthScore(healthScoreName(updated));
+      if (score !== updated.health_score) {
+        db.prepare('UPDATE "receiptItems" SET health_score = ? WHERE id = ? AND created_by = ?').run(score, id, req.userId);
+        updated = { ...updated, health_score: score };
+      }
+    }
     res.json(rowToRecord(entity, updated));
   } catch (err) {
     res.status(500).json({ error: err.message });

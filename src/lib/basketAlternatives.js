@@ -13,6 +13,7 @@
 
 import { classifyProduct, normalizeHebrew, buildProductCatalog, portionCap } from "@/lib/mealPlanRules";
 import { parseQuantityGrams, plausiblePer100g, buildDensities } from "@/lib/mealPlanCalories";
+import { productHealthScore } from "@/lib/healthScore";
 
 // Nutritional role of a basket item, from its meal-planning food group
 const ROLE_BY_GROUP = {
@@ -31,7 +32,6 @@ const ROLE_LABELS = {
 };
 
 // Health score (0–10) of a basic, unprocessed product in each role
-const ROLE_HEALTH = { protein: 9, dairy: 8, milk: 7, carb: 7, vegetable: 10, fruit: 9, fat: 8 };
 
 // Replacement family: an item is only replaced within its own family, so the
 // food's culinary use and kosher type (meat / dairy / parve) never change.
@@ -372,7 +372,7 @@ export async function findAlternatives(item, basketItems, profile, { max = 5 } =
       if (proteinFamily && proteinTarget && kcalTarget) {
         const swapped = basketItems.map(b => (b === item ? buildReplacementItem(o) : b));
         option.proteinAfter = proteinCeiling(swapped, kcalTarget);
-        option.keepsProteinGoal = option.proteinAfter >= proteinTarget * 0.9;
+        option.keepsProteinGoal = proteinReachable(option.proteinAfter, proteinTarget);
       }
       // closest per-100g nutrition first; price only breaks near-ties
       option.score = (current ? nutritionDistance(current, o.per100) : 0) + pricePer100(o) / 1000;
@@ -405,7 +405,7 @@ function catalogItem(option, extra) {
     protein: round1(per100.protein * f),
     carbs: round1(per100.carbs * f),
     fat: round1(per100.fat * f),
-    health_score: ROLE_HEALTH[c.role] ?? null,
+    health_score: productHealthScore(p.original_product_name),
     ...extra,
     catalog_product_id: String(p.product_id),
     catalog_chain: option.chain,
@@ -443,7 +443,7 @@ const STAPLE_NEEDS = [
  * items. Respects diet, allergies and disliked foods, and never duplicates a
  * product already in the basket. Returns [] when nothing is missing.
  */
-export async function missingStaples(basketItems, profile) {
+export async function missingStaples(basketItems, profile, history = []) {
   const disliked = profile?.disliked_foods || [];
   const items = [...basketItems];
   const added = [];
@@ -462,7 +462,7 @@ export async function missingStaples(basketItems, profile) {
       have++;
     }
   }
-  added.push(...await missingProtein(items, profile));
+  added.push(...await missingProtein(items, profile, history));
   return added;
 }
 
@@ -504,6 +504,19 @@ export function proteinCeiling(items, kcalTarget) {
   return Math.round(protein);
 }
 
+// The ceiling is an optimistic estimate (real menus land ~10% lower), so the
+// basket needs a margin above the target for the menu to reach it day after day.
+// One rule for the whole app: the replacement dialog and the basket check agree.
+export const PROTEIN_MARGIN = 1.1;
+export const proteinReachable = (ceiling, target) => ceiling >= target * PROTEIN_MARGIN;
+
+/** Hebrew explanation for a basket whose protein ceiling misses the margin. */
+export function proteinShortText(ceiling, target) {
+  return ceiling >= target
+    ? `עם המוצרים בסל החלבון יגיע בקושי ליעד (כ-${ceiling} גרם ביום, יעד ${target} גרם) — אין מספיק מרווח כדי שכל יום בתפריט יעמוד ביעד`
+    : `עם המוצרים בסל אפשר להגיע לכ-${ceiling} גרם חלבון ביום — פחות מהיעד של ${target} גרם`;
+}
+
 /**
  * Can a good weekly menu be built from this basket for this profile?
  * Returns { ok, issues: [{ key, text }], proteinCeiling }.
@@ -517,10 +530,8 @@ export function basketSufficiency(items, profile) {
   if (!count(["oil", "tahini", "nuts", "avocado"])) issues.push({ key: "fat", text: "אין בסל מקור שומן בריא (שמן זית, טחינה, אגוזים)" });
   const target = profile?.protein_target;
   const ceiling = proteinCeiling(items, profile?.daily_calories);
-  // The ceiling is an optimistic estimate (real menus land ~10% lower), so the
-  // basket needs a margin above the target for the menu to reach it day after day
-  if (target && ceiling != null && ceiling < target * 1.1) {
-    issues.push({ key: "protein", text: `עם המוצרים בסל אפשר להגיע לכ-${ceiling} גרם חלבון ביום, מתוך יעד של ${target} גרם` });
+  if (target && ceiling != null && !proteinReachable(ceiling, target)) {
+    issues.push({ key: "protein", text: proteinShortText(ceiling, target) });
   }
   return { ok: issues.length === 0, issues, proteinCeiling: ceiling };
 }
@@ -529,8 +540,10 @@ export function basketSufficiency(items, profile) {
  * Real Shufersal protein sources to add when the basket cannot reach the
  * profile's protein target (at most 3, the ones that raise the ceiling most).
  * Respects diet, allergies, disliked foods and products already in the basket.
+ * Purchase history only breaks near-ties (within 1 g of protein ceiling):
+ * a product the user buys regularly wins over an equally useful one.
  */
-async function missingProtein(basketItems, profile) {
+async function missingProtein(basketItems, profile, history = []) {
   const target = profile?.protein_target;
   const kcal = profile?.daily_calories;
   if (!target || !kcal || proteinCeiling(basketItems, kcal) >= target * 1.2) return [];
@@ -543,6 +556,8 @@ async function missingProtein(basketItems, profile) {
   const options = (await Promise.all(eligible.map(c => searchCandidate(c).catch(() => null))))
     .filter(o => o && !isDisliked(o.product.original_product_name, disliked, o.group))
     .map(o => catalogItem(o, { reason: "הוספנו מקור חלבון כדי שהתפריט יגיע ליעד החלבון שלך.", added_staple: true }));
+  // 0.5 = neutral (no history), so without history the order is unchanged
+  const historyScore = o => history.find(h => mentions(h.name, { label: o.name }) || mentions(o.name, { label: h.name }))?.history_score ?? 0.5;
   const items = [...basketItems];
   const added = [];
   for (let n = 0; n < 3 && proteinCeiling(items, kcal) < target * 1.2; n++) {
@@ -550,7 +565,11 @@ async function missingProtein(basketItems, profile) {
     for (const o of options) {
       if (added.includes(o)) continue;
       const gain = proteinCeiling([...items, o], kcal);
-      if (!best || gain > best.gain || (gain === best.gain && o.estimated_price < best.item.estimated_price)) best = { item: o, gain };
+      const h = historyScore(o);
+      const better = !best ||
+        (Math.abs(gain - best.gain) < 1 && h !== best.h ? h > best.h
+          : gain > best.gain || (gain === best.gain && o.estimated_price < best.item.estimated_price));
+      if (better) best = { item: o, gain, h };
     }
     if (!best || best.gain <= proteinCeiling(items, kcal)) break;
     items.push(best.item);
