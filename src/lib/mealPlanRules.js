@@ -83,6 +83,10 @@ export function portionCap(product) {
 const MAIN_PROTEIN = new Set(["meat", "fish", "eggs", "dairy_protein", "legumes", "yogurt"]);
 const MAIN_BASE = new Set(["bread", "grain", "starch_veg", "vegetable", "cereal"]);
 const DRINKS = new Set(["coffee", "tea", "milk", "plant_milk"]);
+// Milk and plant milks belong in coffee/tea or with cereal/oats, not beside other food
+const MILK_PARTNERS = new Set(["coffee", "tea", "cereal"]);
+const hasMilkWithoutPartner = groups =>
+  groups.some(g => g === "milk" || g === "plant_milk") && !groups.some(g => MILK_PARTNERS.has(g));
 const DAIRY = new Set(["milk", "yogurt", "dairy_protein"]);
 
 // Final letter forms (ך ם ן ף ץ) → regular, so "מלפפון" matches "מלפפונים"
@@ -259,6 +263,7 @@ export function checkMeal(meal, catalog) {
   } else {
     if (groups.includes("coffee") && meal.meal_type === "Dinner") issues.push("coffee at dinner");
     if (groups.every(g => DRINKS.has(g))) issues.push("drink only, not a meal");
+    if (hasMilkWithoutPartner(groups)) issues.push("milk without coffee, tea or cereal");
     if (meal.meal_type === "Lunch" || meal.meal_type === "Dinner") {
       if (!has(MAIN_PROTEIN)) issues.push("main meal without a protein");
       if (!has(MAIN_BASE)) issues.push("main meal without carb/vegetable side");
@@ -358,6 +363,11 @@ export function forceRepair(plan, catalog) {
       const kinds = meal.items.map(i => product(i)?.kosher);
       if (kinds.includes("meat") && kinds.includes("dairy")) {
         meal.items = meal.items.filter(i => product(i)?.kosher !== "dairy");
+      }
+      // Milk only goes with coffee/tea or cereal/oats — otherwise it leaves the meal
+      const groupsHere = meal.items.map(i => product(i)?.group);
+      if (hasMilkWithoutPartner(groupsHere) && meal.items.some(i => !["milk", "plant_milk"].includes(product(i)?.group))) {
+        meal.items = meal.items.filter(i => !["milk", "plant_milk"].includes(product(i)?.group));
       }
       // Keep only the largest meat/fish portion (meat with fish is not served together)
       const mains = meal.items.filter(i => ["meat", "fish"].includes(product(i)?.group));

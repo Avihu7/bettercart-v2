@@ -130,7 +130,7 @@ const MEAL_COMPOSITION_RULES = `HOW TO BUILD THE MEALS (most important):
 - Main meals (lunch, dinner) are a composed plate: a protein + a carbohydrate and/or vegetables + optionally a healthy fat/condiment (olive oil, tahini).
 - Breakfast is a recognizable Israeli breakfast, e.g. bread + cottage/cheese + vegetables + coffee with milk; an omelette with bread and salad; yogurt with fruit and nuts; cornflakes with milk and banana. Only use products that exist in the catalog.
 - Coffee (if in the catalog) appears naturally, usually at breakfast (optionally a daytime snack), as a drink next to food — never as a meal by itself and never at dinner. If both coffee and milk exist, serve coffee with milk.
-- Milk is used as an ingredient/drink: in coffee, with cereal, or as a breakfast beverage alongside food — never as a snack by itself.
+- Milk and plant milks (soy/almond/oat drinks) are only used WITH coffee or tea, or WITH cereal/oats (porridge) in the same meal. Never as a separate drink next to other food (e.g. soy milk + banana is NOT allowed), and never as a snack by itself.
 - Snacks are real snack foods: fruit, nuts, yogurt, a small dairy item, or a small sandwich. NEVER as snacks: plain milk, plain bread, raw rice/pasta, chicken/meat/fish, cooking oil, tahini alone, avocado (avocado goes on bread at breakfast or in a salad at lunch/dinner, about half an avocado).
 - Respect each product's "meal_roles" — place products only in the meal types listed for them.
 - Never put a product with kosher "meat" and a product with kosher "dairy" in the same meal (e.g. chicken + cheese is NOT allowed). Dairy breakfast, meat lunch, dairy dinner is fine.
