@@ -64,7 +64,7 @@ const kosherOf = group => KOSHER_BY_GROUP[group] || "parve";
  *   ref:      typical per-100g values for this product type
  *   family / group: explicit replacement family / food group when the name alone misleads
  */
-const CANDIDATES = [
+export const CANDIDATES = [
   // Protein sources
   { label: "חזה עוף", term: "חזה עוף", role: "protein", category: "protein", animal: "meat", skip: /פרוס|מעושן|ממולא|שניצל/ },
   { label: "חזה הודו", term: "חזה הודו טרי", role: "protein", category: "protein", animal: "meat" },
@@ -155,13 +155,13 @@ const CANDIDATES = [
   { label: "חמאת בוטנים", term: "חמאת בוטנים", role: "fat", category: "fat", allergens: ["בוטנים"], skip: /מתוק|שוקולד/ },
 ];
 
-const candidateGroup = c => c.group || classifyProduct(c.label);
+export const candidateGroup = c => c.group || classifyProduct(c.label);
 const familyOf = c => c.family || FAMILY_BY_GROUP[candidateGroup(c)] || null;
 
 const has = (arr, ...vals) => vals.some(v => (arr || []).includes(v));
 
 /** Whether a candidate breaks the user's diet or allergies. */
-function violatesProfile(c, profile) {
+export function violatesProfile(c, profile) {
   const diet = profile?.dietary_preferences || [];
   const allergies = profile?.allergies || [];
   if (has(diet, "vegan", "טבעוני") && c.animal) return true;
@@ -250,7 +250,7 @@ const stem = w => {
 const DRINK_NAME = /מיץ|משקה|נקטר|תפוזינה|ליטר|מ"ל|מל(?![א-ת])/;
 
 /** Whether a basket item name already refers to this candidate food. */
-function mentions(name, c) {
+export function mentions(name, c) {
   if (c.same) return c.same.test(name);
   const n = normalizeHebrew(name);
   const label = normalizeHebrew(c.label);
@@ -269,7 +269,24 @@ function packageGrams(p, c, group) {
   return parseQuantityGrams(p.original_product_name, group) || c.grams || null;
 }
 
-async function searchCandidate(c) {
+// Catalog lookups are cached for a few minutes: the basket engine, the staple
+// check and the replacement dialog ask for the same candidates in one session
+const SEARCH_TTL_MS = 5 * 60 * 1000;
+const searchCache = new Map();
+
+/** The best household-size catalog option for a candidate (cached). */
+export function searchCandidate(c) {
+  const hit = searchCache.get(c.term);
+  if (hit && Date.now() - hit.at < SEARCH_TTL_MS) return hit.promise;
+  const promise = searchCandidateUncached(c).catch(err => {
+    searchCache.delete(c.term);
+    throw err;
+  });
+  searchCache.set(c.term, { at: Date.now(), promise });
+  return promise;
+}
+
+async function searchCandidateUncached(c) {
   const params = new URLSearchParams({ q: c.term, match: "prefix", limit: "15" });
   const res = await fetch(`/api/products/search?${params}`, { credentials: "include" });
   if (!res.ok) return null;
@@ -307,14 +324,14 @@ function nutritionDistance(a, b) {
 // Food group of a basket item. Packing liquids are ignored, so "טונה בשמן זית"
 // is fish (a protein source), not oil.
 const PACKING = /\s*ב(שמן( זית| קנולה| צמחי| סויה| חמניות)?|מים|מי מלח|רוטב[^,]*)(?=\s|$)/g;
-function itemGroup(item) {
+export function itemGroup(item) {
   const stripped = String(item.name || "").replace(PACKING, " ");
   const group = classifyProduct(stripped, item.category);
   return group === "other" ? classifyProduct(item.name, item.category) : group;
 }
 
 /** Per-100g values of an existing basket item (list totals ÷ package weight, or the group reference). */
-function itemPer100g(item, group) {
+export function itemPer100g(item, group) {
   const grams = parseQuantityGrams(item.quantity, group);
   const f = grams ? 100 / grams : 0;
   return plausiblePer100g({ name_he: item.name, group }, f ? {
@@ -392,7 +409,7 @@ export function buildReplacementItem(option) {
   return catalogItem(option, { reason: `החלפה שבחרת — ${role} שמתאים לתפריט שלך.`, user_replaced: true });
 }
 
-function catalogItem(option, extra) {
+export function catalogItem(option, extra) {
   const { product: p, grams, per100, candidate: c } = option;
   const f = grams / 100;
   const round1 = v => Math.round(v * 10) / 10;
@@ -434,7 +451,8 @@ const STAPLE_NEEDS = [
     reason: "הוספנו לחם לארוחות הבוקר והערב, כדי שהתפריט יגיע ליעד הקלורי שלך." },
   { groups: ["grain", "starch_veg"], count: 2, labels: ["אורז", "פסטה", "תפוחי אדמה", "בטטה", "אורז מלא", "בורגול", "קינואה"],
     reason: "הוספנו מקור פחמימה לארוחות הצהריים והערב, כדי שהתפריט יגיע ליעד הקלורי שלך." },
-  { groups: ["oil", "tahini", "nuts"], count: 2, labels: ["שמן זית", "טחינה", "שקדים"],
+  // avocado counts as a healthy fat (it is never a fruit serving)
+  { groups: ["oil", "tahini", "nuts", "avocado"], count: 2, labels: ["שמן זית", "טחינה", "שקדים"],
     reason: "הוספנו מקור שומן בריא לבישול ולסלטים." },
 ];
 
@@ -555,7 +573,7 @@ async function missingProtein(basketItems, profile, history = []) {
     !basketItems.some(b => mentions(b.name, c)));
   const options = (await Promise.all(eligible.map(c => searchCandidate(c).catch(() => null))))
     .filter(o => o && !isDisliked(o.product.original_product_name, disliked, o.group))
-    .map(o => catalogItem(o, { reason: "הוספנו מקור חלבון כדי שהתפריט יגיע ליעד החלבון שלך.", added_staple: true }));
+    .map(o => catalogItem(o, { reason: "הוספנו מקור חלבון כדי שהתפריט יגיע ליעד החלבון שלך.", added_staple: true, protein_completion: true }));
   // 0.5 = neutral (no history), so without history the order is unchanged
   const historyScore = o => history.find(h => mentions(h.name, { label: o.name }) || mentions(o.name, { label: h.name }))?.history_score ?? 0.5;
   const items = [...basketItems];

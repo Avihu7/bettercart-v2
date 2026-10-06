@@ -23,67 +23,10 @@ import { isBasketReady, isUnresolved, receiptItemName } from "@/lib/receiptRevie
 import { classifyProduct, normalizeHebrew } from "@/lib/mealPlanRules";
 import { parseQuantityGrams } from "@/lib/mealPlanCalories";
 import { productHealthScore } from "@/lib/healthScore";
+import { buildSmartAdditions } from "@/lib/smartBasketEngine";
 import { findAlternatives, buildReplacementItem, isDisliked, itemRole, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement, proteinShortText } from "@/lib/basketAlternatives";
 
 const MIN_FOOD_ITEMS = 3;
-
-// ─── Protein source diversity ────────────────────────────────────────────────
-// Receipts tend to be dominated by 1-2 "safe" proteins (chicken, eggs). To keep
-// the shopping list from narrowing the whole week's menu to just those, we
-// detect which of these groups are already represented in the receipt and, for
-// groups that are missing (and not excluded by dietary restrictions/allergies),
-// fetch a couple of real complementary candidates from the active Shufersal
-// catalog to suggest to the AI generator.
-const PROTEIN_SOURCE_GROUPS = {
-  poultry:       { label: "עוף/הודו",     terms: ["עוף", "הודו"],                    searchTerm: "חזה עוף" },
-  eggs:          { label: "ביצים",         terms: ["ביצים", "ביצה"],                  searchTerm: "ביצים" },
-  dairy_protein: { label: "חלבון חלבי",    terms: ["קוטג", "יוגורט", "לבנה", "גבינה"], searchTerm: "קוטג" },
-  fish:          { label: "דגים",          terms: ["טונה", "סלמון", "דג"],            searchTerm: "טונה בשמן" },
-  legumes:       { label: "קטניות",        terms: ["עדש", "חומוס", "שעועית"],         searchTerm: "עדשים" },
-  plant_protein: { label: "חלבון צמחי",    terms: ["טופו", "סייטן"],                  searchTerm: "טופו" },
-};
-
-function excludedProteinGroups(dietaryRestrictions, allergies) {
-  const has = (arr, ...vals) => vals.some(v => arr.includes(v));
-  const excluded = new Set();
-  if (has(dietaryRestrictions, "vegan", "טבעוני")) {
-    ["poultry", "eggs", "dairy_protein", "fish"].forEach(g => excluded.add(g));
-  }
-  if (has(dietaryRestrictions, "vegetarian", "צמחוני")) {
-    ["poultry", "fish"].forEach(g => excluded.add(g));
-  }
-  if (has(allergies, "דגים", "פירות ים")) excluded.add("fish");
-  if (has(allergies, "ביצים")) excluded.add("eggs");
-  if (has(allergies, "חלב") || has(dietaryRestrictions, "ללא לקטוז")) excluded.add("dairy_protein");
-  if (has(allergies, "סויה")) excluded.add("plant_protein");
-  return excluded;
-}
-
-function presentProteinGroups(itemNames) {
-  const present = new Set();
-  for (const [group, cfg] of Object.entries(PROTEIN_SOURCE_GROUPS)) {
-    if (cfg.terms.some(t => itemNames.some(n => n.includes(t)))) present.add(group);
-  }
-  return present;
-}
-
-// Best-effort: fetch a couple of real Shufersal catalog candidates per missing
-// protein group. Failures are swallowed — this is a suggestion layer only, the
-// AI prompt still works fine without it.
-async function fetchComplementaryCandidates(missingGroups) {
-  const candidates = [];
-  for (const group of missingGroups.slice(0, 3)) {
-    try {
-      const res = await fetch(`/api/products/search?q=${encodeURIComponent(PROTEIN_SOURCE_GROUPS[group].searchTerm)}&limit=2`);
-      if (!res.ok) continue;
-      const data = await res.json();
-      for (const p of (data.results || []).slice(0, 2)) {
-        candidates.push({ group, ...p });
-      }
-    } catch { /* best-effort — skip this group on failure */ }
-  }
-  return candidates;
-}
 
 // Pack size assumed when a receipt line has no readable quantity
 const DEFAULT_PACK_GRAMS = 500;
@@ -95,8 +38,9 @@ const DEFAULT_PACK_GRAMS = 500;
 function receiptToBasketItem(raw) {
   const i = getEffectiveItemData(raw);
   const name = receiptItemName(i);
-  const category = normalizeCategory(i.category);
-  const group = classifyProduct(name, category);
+  const group = classifyProduct(name, normalizeCategory(i.category));
+  // Avocado is a healthy fat in the basket, whatever the receipt called it
+  const category = group === "avocado" ? "fat" : normalizeCategory(i.category);
   const parsed = parseQuantityGrams(i.quantity, group) || parseQuantityGrams(i.matched_product_name, group);
   const grams = parsed || DEFAULT_PACK_GRAMS;
   const f = grams / 100;
@@ -227,36 +171,6 @@ function isHebrewReason(text) {
   return hebrew > 0 && hebrew >= latin;
 }
 
-// Rewrites only the non-Hebrew reasons in Hebrew; unrepaired ones are cleared
-async function ensureHebrewReasons(items) {
-  const bad = items.map((item, index) => ({ index, item })).filter(({ item }) => item.reason && !isHebrewReason(item.reason));
-  if (!bad.length) return items;
-  console.warn(`[shopping list] rewriting ${bad.length} non-Hebrew reasons`);
-  let fixes = [];
-  try {
-    const res = await api.integrations.Core.InvokeLLM({
-      prompt: `Rewrite each shopping-list item explanation below as one short, natural Hebrew sentence with the same meaning. Hebrew only — no English words.
-
-ITEMS:
-${JSON.stringify(bad.map(({ index, item }) => ({ index, name: item.name, reason: item.reason })), null, 1)}`,
-      response_json_schema: {
-        type: "object",
-        properties: {
-          reasons: { type: "array", items: { type: "object", properties: { index: { type: "number" }, reason: { type: "string" } } } },
-        },
-      },
-    });
-    fixes = res.reasons || [];
-  } catch (err) {
-    console.error("[shopping list] reason rewrite failed", err);
-  }
-  return items.map((item, index) => {
-    if (!item.reason || isHebrewReason(item.reason)) return item;
-    const fixed = fixes.find(f => f.index === index)?.reason;
-    return { ...item, reason: isHebrewReason(fixed) ? fixed : "" };
-  });
-}
-
 // Basket totals after an item was removed or replaced
 function basketTotals(items) {
   return {
@@ -382,7 +296,7 @@ export default function ShoppingListPage() {
     enabled: !!user,
   });
   // Only confidently recognized or user-approved food items feed the basket;
-  // items still awaiting review (or ignored / not food) never reach the AI
+  // items still awaiting review (or ignored / not food) never reach the basket
   const receiptItems = foodReceiptItems.filter(isBasketReady);
   const pendingReview = foodReceiptItems.filter(isUnresolved).length;
 
@@ -390,23 +304,14 @@ export default function ShoppingListPage() {
 
   const generateMutation = useMutation({
     mutationFn: async () => {
-      // Receipt items that break the diet or allergies never reach the AI or the basket
-      const receiptName = i => ({ name: receiptItemName(i), category: i.category });
-      const enrichedItems = receiptItems
-        .filter(i => !profileConflict(receiptName(i), profile) && !isSupplement(receiptName(i)))
-        .map(getEffectiveItemData);
-      const itemsList = enrichedItems.map(i =>
-        `${receiptItemName(i)} (${i.category}, ${i.effective_calories_per_100g} cal/100g, protein:${i.effective_protein_per_100g}g, carbs:${i.effective_carbs_per_100g}g, fat:${i.effective_fat_per_100g}g, ₪${i.effective_price}, source:${i.data_source})`
-      ).join("\n");
       // BetterCart plans a full week: one weekly menu and one weekly basket,
       // whatever the shopping frequency (which only splits the budget)
       const daysPerPurchase = 7;
-      const totalCaloriesNeeded = (profile?.daily_calories || 2000) * daysPerPurchase;
       const weeklyBudget = Math.round(profile?.monthly_budget
         ? profile.monthly_budget * 7 / 30
         : (profile?.budget_per_purchase || 500) * Math.max(1, (profile?.purchases_per_month || 4) / 4.3));
       // The receipt is the basis of the basket: its recognized, menu-fit food
-      // items (not disliked) go in as they are; the AI only adds around them
+      // items (not disliked) go in as they are; the engine only adds around them
       const receiptBasket = [];
       for (const item of receiptItems.map(receiptToBasketItem)) {
         if (isDisliked(item.name, profile?.disliked_foods || [])) continue;
@@ -438,159 +343,33 @@ export default function ShoppingListPage() {
           history_total_receipts: h.total_receipts,
         });
       }
-      const historyFor = name => historyCandidates.find(h => sameFood(h.name, name));
-      const receiptCost = [...receiptBasket, ...historyBasket].reduce((s, i) => s + (i.estimated_price || 0), 0);
-      const addBudget = Math.max(Math.round(weeklyBudget * 0.3), Math.round(weeklyBudget - receiptCost));
-      // Prompt section (only once there is more than one receipt to learn from)
-      const historyLines = historyCandidates
-        .filter(h => ![...receiptBasket, ...historyBasket].some(b => sameFood(b.name, h.name)))
-        .map(h => `- ${h.name} — historyScore ${h.history_score}, bought in ${h.receipt_count}/${h.total_receipts} recent receipts, ` +
-          `avg health ${h.avg_health_score ?? "unknown"}/10, last bought ${h.days_since_last_seen} days ago`)
-        .join("\n");
-
-      const dietaryRestrictions = profile?.dietary_preferences || [];
-      const allergies = profile?.allergies || [];
-
-      // Diversity: figure out which protein source groups the receipt is
-      // already covering, and fetch real Shufersal candidates for the ones
-      // that are missing (and not excluded by diet/allergies) so the AI has
-      // concrete, real-priced options to diversify beyond chicken/eggs.
-      const itemNames = enrichedItems.map(i => receiptItemName(i));
-      const excludedGroups = excludedProteinGroups(dietaryRestrictions, allergies);
-      const eligibleGroups = Object.keys(PROTEIN_SOURCE_GROUPS).filter(g => !excludedGroups.has(g));
-      const presentGroups = presentProteinGroups(itemNames);
-      const missingGroups = eligibleGroups.filter(g => !presentGroups.has(g));
-      const complementaryCandidates = missingGroups.length > 0
-        ? await fetchComplementaryCandidates(missingGroups)
-        : [];
-      const complementaryList = complementaryCandidates.length > 0
-        ? complementaryCandidates.map(c =>
-            `${c.original_product_name} (קבוצת חלבון: ${PROTEIN_SOURCE_GROUPS[c.group].label}, ${c.calories_per_100g ?? "?"} cal/100g, protein:${c.protein_per_100g ?? "?"}g, ₪${c.price ?? "?"}, מקור: קטלוג שופרסל)`
-          ).join("\n")
-        : null;
-      const eligibleGroupLabels = eligibleGroups.map(g => PROTEIN_SOURCE_GROUPS[g].label).join(", ");
-
-      const restrictionWarning = dietaryRestrictions.length > 0 || allergies.length > 0
-        ? `⚠️ CRITICAL DIETARY RESTRICTIONS - MUST BE STRICTLY FOLLOWED:
-${dietaryRestrictions.includes("vegan") || dietaryRestrictions.includes("טבעוני") ? "- USER IS VEGAN: ABSOLUTELY NO meat, poultry, fish, dairy, eggs, or any animal products whatsoever." : ""}
-${dietaryRestrictions.includes("vegetarian") || dietaryRestrictions.includes("צמחוני") ? "- USER IS VEGETARIAN: NO meat, poultry, or fish." : ""}
-${dietaryRestrictions.includes("kosher") || dietaryRestrictions.includes("כשר") ? "- USER KEEPS KOSHER: Never combine meat/poultry items with dairy items in the same meal — keep meat-based and dairy-based items usable as separate meals." : ""}
-${allergies.length > 0 ? `- ALLERGIES (NEVER include): ${allergies.join(", ")}` : ""}
-Any item violating these restrictions must be replaced with a compliant alternative.`
-        : "";
-
-      const prompt = `You are a smart shopping list generator. Create an optimized, VARIED shopping list based on the user's profile and receipt history.
-
-The basket is built around the user's receipt: the RECEIPT ITEMS below are ALREADY IN THE BASKET. Your job is to ADD the items that complete a balanced, varied week around them, using realistic Israeli Shufersal products (the CATALOG COMPLEMENTARY OPTIONS below, if given, are real catalog products you can draw from or use as inspiration).
-
-${restrictionWarning}
-
-USER PROFILE:
-- Daily calories: ${profile?.daily_calories || 2000}
-- Protein target: ${profile?.protein_target || 150}g/day
-- Carbs target: ${profile?.carbs_target || 200}g/day
-- Fat target: ${profile?.fat_target || 67}g/day
-- Goal: ${profile?.goal || "maintenance"}
-- Weekly budget: ₪${weeklyBudget}
-- Shopping period: ${daysPerPurchase} days (one weekly basket)
-- Total calories needed: ${totalCaloriesNeeded}
-- Dietary preferences: ${dietaryRestrictions.join(", ") || "None"}
-- Allergies: ${allergies.join(", ") || "None"}
-- Favorite foods: ${(profile?.favorite_foods || []).join(", ") || "None"}
-- Disliked foods (NEVER include): ${(profile?.disliked_foods || []).join(", ") || "None"}
-
-RECEIPT ITEMS — ALREADY IN THE BASKET (do NOT list them again):
-${[itemsList, ...historyBasket.map(i => `${i.name} (${i.category}, the user's regular purchase)`)].filter(Boolean).join("\n") || "No receipt data available"}
-${historyLines ? `
-HISTORICAL PURCHASE PREFERENCES (products this user buys repeatedly, already filtered for their diet, allergies and dislikes):
-${historyLines}
-Prefer these products when they fit the user's nutritional needs, diet, budget and basket variety.
-Do NOT add them only because they were purchased frequently.
-Do NOT override dietary restrictions, allergies, disliked foods, protein/calorie sufficiency or budget.
-` : ""}
-
-CATALOG COMPLEMENTARY OPTIONS (real products from the active Shufersal catalog, offered to fill protein-group gaps the receipt is missing — use some of these, or similar realistic Shufersal products, to diversify):
-${complementaryList || "None needed — receipt already covers enough protein variety"}
-
-RULES:
-1. FIRST AND FOREMOST: strictly follow all dietary restrictions above - no exceptions.
-2. Only ADD items: never repeat a receipt item. Add what the week still needs around it — do NOT build around chicken/poultry and eggs as the only protein sources.
-3. Protein source diversity (REQUIRED): include items from AT LEAST 3 different protein source groups among: ${eligibleGroupLabels}. Use the CATALOG COMPLEMENTARY OPTIONS above (or similar real Shufersal products) to cover groups missing from the receipt.
-4. Category variety targets for a ${daysPerPurchase}-day list: at least 4 different vegetables, 2+ fruits, 2+ healthy fat sources, 2-3 different carb sources.
-5. Give priority to favorite foods and to products that go well with the receipt items.
-6. Add healthier alternatives where needed.
-7. ⚠️ STRICT BUDGET LIMIT: The SUM of the estimated_price values of the items you ADD MUST be under ₪${addBudget}. No exceptions. Reduce quantities or item count if needed — prefer trimming duplicate/overlapping items over dropping an entire protein group.
-8. Ensure enough calories for ${daysPerPurchase} days (${totalCaloriesNeeded} cal total).
-9. Balance protein, carbs, and fats.
-9b. Only regular groceries that are cooked or eaten in meals. NEVER supplements, protein powders, superfood powders (e.g. spirulina), vitamins, capsules or tablets.
-10. If the user keeps kosher, keep meat/poultry items and dairy-protein items as distinct shopping items (they must be usable in separate meals, never combined).
-11. Each item needs: name, category, quantity, estimated_price, calories (total for quantity), protein, carbs, fat, health_score (0-10), and reason.
-12. LANGUAGE (strict): "name" is the Hebrew product name as sold in Israeli supermarkets. "category" is exactly one of: ${SHOPPING_CATEGORIES.join(", ")}. "reason" is one short, natural Hebrew sentence explaining why the item is on the list — Hebrew only, never English.
-13. Before returning, verify: sum of the added items' estimated_price < ₪${addBudget}.
-
-Generate ${receiptBasket.length ? "6-12 additional items" : "a practical, realistic, VARIED shopping list with 12-18 items"}. Use Israeli supermarket product names. MAX BUDGET FOR THESE ITEMS: ₪${addBudget}.`;
-
-      const result = await api.integrations.Core.InvokeLLM({
-        prompt,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            items: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  name: { type: "string" },
-                  category: { type: "string", enum: SHOPPING_CATEGORIES },
-                  quantity: { type: "string" },
-                  estimated_price: { type: "number" },
-                  calories: { type: "number" },
-                  protein: { type: "number" },
-                  carbs: { type: "number" },
-                  fat: { type: "number" },
-                  health_score: { type: "number" },
-                  reason: { type: "string", description: "One short sentence in Hebrew" },
-                },
-              },
-            },
-            total_estimated_cost: { type: "number" },
-            total_calories: { type: "number" },
-          },
-        },
+      // The receipt (and strong regulars) are the anchor; the engine adds
+      // what the week still needs around it — deterministic, no AI
+      const anchor = [...receiptBasket, ...historyBasket];
+      const anchorCost = anchor.reduce((s, i) => s + (i.estimated_price || 0), 0);
+      // History products that are not regulars compete with catalog candidates
+      const historyItems = historyCandidates
+        .filter(h => h.latest_item && !anchor.some(b => sameFood(b.name, h.name)))
+        .map(h => ({ item: { ...receiptToBasketItem(h.latest_item), name: h.name, from_receipt: false }, history: h }));
+      const additions = await buildSmartAdditions({
+        basket: anchor,
+        historyItems,
+        profile,
+        budgetLeft: weeklyBudget - anchorCost,
+        hasReceipt: receiptBasket.length > 0,
       });
-
-      // Enforce budget hard cap - trim items if AI exceeded budget
-      const budget = weeklyBudget;
-      // Disliked foods never enter the basket, even if the AI suggested them
-      const disliked = profile?.disliked_foods || [];
-      const aiItems = await ensureHebrewReasons(
-        (result.items || [])
-          .filter(item => !isDisliked(item.name, disliked))
-          // the AI must follow the diet too — anything that breaks it is dropped
-          .filter(item => !profileConflict(item, profile))
-          // regular groceries only — supplements and powders are not meal food
-          .filter(item => !isSupplement(item))
-          // never a second copy of something the receipt (or history) already put in
-          .filter(item => ![...receiptBasket, ...historyBasket].some(r => sameFood(r.name, item.name)))
-          .map(item => {
-            const h = historyFor(item.name);
-            return {
-              ...item,
-              category: normalizeCategory(item.category),
-              // the AI's own number is not used: same product → same score
-              health_score: productHealthScore(item.name),
-              ...(h ? { history_score: h.history_score, history_receipt_count: h.receipt_count, history_total_receipts: h.total_receipts } : {}),
-            };
-          })
-      );
-      let finalItems = [...receiptBasket, ...historyBasket, ...aiItems];
-      // Bread/grains and a healthy fat are what lets the weekly menu reach the
-      // calorie target — complete them from the Shufersal catalog if missing
+      let finalItems = [...anchor, ...additions];
+      // Safety net (and protein completion): bread/grains/fat if still missing,
+      // then protein sources until the menu can reach the protein target
       finalItems = [...finalItems, ...await missingStaples(finalItems, profile, historyCandidates)];
+      const budget = weeklyBudget;
       let runningTotal = finalItems.reduce((sum, i) => sum + (i.estimated_price || 0), 0);
-      // Over budget: drop the most expensive AI addition first, then history
-      // regulars, receipt items only as a last resort, added staples never
-      const trimRank = i => (i.added_staple ? 0 : i.from_receipt ? 1 : i.from_history ? 2 : 3);
+      // Over budget: drop optional picks first (most expensive first), then
+      // history regulars, then vegetables/fruit/dairy needs, then protein
+      // sources, receipt items only as a last resort; staples and protein
+      // completion never
+      const trimRank = i => (i.added_staple ? 0 : i.from_receipt ? 1 : i.basket_need === "protein" ? 2
+        : i.basket_need ? 3 : i.from_history ? 4 : 5);
       while (runningTotal > budget && finalItems.some(i => !i.added_staple)) {
         const maxIdx = finalItems.reduce((mi, item, idx, arr) =>
           trimRank(item) > trimRank(arr[mi]) || (trimRank(item) === trimRank(arr[mi]) && item.estimated_price > arr[mi].estimated_price) ? idx : mi, 0);
@@ -603,10 +382,10 @@ Generate ${receiptBasket.length ? "6-12 additional items" : "a practical, realis
         title: `סל קניות — ${new Date().toLocaleDateString("he-IL")}`,
         shopping_period_days: daysPerPurchase,
         total_estimated_cost: runningTotal,
-        total_calories: result.total_calories,
+        total_calories: Math.round(finalItems.reduce((s, i) => s + (Number(i.calories) || 0), 0)),
         status: "draft",
         items: finalItems,
-        complementary_added: missingGroups.length > 0,
+        complementary_added: finalItems.some(i => !i.from_receipt),
       });
 
       return list;
@@ -771,7 +550,7 @@ Generate ${receiptBasket.length ? "6-12 additional items" : "a practical, realis
             <p className="text-xs text-muted-foreground/60 mt-0.5">
               {catalogMatchCount > 0
                 ? `הסל משתמש בנתוני קטלוג מאומתים עבור ${catalogMatchCount} מוצרים`
-                : "הסל מבוסס על נתוני הקבלה והערכת AI"}
+                : "הסל מבוסס על נתוני הקבלה"}
             </p>
           )}
           {effectiveReceiptId && catalogMatchCount > 0 && (
@@ -894,6 +673,12 @@ Generate ${receiptBasket.length ? "6-12 additional items" : "a practical, realis
                         )}
                         {!item.from_receipt && item.history_score >= REGULAR_MIN_SCORE && (
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-emerald-300 text-emerald-700">קונה בקביעות</Badge>
+                        )}
+                        {item.protein_completion && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">השלמת חלבון</Badge>
+                        )}
+                        {item.from_engine && !(item.history_score >= REGULAR_MIN_SCORE) && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">המלצת BetterCart</Badge>
                         )}
                         <Badge className={`text-xs ${categoryColors[item.category] || categoryColors.other}`}>
                           {CATEGORY_LABELS[item.category] || item.category}
