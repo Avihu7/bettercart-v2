@@ -129,6 +129,8 @@ export function matchPatch(item, match) {
 export function manualMatchPatch(product) {
   return {
     ...EMPTY_CATALOG,
+    // the item is now known by the product the user chose (the receipt text stays in original_name)
+    normalized_name: product.original_product_name,
     matched_product_id: String(product.product_id),
     matched_product_name: product.original_product_name,
     catalog_chain: product.chain ?? null,
@@ -146,6 +148,13 @@ export function manualMatchPatch(product) {
     is_food: true,
   };
 }
+
+/**
+ * The name to use for a receipt item: the product the user picked when they
+ * corrected the match by hand, otherwise the receipt's reading of it.
+ */
+export const receiptItemName = i =>
+  (i.catalog_match_type === "manual" && i.matched_product_name) || i.normalized_name || i.original_name;
 
 /** Patches for the other review actions. */
 export const approvePatch = () => ({ catalog_match_status: "approved", catalog_needs_review: false });

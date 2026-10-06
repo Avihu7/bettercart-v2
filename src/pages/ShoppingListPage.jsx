@@ -19,7 +19,7 @@ import { toast } from "@/components/ui/use-toast";
 import StatCard from "@/components/dashboard/StatCard";
 import { useFlowData, FLOW_QUERY_KEY } from "@/lib/flowData";
 import FlowSteps from "@/components/FlowSteps";
-import { isBasketReady, isUnresolved } from "@/lib/receiptReview";
+import { isBasketReady, isUnresolved, receiptItemName } from "@/lib/receiptReview";
 import { classifyProduct, normalizeHebrew } from "@/lib/mealPlanRules";
 import { parseQuantityGrams } from "@/lib/mealPlanCalories";
 import { findAlternatives, buildReplacementItem, isDisliked, itemRole, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement } from "@/lib/basketAlternatives";
@@ -93,7 +93,7 @@ const DEFAULT_PACK_GRAMS = 500;
  */
 function receiptToBasketItem(raw) {
   const i = getEffectiveItemData(raw);
-  const name = i.normalized_name || i.original_name;
+  const name = receiptItemName(i);
   const category = normalizeCategory(i.category);
   const group = classifyProduct(name, category);
   const parsed = parseQuantityGrams(i.quantity, group) || parseQuantityGrams(i.matched_product_name, group);
@@ -367,12 +367,12 @@ export default function ShoppingListPage() {
   const generateMutation = useMutation({
     mutationFn: async () => {
       // Receipt items that break the diet or allergies never reach the AI or the basket
-      const receiptName = i => ({ name: i.normalized_name || i.original_name, category: i.category });
+      const receiptName = i => ({ name: receiptItemName(i), category: i.category });
       const enrichedItems = receiptItems
         .filter(i => !profileConflict(receiptName(i), profile) && !isSupplement(receiptName(i)))
         .map(getEffectiveItemData);
       const itemsList = enrichedItems.map(i =>
-        `${i.normalized_name || i.original_name} (${i.category}, ${i.effective_calories_per_100g} cal/100g, protein:${i.effective_protein_per_100g}g, carbs:${i.effective_carbs_per_100g}g, fat:${i.effective_fat_per_100g}g, ₪${i.effective_price}, source:${i.data_source})`
+        `${receiptItemName(i)} (${i.category}, ${i.effective_calories_per_100g} cal/100g, protein:${i.effective_protein_per_100g}g, carbs:${i.effective_carbs_per_100g}g, fat:${i.effective_fat_per_100g}g, ₪${i.effective_price}, source:${i.data_source})`
       ).join("\n");
       // BetterCart plans a full week: one weekly menu and one weekly basket,
       // whatever the shopping frequency (which only splits the budget)
@@ -400,7 +400,7 @@ export default function ShoppingListPage() {
       // already covering, and fetch real Shufersal candidates for the ones
       // that are missing (and not excluded by diet/allergies) so the AI has
       // concrete, real-priced options to diversify beyond chicken/eggs.
-      const itemNames = enrichedItems.map(i => (i.normalized_name || i.original_name || ""));
+      const itemNames = enrichedItems.map(i => receiptItemName(i));
       const excludedGroups = excludedProteinGroups(dietaryRestrictions, allergies);
       const eligibleGroups = Object.keys(PROTEIN_SOURCE_GROUPS).filter(g => !excludedGroups.has(g));
       const presentGroups = presentProteinGroups(itemNames);
@@ -585,15 +585,15 @@ Generate ${receiptBasket.length ? "6-12 additional items" : "a practical, realis
     return foodReceiptItems
       .filter(i => ["matched", "approved"].includes(i.catalog_match_status))
       .filter(i => {
-        const name = i.normalized_name || i.original_name;
+        const name = receiptItemName(i);
         if (showList.items.some(b => sameFood(b.name, name)) || seen.some(n => sameFood(n, name))) return false;
         seen.push(name);
         return true;
       });
   })() : [];
-  const conflictOf = i => profileConflict({ name: i.normalized_name || i.original_name, category: i.category }, profile);
+  const conflictOf = i => profileConflict({ name: receiptItemName(i), category: i.category }, profile);
   const leftOutReason = i => {
-    const name = i.normalized_name || i.original_name;
+    const name = receiptItemName(i);
     const conflict = conflictOf(i);
     if (conflict) return conflict.text;
     if (isSupplement({ name })) return "תוסף תזונה — לא חלק מהתפריט";
@@ -862,10 +862,10 @@ Generate ${receiptBasket.length ? "6-12 additional items" : "a practical, realis
                 {leftOutFromReceipt.map(i => (
                   <li key={i.id} className="p-4 flex flex-col sm:flex-row sm:items-center gap-2">
                     <div className="flex-1 min-w-0">
-                      <span className="font-medium text-sm break-words">{i.normalized_name || i.original_name}</span>
+                      <span className="font-medium text-sm break-words">{receiptItemName(i)}</span>
                       <p className="text-xs text-muted-foreground mt-0.5">{leftOutReason(i)}</p>
                     </div>
-                    {conflictOf(i) || isSupplement({ name: i.normalized_name || i.original_name }) ? (
+                    {conflictOf(i) || isSupplement({ name: receiptItemName(i) }) ? (
                       <span className="text-xs text-muted-foreground shrink-0">לא ניתן להוסיף</span>
                     ) : (
                       <Button variant="outline" size="sm" className="min-h-9 shrink-0" disabled={saveItemsMutation.isPending}
