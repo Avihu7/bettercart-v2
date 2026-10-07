@@ -63,6 +63,14 @@ export function explainMenu(validation, { plan, basketItems, profile } = {}) {
     if (bad(id)) say("safety", `שגיאה: ${check(id).message} — לא מתקיים. התפריט לא יוצג עד שזה יתוקן.`);
   }
   if (bad("meals_per_day")) say("realism", `בחלק מהימים יש פחות מ-3 ארוחות — אין בסל מספיק מוצרים לכל הארוחות.`);
+  if (bad("meal_slots") && !bad("meals_per_day")) {
+    const missing = check("meal_slots").data.missing;
+    const breakfast = missing.some(m => m.endsWith("Breakfast"));
+    say("realism", breakfast
+      ? "בחלק מהימים אין ארוחת בוקר — אין בסל מוצרים לארוחת בוקר (לחם, ביצים, יוגורט, דגני בוקר או פרי)."
+      : `בחלק מהימים חסרה ארוחה (${missing.length}) — אין בסל מספיק מוצרים לכל הארוחות.`);
+    if (breakfast) add.add(ADD.breakfast);
+  }
   if (bad("meal_rules")) {
     const n = check("meal_rules").data.problems.length;
     say("realism", `${n} ארוחות לא עומדות בחוקי הארוחה (למשל ארוחה עיקרית בלי חלבון).`);

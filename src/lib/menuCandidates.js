@@ -14,6 +14,8 @@
  *              cottage/cheese + avocado + vegetables      (cottage_avocado)
  *              cereal/oats + milk + fruit                 (cereal)
  *              yogurt + fruit (+ nuts or oats)            (yogurt)
+ *              bread/pita + spread + vegetables           (bread_spread)          } only when none of the
+ *              fruit + nuts (+ bread)                     (fruit_nuts_breakfast)  } above is possible
  *   Lunch      protein + carb + vegetables (+ oil/tahini) (plate)
  *              eggs/dairy + bread + vegetables            (dairy_plate)
  *   Dinner     cheese/eggs/yogurt + bread + vegetables    (dairy_plate)
@@ -31,6 +33,7 @@ export const MEAL_SHARE = { Breakfast: 0.25, Lunch: 0.35, Dinner: 0.27, Snacks: 
 // How natural each pattern is as an everyday Israeli meal (0..1)
 export const PATTERN_REALISM = {
   bread: 1, eggs: 1, cereal: 0.95, yogurt: 0.9, tuna: 0.85, cottage_avocado: 0.9,
+  bread_spread: 0.85, fruit_nuts_breakfast: 0.75,
   plate: 1, dairy_plate: 0.9, starch_plate: 0.4,
   fruit: 1, fruit_nuts: 0.95, yogurt_snack: 0.9, nuts: 0.8,
 };
@@ -168,6 +171,27 @@ export function generateCandidates({ catalog, densities, profile }) {
       const extra = of(["nuts"], "Breakfast")[0] || of(["cereal"], "Breakfast")[0];
       add("Breakfast", "yogurt", withCoffee([protein(y, "Breakfast"), it(f, PORTION.fruit), extra && it(extra, extra.group === "nuts" ? 20 : 40)]),
         { main: y, style: `yogurt:${y.id}` });
+    }
+  }
+  // Fallback: breakfasts without a protein food, only when the basket can make no
+  // breakfast above (no cheese, eggs, tofu, tuna, yogurt or cereal) — so every day
+  // still has a breakfast, and baskets that have one are not affected:
+  //   bread / pita + a spread (peanut butter, tahini, avocado) + vegetables
+  //   fruit + nuts (+ bread)
+  const spreads = out.Breakfast.length ? [] : [...of(["avocado"], "Breakfast"), ...of(["tahini", "nuts"], "Breakfast").filter(p => /חמאת|ממרח|טחינה/.test(p.name_he))];
+  const fallbackFruits = out.Breakfast.length ? [] : fruitsB;
+  for (const bread of breads) {
+    for (const spread of spreads) {
+      for (const veg of vegB.length ? vegB : [[]]) {
+        add("Breakfast", "bread_spread", withCoffee([it(bread, PORTION.bread), it(spread, spread.group === "avocado" ? PORTION.avocado : 25), ...veg.map(v => it(v, PORTION.vegetable))]),
+          { carb: bread, style: `spread:${spread.id}` });
+      }
+    }
+  }
+  for (const f of fallbackFruits) {
+    for (const n of of(["nuts"], "Breakfast").filter(p => !/חמאת|ממרח/.test(p.name_he))) {
+      add("Breakfast", "fruit_nuts_breakfast", withCoffee([it(f, PORTION.fruit), it(n, PORTION.nuts), breads[0] && it(breads[0], 60)]),
+        { carb: breads[0] || null, style: `fruit:${n.id}` });
     }
   }
 

@@ -120,6 +120,9 @@ export function validateMenu({ plan, basketItems, profile, budget = null }) {
   add("meal_rules", "realism", ruleProblems.length === 0, "כל הארוחות עומדות בחוקי הארוחה ובגודל מנה ריאלי", { problems: ruleProblems });
   const thinDays = days.filter(d => d.meals.length < 3).map(d => d.day_name);
   add("meals_per_day", "realism", days.length === 7 && thinDays.length === 0, "7 ימים, לפחות 3 ארוחות ביום", { thinDays, days: days.length });
+  // Every day has its breakfast, lunch and dinner (snacks are optional)
+  const missingSlots = days.flatMap(d => ["Breakfast", "Lunch", "Dinner"].filter(t => !d.meals.some(m => m.meal_type === t && m.items.length)).map(t => `${d.day_name}/${t}`));
+  add("meal_slots", "realism", missingSlots.length === 0, "בכל יום יש ארוחת בוקר, צהריים וערב", { missing: missingSlots });
 
   // ── nutrition
   const kcalTarget = profile?.daily_calories, proteinTarget = profile?.protein_target;
