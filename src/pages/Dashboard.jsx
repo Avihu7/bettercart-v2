@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { formatCurrency, getBMICategoryHe, calculateFitnessScore, calculateBMI } from "@/lib/calculations";
 import { format } from "date-fns";
+import { applyReceiptRules } from "@/lib/receiptClassifier";
 
 const STATUS_LABELS = {
   uploaded: "הועלה",
@@ -62,7 +63,9 @@ export default function Dashboard() {
 
   const { data: approvedReceiptItems } = useQuery({
     queryKey: ["approvedReceiptItems", user?.email],
-    queryFn: () => api.entities.ReceiptItem.filter({ created_by: user.email, is_approved_for_menu: true }),
+    // menu suitability by the rules (or the user's own edit), not the receipt AI
+    queryFn: async () => (await api.entities.ReceiptItem.filter({ created_by: user.email }))
+      .map(applyReceiptRules).filter(i => i.is_approved_for_menu),
     initialData: [],
     enabled: !!user,
   });

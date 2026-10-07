@@ -21,6 +21,7 @@ import { useFlowData, FLOW_QUERY_KEY } from "@/lib/flowData";
 import FlowSteps from "@/components/FlowSteps";
 import { isBasketReady, isUnresolved, receiptItemName } from "@/lib/receiptReview";
 import { weeklyBudget as profileWeeklyBudget, basketBudget } from "@/lib/pricing";
+import { applyReceiptRules } from "@/lib/receiptClassifier";
 import { buildBasket, receiptToBasketItem, sameFood, basketTotals, basketLooksThin, REGULAR_MIN_SCORE } from "@/lib/basketBuilder";
 import { planCost } from "@/lib/mealPlanBudget";
 import { weeklyCosts, budgetDrivers, priceFacts } from "@/lib/basketBudget";
@@ -202,7 +203,9 @@ export default function ShoppingListPage() {
   const { data: foodReceiptItems = [], isLoading: itemsLoading } = useQuery({
     queryKey: ["approvedItems", effectiveReceiptId, user?.email],
     queryFn: () => effectiveReceiptId
-      ? api.entities.ReceiptItem.filter({ receipt_id: effectiveReceiptId, created_by: user.email, is_food: true })
+      // food / menu suitability by the rules (or the user's own edit), not the receipt AI
+      ? api.entities.ReceiptItem.filter({ receipt_id: effectiveReceiptId, created_by: user.email })
+        .then(rows => rows.map(applyReceiptRules).filter(i => i.is_food))
       : Promise.resolve([]),
     enabled: !!user,
   });

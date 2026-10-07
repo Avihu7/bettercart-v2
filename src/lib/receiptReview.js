@@ -12,11 +12,13 @@
  *   ignored           the user chose to leave it out of the flow
  * Only matched/approved food items may be used to build the smart basket.
  */
+import { applyReceiptRules } from "@/lib/receiptClassifier";
+import { isNonFoodName } from "@/lib/nonFood";
 
 // Common household / personal-care products that are never food
 const NON_FOOD = /משחת\s*שיניים|מש\.?\s*שיניים|מברשת\s*שיניים|מרידול|קולגייט|שמפו|מרכך\s*(שיער|כביסה)|סבון|דאודורנט|נייר\s*(טואלט|סופג)|חיתולים|מגבונים|חומר\s*ניקוי|אקונומיקה|נוזל\s*כלים|אבקת\s*כביסה|ג'?ל\s*כביסה|תחליב\s*רחצה/;
 
-export const looksNonFood = text => NON_FOOD.test(String(text || ""));
+export const looksNonFood = text => NON_FOOD.test(String(text || "")) || isNonFoodName(text);
 
 const UNRESOLVED = new Set(["not_checked", "needs_review", "possible_non_food", "not_found"]);
 const BASKET_READY = new Set(["matched", "approved"]);
@@ -29,8 +31,11 @@ const statusOf = item => item.catalog_match_status || "not_checked";
 export const isUnresolved = item => !!item.is_food && UNRESOLVED.has(statusOf(item));
 
 /** May this receipt item be used to build the smart basket? */
-export const isBasketReady = item =>
-  !!item.is_food && !!item.is_approved_for_menu && BASKET_READY.has(statusOf(item)) && !item.catalog_needs_review;
+// Food and menu suitability by the rules (or the user's own edit), never the receipt AI
+export const isBasketReady = raw => {
+  const item = applyReceiptRules(raw);
+  return !!item.is_food && !!item.is_approved_for_menu && BASKET_READY.has(statusOf(item)) && !item.catalog_needs_review;
+};
 
 /** Should (re)running catalog matching touch this item? */
 export const needsMatching = item => !!item.is_food && !USER_DECIDED.has(statusOf(item));

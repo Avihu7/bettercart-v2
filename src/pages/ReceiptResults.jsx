@@ -23,6 +23,7 @@ import { formatCurrency } from "@/lib/calculations";
 import { format } from "date-fns";
 import FlowSteps from "@/components/FlowSteps";
 import { useFlowData } from "@/lib/flowData";
+import { receiptInsights, applyReceiptRules } from "@/lib/receiptClassifier";
 
 const CATEGORIES = ["protein", "carb", "fat", "vegetable", "fruit", "dairy", "snack", "drink", "other"];
 
@@ -101,22 +102,6 @@ const categoryColors = {
   drink: "bg-cyan-50 text-cyan-700",
   other: "bg-gray-50 text-gray-700",
 };
-
-// Older AI insights used a malformed Hebrew term for dairy ("מוצרי דייה",
-// "דיירי") — show the correct "מוצרי חלב" for receipts already saved.
-function fixHebrewTerm(text) {
-  if (typeof text !== "string") return text;
-  return text
-    .replace(/מוצרי\s+(?:דייה|דיירי|דאירי)/g, "מוצרי חלב")
-    .replace(/(?<![א-ת])(?:דייה|דיירי|דאירי)(?![א-ת])/g, "מוצרי חלב");
-}
-
-function fixInsightTerms(insights) {
-  if (!insights || typeof insights !== "object") return insights;
-  return Object.fromEntries(
-    Object.entries(insights).map(([k, v]) => [k, Array.isArray(v) ? v.map(fixHebrewTerm) : fixHebrewTerm(v)])
-  );
-}
 
 // "שינוי התאמה": a few Shufersal catalog candidates for the receipt text, searchable
 function ChangeMatchDialog({ item, onClose, onSelect, saving }) {
@@ -199,7 +184,8 @@ export default function ReceiptResults() {
       const filters = user?.email
         ? { receipt_id: receiptId, created_by: user.email }
         : { receipt_id: receiptId };
-      return api.entities.ReceiptItem.filter(filters);
+      // category / menu suitability / food by the rules (or the user's own edit)
+      return api.entities.ReceiptItem.filter(filters).then(rows => rows.map(applyReceiptRules));
     },
     enabled: !!receiptId && !!user,
   });
@@ -280,7 +266,8 @@ export default function ReceiptResults() {
   };
 
   const saveEdit = (id) => {
-    updateMutation.mutate({ id, data: editData });
+    // A hand-edited row keeps the user's category / menu choice over the rules
+    updateMutation.mutate({ id, data: { ...editData, user_edited: true } });
   };
 
   if (!receipt) {
@@ -292,7 +279,8 @@ export default function ReceiptResults() {
     );
   }
 
-  const insights = fixInsightTerms(receipt.insights);
+  // Computed from the items (src/lib/receiptClassifier.js) — no AI advice
+  const insights = receiptInsights(items);
 
   return (
     <div className="space-y-6">
@@ -301,7 +289,7 @@ export default function ReceiptResults() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="font-heading text-2xl font-bold">ניתוח הקבלה</h1>
-          <p className="text-sm text-muted-foreground">תוצאות ניתוח AI של הקבלה שלכם</p>
+          <p className="text-sm text-muted-foreground">המוצרים שזוהו בקבלה שלכם</p>
         </div>
         <div className="flex flex-col items-start sm:items-end gap-1">
           <Button onClick={() => navigate(`/shopping-list?receipt_id=${receiptId}&build=1`)} className="rounded-full">
@@ -594,11 +582,11 @@ export default function ReceiptResults() {
         </Card>
       )}
 
-      {/* AI Insights */}
+      {/* Insights (rule-based) */}
       {insights && (
         <Card className="p-5">
           <h2 className="font-heading font-semibold flex items-center gap-2 mb-4">
-            <Lightbulb className="w-5 h-5 text-amber-500" /> תובנות AI
+            <Lightbulb className="w-5 h-5 text-amber-500" /> תובנות מהקבלה
           </h2>
           <div className="grid sm:grid-cols-2 gap-6">
             {insights.main_food_preferences?.length > 0 && (

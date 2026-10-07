@@ -134,11 +134,12 @@ export function computePurchaseHistory(rows, itemCodeById = new Map(), now = new
         id: s.id, receipt_id: s.receipt_id,
         original_name: s.original_name, normalized_name: s.normalized_name,
         category: s.category, quantity: s.quantity, price: s.price,
-        is_food: true, is_approved_for_menu: true, health_score: productHealthScore(healthScoreName(s)),
+        is_food: true, is_approved_for_menu: !!s.is_approved_for_menu, user_edited: !!s.user_edited, health_score: productHealthScore(healthScoreName(s)),
         calories_per_100g: s.calories_per_100g, protein_per_100g: s.protein_per_100g,
         carbs_per_100g: s.carbs_per_100g, fat_per_100g: s.fat_per_100g,
         matched_product_id: s.matched_product_id, matched_product_name: s.matched_product_name,
         catalog_chain: s.catalog_chain, catalog_price: s.catalog_price, catalog_price_per_100g: s.catalog_price_per_100g,
+        catalog_pack_grams: s.catalog_pack_grams, catalog_sold_by_weight: !!s.catalog_sold_by_weight,
         catalog_calories_per_100g: s.catalog_calories_per_100g, catalog_protein_per_100g: s.catalog_protein_per_100g,
         catalog_carbs_per_100g: s.catalog_carbs_per_100g, catalog_fat_per_100g: s.catalog_fat_per_100g,
         catalog_match_type: s.catalog_match_type, catalog_match_status: s.catalog_match_status, catalog_needs_review: false,
@@ -154,12 +155,12 @@ export function purchaseHistoryForUser(db, productsDb, userId, now = new Date())
            i.health_score, i.calories_per_100g, i.protein_per_100g, i.carbs_per_100g, i.fat_per_100g,
            i.matched_product_id, i.matched_product_name, i.catalog_chain, i.catalog_price, i.catalog_price_per_100g,
            i.catalog_calories_per_100g, i.catalog_protein_per_100g, i.catalog_carbs_per_100g, i.catalog_fat_per_100g,
-           i.catalog_match_type, i.catalog_match_status,
+           i.catalog_match_type, i.catalog_match_status, i.is_approved_for_menu, i.user_edited, i.catalog_pack_grams, i.catalog_sold_by_weight,
            r.purchase_date, r.created_date
     FROM receiptItems i
     JOIN receipts r ON r.id = i.receipt_id AND r.created_by = i.created_by
     WHERE i.created_by = ?
-      AND i.is_food = 1 AND i.is_approved_for_menu = 1
+      AND i.is_food = 1
       AND i.catalog_match_status IN ('matched', 'approved')
       AND COALESCE(i.catalog_needs_review, 0) = 0
   `).all(userId);

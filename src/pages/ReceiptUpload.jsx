@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, FileText, Camera, Loader2, Sparkles, AlertCircle, Info } from "lucide-react";
 import { DEMO_RECEIPT_TEXT } from "@/lib/demoData";
 import { analyzeReceipt } from "@/lib/receiptPipeline";
+import { classifyReceiptLine, receiptInsights } from "@/lib/receiptClassifier";
 import { IS_DEMO_MODE } from "@/lib/ai";
 import { useAuth } from "@/lib/AuthContext";
 import FlowSteps from "@/components/FlowSteps";
@@ -77,53 +78,39 @@ export default function ReceiptUpload() {
       setPipelineStep("מנתח את הקבלה עם AI...");
       const result = await analyzeReceipt(textToAnalyze);
 
+      // The AI only read the lines; food / category / menu suitability are
+      // decided here by rules (src/lib/receiptClassifier.js), nutrition later
+      // by the catalog match, the health score by the server
+      const lines = result.lines.map(line => ({ ...line, ...classifyReceiptLine(line) }));
+      const food = lines.filter(l => l.is_food);
+
       setPipelineStep("שומר נתוני קבלה...");
       const receipt = await api.entities.Receipt.create({
         store_name: result.store_name,
         purchase_date: result.purchase_date,
-        total_amount: result.total_amount,
+        total_amount: result.total_amount ?? Math.round(lines.reduce((s, l) => s + (l.price || 0), 0) * 100) / 100,
         raw_text: textToAnalyze,
         file_url: fileUrl,
         status: "analyzed",
-        ai_raw_output: JSON.stringify(result, null, 2),
-        insights: result.insights,
-        food_item_count: result.food_items?.length || 0,
-        non_food_item_count: result.non_food_items?.length || 0,
+        ai_raw_output: JSON.stringify(result.raw, null, 2),
+        insights: receiptInsights(lines),
+        food_item_count: food.length,
+        non_food_item_count: lines.length - food.length,
       });
 
       setPipelineStep("שומר פריטי מזון...");
-      if (result.food_items?.length > 0) {
-        const items = result.food_items.map(item => ({
+      if (lines.length > 0) {
+        await api.entities.ReceiptItem.bulkCreate(lines.map(line => ({
           receipt_id: receipt.id,
-          original_name: item.original_name,
-          normalized_name: item.normalized_name,
-          category: item.category,
-          is_food: item.is_food,
-          is_approved_for_menu: item.is_approved_for_menu,
-          quantity: item.estimated_quantity,
-          price: item.price,
-          calories_per_100g: item.calories_per_100g,
-          protein_per_100g: item.protein_per_100g,
-          carbs_per_100g: item.carbs_per_100g,
-          fat_per_100g: item.fat_per_100g,
-          health_score: item.health_score,
-          reasoning: item.reasoning,
-        }));
-        await api.entities.ReceiptItem.bulkCreate(items);
-      }
-
-      if (result.non_food_items?.length > 0) {
-        const nonFoodItems = result.non_food_items.map(item => ({
-          receipt_id: receipt.id,
-          original_name: item.name,
-          normalized_name: item.name,
-          category: "other",
-          is_food: false,
-          is_approved_for_menu: false,
-          price: item.price,
-          reasoning: item.reason,
-        }));
-        await api.entities.ReceiptItem.bulkCreate(nonFoodItems);
+          original_name: line.original_name,
+          normalized_name: line.normalized_name,
+          category: line.category,
+          is_food: line.is_food,
+          is_approved_for_menu: line.is_approved_for_menu,
+          quantity: line.quantity,
+          price: line.price,
+          reasoning: line.reasoning,
+        })));
       }
 
       return receipt;

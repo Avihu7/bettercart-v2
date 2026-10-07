@@ -152,7 +152,7 @@ const JSON_FIELDS = {
 const BOOL_FIELDS = {
   userProfile:   ['onboarding_complete'],
   receipts:      [],
-  receiptItems:  ['is_food', 'is_approved_for_menu', 'catalog_needs_review', 'catalog_sold_by_weight'],
+  receiptItems:  ['is_food', 'is_approved_for_menu', 'catalog_needs_review', 'catalog_sold_by_weight', 'user_edited'],
   shoppingLists: ['complementary_added'],
   nutritionPlans: [],
 };

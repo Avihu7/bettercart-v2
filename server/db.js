@@ -132,6 +132,8 @@ const catalogCols = [
   // Real pack weight of the matched product, and whether its price is per kg
   "ALTER TABLE receiptItems ADD COLUMN catalog_pack_grams        REAL",
   "ALTER TABLE receiptItems ADD COLUMN catalog_sold_by_weight    INTEGER",
+  // The user edited the row by hand: their category / menu choice wins over the rules
+  "ALTER TABLE receiptItems ADD COLUMN user_edited               INTEGER DEFAULT 0",
   // Budget: a higher weekly amount the user accepted for a basket, and the
   // menu's cost check ({ weekly_budget, estimated_cost, fits, over_by, swaps })
   "ALTER TABLE shoppingLists ADD COLUMN accepted_budget          REAL",

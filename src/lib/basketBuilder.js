@@ -12,7 +12,8 @@
  * No network here: purchase history and catalog lookups are passed in.
  */
 import { classifyProduct, normalizeHebrew } from "@/lib/mealPlanRules";
-import { parseQuantityGrams } from "@/lib/mealPlanCalories";
+import { parseQuantityGrams, plausiblePer100g } from "@/lib/mealPlanCalories";
+import { applyReceiptRules } from "@/lib/receiptClassifier";
 import { productHealthScore } from "@/lib/healthScore";
 import { pricingFields, isWeighedGroup } from "@/lib/pricing";
 import { receiptItemName } from "@/lib/receiptReview";
@@ -24,10 +25,16 @@ const DEFAULT_PACK_GRAMS = 500;
 
 // ─── Receipt item → basket item ──────────────────────────────────────────────
 
-/** Catalog values for an item matched with confidence, else the receipt's own. */
+/**
+ * Price and nutrition for an item: the catalog's when it is matched with
+ * confidence; otherwise the receipt's price and no nutrition (the caller uses
+ * typical values for the food group). Nutrition the receipt AI once estimated
+ * is never used.
+ */
 export function getEffectiveItemData(item) {
   const hasStrongCatalogMatch =
     ["matched", "approved"].includes(item.catalog_match_status) && !item.catalog_needs_review;
+  const catalog = k => (hasStrongCatalogMatch && item[`catalog_${k}_per_100g`] != null ? item[`catalog_${k}_per_100g`] : null);
 
   return {
     ...item,
@@ -35,23 +42,11 @@ export function getEffectiveItemData(item) {
       hasStrongCatalogMatch && item.catalog_price != null
         ? item.catalog_price
         : item.price,
-    effective_calories_per_100g:
-      hasStrongCatalogMatch && item.catalog_calories_per_100g != null
-        ? item.catalog_calories_per_100g
-        : item.calories_per_100g,
-    effective_protein_per_100g:
-      hasStrongCatalogMatch && item.catalog_protein_per_100g != null
-        ? item.catalog_protein_per_100g
-        : item.protein_per_100g,
-    effective_carbs_per_100g:
-      hasStrongCatalogMatch && item.catalog_carbs_per_100g != null
-        ? item.catalog_carbs_per_100g
-        : item.carbs_per_100g,
-    effective_fat_per_100g:
-      hasStrongCatalogMatch && item.catalog_fat_per_100g != null
-        ? item.catalog_fat_per_100g
-        : item.fat_per_100g,
-    data_source: hasStrongCatalogMatch ? "catalog" : "receipt_ai",
+    effective_calories_per_100g: catalog("calories"),
+    effective_protein_per_100g: catalog("protein"),
+    effective_carbs_per_100g: catalog("carbs"),
+    effective_fat_per_100g: catalog("fat"),
+    data_source: hasStrongCatalogMatch ? "catalog" : "receipt",
   };
 }
 
@@ -80,7 +75,8 @@ export function normalizeCategory(category) {
  * basket, so these go in directly (catalog values when the match is confirmed).
  */
 export function receiptToBasketItem(raw) {
-  const i = getEffectiveItemData(raw);
+  // category and menu suitability by the rules (or the user's own edit)
+  const i = getEffectiveItemData(applyReceiptRules(raw));
   const name = receiptItemName(i);
   const group = classifyProduct(name, normalizeCategory(i.category));
   // Avocado is a healthy fat in the basket, whatever the receipt called it
@@ -97,6 +93,11 @@ export function receiptToBasketItem(raw) {
   const catalogPriced = i.data_source === "catalog" && Number(i.catalog_price) > 0 && packGrams > 0 && !otherPack;
   const grams = parsed || (catalogPriced ? packGrams : DEFAULT_PACK_GRAMS);
   const f = grams / 100;
+  // Catalog nutrition when plausible for the food group, else its typical values
+  const n = plausiblePer100g({ name_he: name, group }, i.effective_calories_per_100g != null ? {
+    kcal: Number(i.effective_calories_per_100g), protein: Number(i.effective_protein_per_100g) || 0,
+    carbs: Number(i.effective_carbs_per_100g) || 0, fat: Number(i.effective_fat_per_100g) || 0,
+  } : null);
   const per = v => (v == null ? null : Math.round(Number(v) * f * 10) / 10);
   const pricing = catalogPriced
     ? pricingFields({ price: Number(i.catalog_price), packGrams: Number(i.catalog_pack_grams), soldByWeight: !!i.catalog_sold_by_weight, grams })
@@ -109,10 +110,11 @@ export function receiptToBasketItem(raw) {
     quantity: parsed && i.quantity ? i.quantity : `${grams} גרם`,
     estimated_price: Number(i.effective_price ?? i.price ?? 0) || 0,
     ...pricing,
-    calories: Math.round((Number(i.effective_calories_per_100g) || 0) * f),
-    protein: per(i.effective_protein_per_100g),
-    carbs: per(i.effective_carbs_per_100g),
-    fat: per(i.effective_fat_per_100g),
+    calories: Math.round((n?.kcal || 0) * f),
+    protein: per(n?.protein),
+    carbs: per(n?.carbs),
+    fat: per(n?.fat),
+    nutrition_source: n?.source || null,
     // deterministic, from the product (the same score the receipt table shows)
     health_score: productHealthScore(name),
     reason: "נמצא בקבלה שלך, ולכן נשאר בסל.",
@@ -189,6 +191,8 @@ export async function buildBasket({
   // A single receipt is not a pattern — history needs at least 2 (confidence 0.4).
   const fitting = history
     .filter(h => h.confidence >= 0.4 && h.history_score > 0.5)
+    // menu suitability by the rules (or the user's edit), as for receipt items
+    .filter(h => !h.latest_item || applyReceiptRules(h.latest_item).is_approved_for_menu)
     .filter(h => !profileConflict({ name: h.name, category: h.latest_item?.category }, profile))
     .filter(h => !isSupplement({ name: h.name }) && !isDisliked(h.name, disliked));
   const historyCandidates = fitting.slice(0, HISTORY_TOP);
