@@ -14,7 +14,7 @@
  * week's real cost went down. Deterministic: same menu + basket → same result.
  */
 import { buildFinalShoppingList } from '@/lib/shoppingOptimizer';
-import { checkMeal, validatePlan, mealNameMismatches, nameFromItems, shortProductName, portionCap } from '@/lib/mealPlanRules';
+import { checkMeal, validatePlan, mealNameMismatches, nameFromItems, dishWord, portionCap } from '@/lib/mealPlanRules';
 import { closeCalories } from '@/lib/mealPlanCalories';
 
 // What a product can be swapped for, and what the swap keeps equal
@@ -70,8 +70,8 @@ function setItem(item, product, grams, d) {
 
 /** The dish name after a swap: the old product's name replaced, else rebuilt from the items. */
 function renameMeal(meal, from, to, catalog) {
-  const oldShort = shortProductName(from.name_he);
-  const newShort = shortProductName(to.name_he);
+  const oldShort = dishWord(from.name_he);
+  const newShort = dishWord(to.name_he);
   if (oldShort && meal.meal_name?.includes(oldShort)) meal.meal_name = meal.meal_name.replace(oldShort, newShort);
   if (mealNameMismatches(meal.meal_name, meal.items, catalog).length) meal.meal_name = nameFromItems(meal.items);
 }
@@ -141,7 +141,9 @@ export function fitPlanToBudget({ plan, catalog, densities, targets, basketItems
   const swaps = [];
   const rejected = new Set(); // product pairs ("from>to") with no saving move
   const swappedIn = new Set(); // "day:meal:product" put in by a kept swap
-  const baseProblems = validatePlan(plan, catalog).length;
+  // Meal-rule problems the menu already had; a swap may fix some, never add one
+  const problemKeys = p => validatePlan(p, catalog).flatMap(x => x.reasons.map(r => `${x.dayIndex}:${x.mealIndex}:${r}`));
+  const baseProblems = new Set(problemKeys(plan));
   const productByName = new Map(catalog.map(p => [p.name_he, p]));
   const priced = new Set(basketItems.filter(i => Number(i.price_per_kg) > 0 || Number(i.estimated_price) > 0).map(i => i.name));
 
@@ -170,7 +172,7 @@ export function fitPlanToBudget({ plan, catalog, densities, targets, basketItems
           if (!report) continue;
           reportsHere.set(report.day, report);
           done.push(swap);
-          if (validatePlan(trial, catalog).length > baseProblems) continue;
+          if (problemKeys(trial).some(k => !baseProblems.has(k))) continue;
           const trialCost = planCost(basketItems, trial.days);
           const saving = cost - trialCost;
           if (saving < MIN_SAVING) continue;

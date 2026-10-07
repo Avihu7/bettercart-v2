@@ -4,7 +4,7 @@
  * Falls back to demo responses when no key is available.
  */
 
-import { DEMO_AI_RESPONSE, DEMO_SHOPPING_LIST_RESPONSE, DEMO_NUTRITION_PLAN_RESPONSE, DEMO_RECEIPT_TEXT } from '@/lib/demoData';
+import { DEMO_AI_RESPONSE, DEMO_RECEIPT_TEXT } from '@/lib/demoData';
 
 const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
 const MODEL = 'claude-haiku-4-5-20251001';
@@ -142,16 +142,8 @@ export async function invokeLLM({ prompt, response_json_schema }) {
 }
 
 function buildDemoResponse(prompt) {
+  // Only receipts use AI (the basket and the weekly menu are rule-based)
   const lower = prompt.toLowerCase();
-  // Meal plan MUST be checked first — its prompt contains "shopping list" as context,
-  // so checking shopping list first incorrectly returns the shopping list demo response.
-  if (lower.includes('meal plan') || lower.includes('nutrition plan') || lower.includes('breakfast') || lower.includes('lunch')) {
-    return Promise.resolve(DEMO_NUTRITION_PLAN_RESPONSE);
-  }
-  // Shopping list prompt contains "RECEIPT ITEMS" — check before generic receipt
-  if (lower.includes('shopping list') || lower.includes('סל קניות') || lower.includes('shopping_period')) {
-    return Promise.resolve(DEMO_SHOPPING_LIST_RESPONSE);
-  }
   if (lower.includes('receipt') || lower.includes('קבלה') || lower.includes('supermarket')) {
     return Promise.resolve(DEMO_AI_RESPONSE);
   }

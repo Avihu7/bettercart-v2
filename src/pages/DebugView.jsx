@@ -134,7 +134,7 @@ export default function DebugView() {
                 { step: "3. AI Analysis", desc: "InvokeLLM with structured JSON schema", status: selectedReceipt?.ai_raw_output ? "done" : "pending" },
                 { step: "4. Food Classification", desc: "Categorize items as protein/carb/fat/etc.", status: receiptItems.some(i => i.category) ? "done" : "pending" },
                 { step: "5. Non-food Filtering", desc: "Remove cleaning products, cosmetics, etc.", status: receiptItems.some(i => !i.is_food) ? "done" : "pending" },
-                { step: "6. Shopping List Generation", desc: "AI-optimized list based on profile", status: shoppingLists.length > 0 ? "done" : "pending" },
+                { step: "6. Shopping List Generation", desc: "Rule-based basket from receipt + profile (no AI)", status: shoppingLists.length > 0 ? "done" : "pending" },
                 { step: "7. Nutrition Plan", desc: "Weekly meal plan from shopping list", status: plans.length > 0 ? "done" : "pending" },
                 { step: "8. PDF Export", desc: "Downloadable shopping list and meal plan", status: "ready" },
               ].map((s, i) => (

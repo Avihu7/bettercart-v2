@@ -321,9 +321,22 @@ export function shortProductName(name) {
     .trim();
 }
 
+// Package / kashrut words that are not part of a dish name
+const NOISE_WORDS = new Set(["טרי", "טריה", "ארוז", "ארוזה", "מהדרין", "כשר", "כשרה", "יח", "מארז", "שקית", "ק\"ג", "גרם"]);
+
+/** A short, readable food name for dish names: "לחם מלא100%+שיפון-קל750ג" → "לחם מלא", "טונה במים בד"צ 960" → "טונה במים". */
+export function dishWord(name) {
+  const words = shortProductName(name)
+    .replace(/[+/,()]/g, " ")
+    .split(/\s+/)
+    .map(w => w.replace(/\d.*$/, "").replace(/[-–]+$/, ""))
+    .filter(w => w && w.length > 1 && !/["״׳']/.test(w.slice(1, -1)) && !NOISE_WORDS.has(w));
+  return words.slice(0, 3).join(" ") || shortProductName(name);
+}
+
 /** Fallback dish name built from the meal's own items. */
 export function nameFromItems(items) {
-  const names = items.map(i => shortProductName(i.food_name)).filter(Boolean);
+  const names = [...new Set(items.map(i => dishWord(i.food_name)).filter(Boolean))];
   if (names.length <= 1) return names[0] || "";
   const [first, ...rest] = names;
   const tail = rest.length === 1 ? rest[0] : `${rest.slice(0, -1).join(", ")} ו${rest.at(-1)}`;

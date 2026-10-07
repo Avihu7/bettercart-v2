@@ -9,7 +9,7 @@
  * snack, and finally nudged toward the protein target (see balanceProtein).
  */
 
-import { portionCap, shortProductName, mealNameMismatches, nameFromItems } from '@/lib/mealPlanRules';
+import { portionCap, dishWord, mealNameMismatches, nameFromItems } from '@/lib/mealPlanRules';
 
 // Plausible kcal/100g "as eaten" per food group; values outside are treated as bad data.
 const KCAL_RANGE = {
@@ -451,7 +451,7 @@ function addCarbSides(day, kcalNeeded, catalog, densities, usedCarbs, dayProduct
     setGrams(item, grams, d);
     if (isSide) SIDE_ITEMS.add(item);
     meal.items.push(item);
-    if (meal.meal_name) meal.meal_name = `${meal.meal_name} ו${shortProductName(p.name_he)}`;
+    if (meal.meal_name) meal.meal_name = `${meal.meal_name} ו${dishWord(p.name_he)}`;
     added += item.calories;
   }
   return added;
@@ -477,7 +477,7 @@ function addFatSides(day, kcal, catalog, densities, usedIds) {
     const item = { product_id: p.id, food_name: p.name_he };
     setGrams(item, grams, d);
     meal.items.push(item);
-    if (meal.meal_name) meal.meal_name = `${meal.meal_name} ו${shortProductName(p.name_he)}`;
+    if (meal.meal_name) meal.meal_name = `${meal.meal_name} ו${dishWord(p.name_he)}`;
     added += item.calories;
   }
   return added;
@@ -525,7 +525,7 @@ function densifyProtein(day, proteinNeeded, catalog, densities) {
         target = { product_id: better.id, food_name: better.name_he };
         setGrams(target, 0, dHigh);
         meal.items.push(target);
-        if (meal.meal_name) meal.meal_name = `${meal.meal_name} ו${shortProductName(better.name_he)}`;
+        if (meal.meal_name) meal.meal_name = `${meal.meal_name} ו${dishWord(better.name_he)}`;
       }
       setGrams(target, roundGrams(Number(target.grams) + kcal * 100 / dHigh.kcal), dHigh);
       gained += sumOf(day, "protein") - before;
@@ -559,7 +559,7 @@ function addProteinSides(day, proteinNeeded, catalog, densities, kcalBudget = In
     const item = { product_id: p.id, food_name: p.name_he };
     setGrams(item, grams, d);
     meal.items.push(item);
-    if (meal.meal_name) meal.meal_name = `${meal.meal_name} ו${shortProductName(p.name_he)}`;
+    if (meal.meal_name) meal.meal_name = `${meal.meal_name} ו${dishWord(p.name_he)}`;
     added += item.protein;
     kcalAdded += item.calories;
   }
@@ -577,7 +577,7 @@ function addNutSnack(day, kcal, catalog, densities, usedIds) {
   const item = { product_id: p.id, food_name: p.name_he };
   setGrams(item, grams, d);
   snacks.items.push(item);
-  if (snacks.meal_name) snacks.meal_name = `${snacks.meal_name} ו${shortProductName(p.name_he)}`;
+  if (snacks.meal_name) snacks.meal_name = `${snacks.meal_name} ו${dishWord(p.name_he)}`;
   return item.calories;
 }
 

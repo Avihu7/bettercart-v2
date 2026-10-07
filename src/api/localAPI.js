@@ -5,7 +5,7 @@
 
 import { createEntityAPI } from '@/lib/serverDB';
 import { profileMacroTargets } from '@/lib/calculations';
-import { invokeLLM, uploadFile, extractDataFromFile } from '@/lib/ai';
+import { uploadFile, extractDataFromFile } from '@/lib/ai';
 
 // Every profile the app reads carries macro targets from the current formula
 // (calculateMacros), so all screens and the plan generator agree — including
@@ -40,7 +40,6 @@ export const api = {
 
   integrations: {
     Core: {
-      InvokeLLM: invokeLLM,
       UploadFile: uploadFile,
       ExtractDataFromUploadedFile: extractDataFromFile,
     },

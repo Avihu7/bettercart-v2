@@ -27,13 +27,13 @@ const FEATURES = [
   {
     icon: Heart,
     title: "תפריט תזונה אישי",
-    desc: "הבינה המלאכותית יוצרת תפריט שבועי המותאם למטרות הבריאות, ההעדפות והתקציב שלכם.",
+    desc: "תפריט שבועי שנבנה מהמוצרים שבסל, ומותאם למטרות הבריאות, להעדפות ולתקציב שלכם.",
     color: "bg-emerald-50 text-emerald-600",
   },
   {
     icon: Receipt,
     title: "תובנות מזון מהקבלה",
-    desc: "העלו קבלות וגלו את הרגלי האכילה האמיתיים שלכם. הAI מזהה דפוסים ומציע שיפורים.",
+    desc: "העלו קבלות וגלו את הרגלי האכילה האמיתיים שלכם. הבינה המלאכותית קוראת את הקבלה ומזהה את מוצרי המזון.",
     color: "bg-purple-50 text-purple-600",
   },
 ];
@@ -113,7 +113,7 @@ export default function Landing() {
             className="text-lg text-muted-foreground max-w-xl mx-auto mb-10 leading-relaxed"
           >
             בנו תפריט תזונה אישי מתוך הקבלות האמיתיות שלכם מהסופר.
-            BetterCart משתמשת בבינה מלאכותית לנתח את הרגלי הקנייה שלכם וליצור תפריט בריא וחכם שמתאים לתקציב.
+            BetterCart קוראת את הקבלה בעזרת בינה מלאכותית, ובונה ממנה סל ותפריט בריא שמתאים לתקציב — לפי כללים תזונתיים קבועים.
           </motion.p>
 
           <motion.div custom={3} variants={fadeUp} initial="hidden" animate="visible" className="space-y-3">
