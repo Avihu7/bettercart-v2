@@ -255,7 +255,7 @@ export default function NutritionPlanPage() {
             <StatCard title="ימים מתוכננים" value={showPlan.days?.length || 0} icon={UtensilsCrossed} color="blue" />
           </div>
 
-          <BudgetNotice budget={showPlan.budget} onBasket={() => navigate("/shopping-list")} />
+          <BudgetNotice budget={showPlan.budget} onBasket={() => navigate("/shopping-list#budget")} />
 
           {/* Day Tabs */}
           <Tabs key={showPlan.id} defaultValue={planDays[0]?.day_name} dir="rtl" className="w-full">

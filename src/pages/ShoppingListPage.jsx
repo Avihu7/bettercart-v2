@@ -26,11 +26,43 @@ import { productHealthScore } from "@/lib/healthScore";
 import { pricingFields, isWeighedGroup, weeklyBudget as profileWeeklyBudget, basketBudget } from "@/lib/pricing";
 import { buildSmartAdditions } from "@/lib/smartBasketEngine";
 import { planCost } from "@/lib/mealPlanBudget";
+import { weeklyCosts, budgetDrivers, priceFacts } from "@/lib/basketBudget";
+import BudgetImpactCard from "@/components/BudgetImpactCard";
 import { findAlternatives, buildReplacementItem, isDisliked, itemRole, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement, proteinShortText } from "@/lib/basketAlternatives";
 
 const MIN_FOOD_ITEMS = 3;
 
 const formatShekel = n => `₪${Math.round(n * 10) / 10}`;
+
+/**
+ * Price details of a basket item: price and amount, ₪/kg (or litre) and
+ * ₪/100 g, ₪ per 10 g of protein for protein foods, and its weekly cost and
+ * share of the total; "מגדיל את העלות" for the top budget drivers.
+ */
+function PriceLine({ item, weekly, total, driver }) {
+  const f = priceFacts(item);
+  const unit = f.liquid ? "לליטר" : "לק\"ג";
+  const parts = [
+    f.price > 0 && `${formatShekel(f.price)} · ${item.quantity}`,
+    f.perKg && `${formatShekel(f.perKg)} ${unit}${f.soldByWeight ? " (במשקל)" : ""}`,
+    f.per100g && `${formatShekel(f.per100g)} ל-100 ${f.liquid ? "מ\"ל" : "גרם"}`,
+    f.perTenGramsProtein && `${formatShekel(f.perTenGramsProtein)} ל-10 ג׳ חלבון`,
+  ].filter(Boolean);
+  return (
+    <div className="mt-1 text-xs text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5">
+      {parts.length > 0 && <span>{parts.join(" · ")}</span>}
+      {weekly?.source === "menu" && (
+        <span className="text-foreground">
+          השבוע: {formatShekel(weekly.cost)}{total > 0 && ` (${Math.round(weekly.cost / total * 100)}%)`}
+        </span>
+      )}
+      {weekly?.source === "unused" && <span>לא בשימוש בתפריט השבוע</span>}
+      {driver && (
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-amber-300 text-amber-700">מגדיל את העלות</Badge>
+      )}
+    </div>
+  );
+}
 
 // Pack size assumed when a receipt line has no readable quantity
 const DEFAULT_PACK_GRAMS = 500;
@@ -536,8 +568,8 @@ export default function ShoppingListPage() {
     });
   };
 
-  const replaceItem = option => {
-    const index = replacing;
+  const replaceItem = option => replaceItemAt(replacing, option);
+  const replaceItemAt = (index, option) => {
     const old = showList.items[index];
     const replacement = buildReplacementItem(option);
     const items = showList.items.map((it, i) => (i === index ? replacement : it));
@@ -574,6 +606,20 @@ export default function ShoppingListPage() {
   const disliked = profile?.disliked_foods || [];
   // The weekly plan was built from an earlier version of this basket
   const basketChangedSincePlan = planOutdated && planBasket?.id === showList?.id;
+
+  // Weekly cost per item: what the menu needs (when a menu was built from this
+  // basket), else the item's own price; the top 3 are the budget drivers
+  const menuDays = plan?.days?.length && planBasket?.id === showList?.id ? plan.days : null;
+  const itemCosts = showList?.items ? weeklyCosts(showList.items, menuDays) : [];
+  const costTotal = itemCosts.reduce((s, c) => s + c.cost, 0);
+  const driverIdx = new Set(showList?.items ? budgetDrivers(showList.items, itemCosts).slice(0, 3).map(d => d.index) : []);
+
+  // Arriving from "החלפת מוצרים יקרים בסל": scroll to the budget card
+  useEffect(() => {
+    if (window.location.hash === "#budget" && showList) {
+      document.getElementById("budget")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [showList?.id]);
 
   const catalogMatchCount = receiptItems.filter(
     i => ["matched", "approved"].includes(i.catalog_match_status) && !i.catalog_needs_review
@@ -709,11 +755,23 @@ export default function ShoppingListPage() {
             <StatCard title="קטגוריות" value={new Set((showList.items || []).map(i => i.category)).size} icon={Heart} color="green" />
           </div>
 
+          <BudgetImpactCard
+            basketItems={showList.items || []}
+            planDays={menuDays}
+            profile={profile}
+            budget={profile ? basketBudget(profile, showList) : 0}
+            onReplace={replaceItemAt}
+            saving={saveItemsMutation.isPending}
+            menuOutdated={basketChangedSincePlan}
+          />
+
           {/* Items Table */}
           <Card className="overflow-hidden">
             <div className="p-4 border-b flex items-center justify-between">
               <h2 className="font-heading font-semibold">המוצרים שנבחרו</h2>
-              <span className="text-xs text-muted-foreground">הכמויות והעלות לקנייה יחושבו בסוף, לפי התפריט השבועי</span>
+              <span className="text-xs text-muted-foreground">
+                {menuDays ? "העלות השבועית לכל מוצר — לפי הכמות שהתפריט צריך" : "המחיר לכל מוצר — העלות השבועית תחושב לפי התפריט"}
+              </span>
             </div>
             <ul className="divide-y">
               {showList.items?.map((item, i) => (
@@ -745,6 +803,7 @@ export default function ShoppingListPage() {
                           {CATEGORY_LABELS[item.category] || item.category}
                         </Badge>
                       </div>
+                      <PriceLine item={item} weekly={itemCosts[i]} total={costTotal} driver={driverIdx.has(i)} />
                       {isHebrewReason(item.reason) && (
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.reason}</p>
                       )}

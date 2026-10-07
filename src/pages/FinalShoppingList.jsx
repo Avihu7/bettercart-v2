@@ -128,7 +128,7 @@ export default function FinalShoppingList() {
               fits: finalList.total_estimated_cost <= plan.budget.weekly_budget,
               over_by: Math.max(0, Math.round((finalList.total_estimated_cost - plan.budget.weekly_budget) * 10) / 10),
             } : null}
-            onBasket={() => navigate("/shopping-list")}
+            onBasket={() => navigate("/shopping-list#budget")}
           />
 
           <Card className="overflow-hidden">

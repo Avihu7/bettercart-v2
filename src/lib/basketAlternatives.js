@@ -358,7 +358,8 @@ export function itemFamily(item) {
  * Up to `max` replacement options for `item`, best match first.
  * Returns [] when the item has no replaceable role or nothing suitable exists.
  */
-export async function findAlternatives(item, basketItems, profile, { max = 5 } = {}) {
+// sameFood: also a cheaper version of the same food (e.g. frozen for fresh ground beef) — for budget savings
+export async function findAlternatives(item, basketItems, profile, { max = 5, sameFood = false } = {}) {
   const family = itemFamily(item);
   if (!family) return [];
   const kosher = kosherOf(itemGroup(item));
@@ -371,15 +372,16 @@ export async function findAlternatives(item, basketItems, profile, { max = 5 } =
     (c.family === "plant_drink" || kosherOf(candidateGroup(c)) === kosher) &&
     !violatesProfile(c, profile) &&
     !isDisliked(c.label, disliked, candidateGroup(c)) &&
-    // never the same food again, never something already in the basket
-    !mentions(item.name, c) &&
+    // never the same food again (unless a cheaper version is asked for), never something already in the basket
+    (sameFood || !mentions(item.name, c)) &&
     !others.some(b => mentions(b.name, c))
   );
 
   const found = (await Promise.all(eligible.map(c => searchCandidate(c).catch(() => null))))
     .filter(Boolean)
     .filter(o => !isDisliked(o.product.original_product_name, disliked, o.group))
-    .filter(o => !basketItems.some(b => normalizeHebrew(b.name) === normalizeHebrew(o.product.original_product_name)));
+    .filter(o => !basketItems.some(b => normalizeHebrew(b.name) === normalizeHebrew(o.product.original_product_name) ||
+      (b.catalog_product_id != null && String(b.catalog_product_id) === String(o.product.product_id))));
 
   const current = itemPer100g(item, itemGroup(item));
   const pricePer100 = o => o.product.price / o.grams * 100;
