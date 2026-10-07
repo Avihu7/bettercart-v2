@@ -20,15 +20,12 @@ import StatCard from "@/components/dashboard/StatCard";
 import { useFlowData, FLOW_QUERY_KEY } from "@/lib/flowData";
 import FlowSteps from "@/components/FlowSteps";
 import { isBasketReady, isUnresolved, receiptItemName } from "@/lib/receiptReview";
-import { classifyProduct, normalizeHebrew } from "@/lib/mealPlanRules";
-import { parseQuantityGrams } from "@/lib/mealPlanCalories";
-import { productHealthScore } from "@/lib/healthScore";
-import { pricingFields, isWeighedGroup, weeklyBudget as profileWeeklyBudget, basketBudget } from "@/lib/pricing";
-import { buildSmartAdditions } from "@/lib/smartBasketEngine";
+import { weeklyBudget as profileWeeklyBudget, basketBudget } from "@/lib/pricing";
+import { buildBasket, receiptToBasketItem, sameFood, basketTotals, basketLooksThin, REGULAR_MIN_SCORE } from "@/lib/basketBuilder";
 import { planCost } from "@/lib/mealPlanBudget";
 import { weeklyCosts, budgetDrivers, priceFacts } from "@/lib/basketBudget";
 import BudgetImpactCard from "@/components/BudgetImpactCard";
-import { findAlternatives, buildReplacementItem, isDisliked, itemRole, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement, proteinShortText } from "@/lib/basketAlternatives";
+import { findAlternatives, buildReplacementItem, isDisliked, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement, proteinShortText } from "@/lib/basketAlternatives";
 
 const MIN_FOOD_ITEMS = 3;
 
@@ -64,73 +61,7 @@ function PriceLine({ item, weekly, total, driver }) {
   );
 }
 
-// Pack size assumed when a receipt line has no readable quantity
-const DEFAULT_PACK_GRAMS = 500;
-
-/**
- * A recognized receipt item as a basket item: the receipt is the basis of the
- * basket, so these go in directly (catalog values when the match is confirmed).
- */
-function receiptToBasketItem(raw) {
-  const i = getEffectiveItemData(raw);
-  const name = receiptItemName(i);
-  const group = classifyProduct(name, normalizeCategory(i.category));
-  // Avocado is a healthy fat in the basket, whatever the receipt called it
-  const category = group === "avocado" ? "fat" : normalizeCategory(i.category);
-  const parsed = parseQuantityGrams(i.quantity, group) || parseQuantityGrams(i.matched_product_name, group);
-  // Catalog price with its real unit: a weighed product's price is per kg, a
-  // packed one's per pack — never the price of the receipt's own amount
-  // packaged — unless the catalog matched a different pack size than the one
-  // bought (e.g. 100 g for a 1 kg bag): then the receipt's own price is the truer one
-  const receiptPrice = Number(i.price) || 0;
-  const packGrams = Number(i.catalog_pack_grams) || 0;
-  const otherPack = !i.catalog_sold_by_weight && parsed && packGrams && receiptPrice > 0 &&
-    (parsed / packGrams > 1.5 || parsed / packGrams < 0.67);
-  const catalogPriced = i.data_source === "catalog" && Number(i.catalog_price) > 0 && packGrams > 0 && !otherPack;
-  const grams = parsed || (catalogPriced ? packGrams : DEFAULT_PACK_GRAMS);
-  const f = grams / 100;
-  const per = v => (v == null ? null : Math.round(Number(v) * f * 10) / 10);
-  const pricing = catalogPriced
-    ? pricingFields({ price: Number(i.catalog_price), packGrams: Number(i.catalog_pack_grams), soldByWeight: !!i.catalog_sold_by_weight, grams })
-    : receiptPrice > 0
-      ? pricingFields({ price: receiptPrice, packGrams: grams, soldByWeight: isWeighedGroup(group, name), grams })
-      : {};
-  return {
-    name,
-    category,
-    quantity: parsed && i.quantity ? i.quantity : `${grams} גרם`,
-    estimated_price: Number(i.effective_price ?? i.price ?? 0) || 0,
-    ...pricing,
-    calories: Math.round((Number(i.effective_calories_per_100g) || 0) * f),
-    protein: per(i.effective_protein_per_100g),
-    carbs: per(i.effective_carbs_per_100g),
-    fat: per(i.effective_fat_per_100g),
-    // deterministic, from the product (the same score the receipt table shows)
-    health_score: productHealthScore(name),
-    reason: "נמצא בקבלה שלך, ולכן נשאר בסל.",
-    from_receipt: true,
-    receipt_item_id: i.id,
-    ...(i.data_source === "catalog" ? {
-      catalog_product_id: i.matched_product_id ?? null,
-      catalog_chain: i.catalog_chain ?? null,
-      catalog_name: i.matched_product_name ?? null,
-      catalog_price: i.catalog_price ?? null,
-    } : {}),
-  };
-}
-
-// ─── Purchase history (soft preference) ──────────────────────────────────────
-// Scores come from GET /api/purchase-history (server/purchaseHistory.js).
-// History never overrides diet, allergies, disliked foods, nutrition or budget:
-// candidates are filtered by those first, and history only reorders/adds
-// among what already fits.
-const HISTORY_TOP = 10;
-// A product counts as a "regular" — added to the basket by itself — only with
-// a strong combined score AND decent quality (frequent alone is not enough)
-const REGULAR_MIN_SCORE = 0.72;
-const REGULAR_MIN_QUALITY = 0.6;
-const MAX_REGULARS = 5;
-
+// Purchase history for the basket (server/purchaseHistory.js); none when the request fails
 async function fetchPurchaseHistory() {
   try {
     const res = await fetch("/api/purchase-history", { credentials: "include" });
@@ -140,42 +71,6 @@ async function fetchPurchaseHistory() {
     return [];
   }
 }
-
-const sameFood = (a, b) => {
-  const [x, y] = [normalizeHebrew(a), normalizeHebrew(b)];
-  return !!x && !!y && (x === y || x.includes(y) || y.includes(x));
-};
-
-function getEffectiveItemData(item) {
-  const hasStrongCatalogMatch =
-    ["matched", "approved"].includes(item.catalog_match_status) && !item.catalog_needs_review;
-
-  return {
-    ...item,
-    effective_price:
-      hasStrongCatalogMatch && item.catalog_price != null
-        ? item.catalog_price
-        : item.price,
-    effective_calories_per_100g:
-      hasStrongCatalogMatch && item.catalog_calories_per_100g != null
-        ? item.catalog_calories_per_100g
-        : item.calories_per_100g,
-    effective_protein_per_100g:
-      hasStrongCatalogMatch && item.catalog_protein_per_100g != null
-        ? item.catalog_protein_per_100g
-        : item.protein_per_100g,
-    effective_carbs_per_100g:
-      hasStrongCatalogMatch && item.catalog_carbs_per_100g != null
-        ? item.catalog_carbs_per_100g
-        : item.carbs_per_100g,
-    effective_fat_per_100g:
-      hasStrongCatalogMatch && item.catalog_fat_per_100g != null
-        ? item.catalog_fat_per_100g
-        : item.fat_per_100g,
-    data_source: hasStrongCatalogMatch ? "catalog" : "receipt_ai",
-  };
-}
-
 
 const categoryColors = {
   protein: "bg-red-50 text-red-700",
@@ -195,46 +90,11 @@ const CATEGORY_LABELS = {
   snack: "חטיף", drink: "שתייה", other: "אחר",
 };
 
-const SHOPPING_CATEGORIES = Object.keys(CATEGORY_LABELS);
-
-// Maps AI category variants ("carbs", "legumes", "מוצרי חלב", …) onto the category keys above
-const CATEGORY_ALIASES = [
-  [/^(carbs?|grains?|bread|pasta|rice|cereals?)$|פחמימ|דגנ|לחם|כוללי/i, "carb"],
-  [/^(legumes?|plant_protein|meat|poultry|fish|eggs?|proteins?)$|חלבון|קטני|עו[פף]|בשר|דג/i, "protein"],
-  [/^(dairy_products|milk)$|חלב/i, "dairy"],
-  [/^(fats?|oils?|healthy_fats?|nuts?)$|שומנ|שמן|אגוז|שקד/i, "fat"],
-  [/^vegetables?$|ירק/i, "vegetable"],
-  [/^fruits?$|פרי|פירות|פרות/i, "fruit"],
-  [/^(snacks?|sweets?|favorite)$|חטי[פף]|מתוק/i, "snack"],
-  [/^(drinks?|beverages?)$|משק[הא]|שתי/i, "drink"],
-];
-
-function normalizeCategory(category) {
-  const c = String(category || "").trim();
-  if (SHOPPING_CATEGORIES.includes(c)) return c;
-  return CATEGORY_ALIASES.find(([re]) => re.test(c))?.[1] || "other";
-}
-
 // A reason is shown only if it is Hebrew text, not predominantly Latin/English
 function isHebrewReason(text) {
   const hebrew = (String(text || "").match(/[\u05D0-\u05EA]/g) || []).length;
   const latin = (String(text || "").match(/[A-Za-z]/g) || []).length;
   return hebrew > 0 && hebrew >= latin;
-}
-
-// Basket totals after an item was removed or replaced
-function basketTotals(items) {
-  return {
-    total_estimated_cost: Math.round(items.reduce((s, i) => s + (Number(i.estimated_price) || 0), 0) * 100) / 100,
-    total_calories: Math.round(items.reduce((s, i) => s + (Number(i.calories) || 0), 0)),
-  };
-}
-
-// A basket this small, or without a protein, carb or vegetable, limits the weekly menu
-const MIN_VARIED_BASKET = 8;
-function basketLooksThin(items) {
-  const roles = new Set(items.map(itemRole));
-  return items.length < MIN_VARIED_BASKET || !["protein", "carb", "vegetable"].every(r => roles.has(r) || (r === "protein" && roles.has("dairy")));
 }
 
 function ReplaceDialog({ item, basketItems, profile, onClose, onSelect, saving }) {
@@ -359,72 +219,10 @@ export default function ShoppingListPage() {
       // whatever the shopping frequency (which only splits the budget)
       const daysPerPurchase = 7;
       const weeklyBudget = profileWeeklyBudget(profile);
-      // The receipt is the basis of the basket: its recognized, menu-fit food
-      // items (not disliked) go in as they are; the engine only adds around them
-      const receiptBasket = [];
-      for (const item of receiptItems.map(receiptToBasketItem)) {
-        if (isDisliked(item.name, profile?.disliked_foods || [])) continue;
-        if (profileConflict(item, profile) || isSupplement(item)) continue;
-        if (receiptBasket.some(b => sameFood(b.name, item.name))) continue;
-        receiptBasket.push(item);
-      }
-      // Purchase history: only products that fit this user at all, above neutral.
-      // A single receipt is not a pattern — history needs at least 2 (confidence 0.4).
-      const history = (await fetchPurchaseHistory())
-        .filter(h => h.confidence >= 0.4 && h.history_score > 0.5)
-        .filter(h => !profileConflict({ name: h.name, category: h.latest_item?.category }, profile))
-        .filter(h => !isSupplement({ name: h.name }) && !isDisliked(h.name, profile?.disliked_foods || []));
-      const historyCandidates = history.slice(0, HISTORY_TOP);
-      // Strong regulars go in by themselves (like receipt items), unless already there
-      const historyBasket = [];
-      for (const h of historyCandidates) {
-        if (historyBasket.length >= MAX_REGULARS) break;
-        if (h.history_score < REGULAR_MIN_SCORE || h.quality_score < REGULAR_MIN_QUALITY || !h.latest_item) continue;
-        if ([...receiptBasket, ...historyBasket].some(b => sameFood(b.name, h.name))) continue;
-        historyBasket.push({
-          ...receiptToBasketItem(h.latest_item),
-          name: h.name,
-          reason: `רכשת את המוצר ב-${h.receipt_count} מתוך ${h.total_receipts} הקניות האחרונות, והוא מתאים לסל השבועי.`,
-          from_receipt: false,
-          from_history: true,
-          history_score: h.history_score,
-          history_receipt_count: h.receipt_count,
-          history_total_receipts: h.total_receipts,
-        });
-      }
-      // The receipt (and strong regulars) are the anchor; the engine adds
-      // what the week still needs around it — deterministic, no AI
-      const anchor = [...receiptBasket, ...historyBasket];
-      const anchorCost = anchor.reduce((s, i) => s + (i.estimated_price || 0), 0);
-      // History products that are not regulars compete with catalog candidates
-      const historyItems = historyCandidates
-        .filter(h => h.latest_item && !anchor.some(b => sameFood(b.name, h.name)))
-        .map(h => ({ item: { ...receiptToBasketItem(h.latest_item), name: h.name, from_receipt: false }, history: h }));
-      const additions = await buildSmartAdditions({
-        basket: anchor,
-        historyItems,
-        profile,
-        budgetLeft: weeklyBudget - anchorCost,
-        hasReceipt: receiptBasket.length > 0,
+      // The basket algorithm lives in src/lib/basketBuilder.js (deterministic, no AI)
+      const { items: finalItems, total: runningTotal } = await buildBasket({
+        receiptItems, history: await fetchPurchaseHistory(), profile, weeklyBudget,
       });
-      let finalItems = [...anchor, ...additions];
-      // Safety net (and protein completion): bread/grains/fat if still missing,
-      // then protein sources until the menu can reach the protein target
-      finalItems = [...finalItems, ...await missingStaples(finalItems, profile, historyCandidates)];
-      const budget = weeklyBudget;
-      let runningTotal = finalItems.reduce((sum, i) => sum + (i.estimated_price || 0), 0);
-      // Over budget: drop optional picks first (most expensive first), then
-      // history regulars, then vegetables/fruit/dairy needs, then protein
-      // sources, receipt items only as a last resort; staples and protein
-      // completion never
-      const trimRank = i => (i.added_staple ? 0 : i.from_receipt ? 1 : i.basket_need === "protein" ? 2
-        : i.basket_need ? 3 : i.from_history ? 4 : 5);
-      while (runningTotal > budget && finalItems.some(i => !i.added_staple)) {
-        const maxIdx = finalItems.reduce((mi, item, idx, arr) =>
-          trimRank(item) > trimRank(arr[mi]) || (trimRank(item) === trimRank(arr[mi]) && item.estimated_price > arr[mi].estimated_price) ? idx : mi, 0);
-        runningTotal -= finalItems[maxIdx].estimated_price || 0;
-        finalItems = finalItems.filter((_, idx) => idx !== maxIdx);
-      }
 
       const list = await api.entities.ShoppingList.create({
         receipt_id: effectiveReceiptId || "",
@@ -630,7 +428,7 @@ export default function ShoppingListPage() {
     if (window.location.hash === "#budget" && showList) {
       document.getElementById("budget")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [showList?.id]);
+  }, [showList]);
 
   const catalogMatchCount = receiptItems.filter(
     i => ["matched", "approved"].includes(i.catalog_match_status) && !i.catalog_needs_review
