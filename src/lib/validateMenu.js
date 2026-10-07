@@ -26,7 +26,6 @@ import { profileConflict, isSupplement, isDisliked } from "@/lib/basketAlternati
 import { isNonFoodName } from "@/lib/nonFood";
 
 const MAIN_PROTEIN = new Set(["meat", "fish", "legumes", "eggs", "dairy_protein", "yogurt"]);
-const LUNCH_PROTEIN = new Set(["meat", "fish", "legumes"]);
 const CARB_SIDE = new Set(["grain", "starch_veg", "bread"]);
 const MEAT_KOSHER = new Set(["meat"]);
 const DAIRY_KOSHER = new Set(["dairy_protein", "yogurt", "milk"]);
@@ -51,6 +50,8 @@ export function basketOffer(basketItems, profile) {
   const eatable = (basketItems || []).filter(i =>
     !profileConflict(i, profile) && !isSupplement(i) && !isDisliked(i.name, profile?.disliked_foods || []) && !isNonFoodName(i.name));
   const by = groups => eatable.filter(i => groups.includes(classifyProduct(i.name, i.category))).map(i => i.name);
+  // protein foods allowed at lunch by the meal rules (meat, fish, legumes, eggs, cheese…)
+  const lunchProteins = buildProductCatalog(eatable).filter(p => MAIN_PROTEIN.has(p.group) && p.meal_roles?.includes("Lunch")).map(p => p.name_he);
   const breakfastStyles = new Set();
   if (by(["cereal"]).length && (by(["milk", "plant_milk", "yogurt"]).length)) breakfastStyles.add("cereal");
   if (by(["eggs"]).length) breakfastStyles.add("eggs");
@@ -58,7 +59,7 @@ export function basketOffer(basketItems, profile) {
   if (by(["bread"]).length) for (const p of by(["dairy_protein", "legumes"])) breakfastStyles.add(`bread:${p}`);
   return {
     eatable: eatable.map(i => i.name),
-    lunchProteins: by([...LUNCH_PROTEIN]),
+    lunchProteins,
     mainProteins: by([...MAIN_PROTEIN]),
     carbs: by([...CARB_SIDE]),
     vegetables: by(["vegetable"]),
@@ -157,7 +158,8 @@ export function validateMenu({ plan, basketItems, profile, budget = null }) {
   const count = list => list.filter(Boolean).reduce((m, x) => m.set(x, (m.get(x) || 0) + 1), new Map());
   const lunchUse = count(lunches.map(mainProtein));
   const overLunch = [...lunchUse].filter(([, n]) => n > 3).map(([p, n]) => ({ product: p, lunches: n }));
-  const lunchAlternatives = offer.lunchProteins.length >= 2;
+  // 7 lunches with each protein in at most 3 needs at least 3 lunch proteins
+  const lunchAlternatives = offer.lunchProteins.length >= 3;
   add("lunch_protein_repeat", "variety", overLunch.length === 0 || !lunchAlternatives,
     "אותו חלבון עיקרי לא ביותר מ-3 ארוחות צהריים", { overLunch, alternatives: offer.lunchProteins.length }, overLunch.length > 0 && !lunchAlternatives);
 

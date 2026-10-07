@@ -38,6 +38,15 @@ export function planCost(basketItems, days) {
   return buildFinalShoppingList(basketItems, days).total_estimated_cost;
 }
 
+// The main protein of a lunch/dinner: its first protein food
+const MAIN_PROTEIN = new Set(["meat", "fish", "eggs", "legumes", "dairy_protein", "yogurt"]);
+/** Whether a product is the main protein of more than half of the week's lunches and dinners. */
+function dominates(plan, productId, catalog) {
+  const mains = plan.days.flatMap(d => d.meals.filter(m => m.meal_type === "Lunch" || m.meal_type === "Dinner"));
+  const main = m => m.items.find(i => MAIN_PROTEIN.has(catalog.find(p => p.id === i.product_id)?.group))?.product_id;
+  return mains.filter(m => main(m) === productId).length > mains.length / 2;
+}
+
 /** Weekly cost per product name, most expensive first. */
 function costsByProduct(basketItems, days) {
   return buildFinalShoppingList(basketItems, days).items
@@ -173,6 +182,8 @@ export function fitPlanToBudget({ plan, catalog, densities, targets, basketItems
           reportsHere.set(report.day, report);
           done.push(swap);
           if (problemKeys(trial).some(k => !baseProblems.has(k))) continue;
+          // nor make one protein the main protein of over half the main meals (variety)
+          if (dominates(trial, toId, catalog) && !dominates(plan, toId, catalog)) continue;
           const trialCost = planCost(basketItems, trial.days);
           const saving = cost - trialCost;
           if (saving < MIN_SAVING) continue;

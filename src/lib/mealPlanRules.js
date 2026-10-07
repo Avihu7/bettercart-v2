@@ -39,16 +39,18 @@ const GROUPS = [
   { group: "vegetable", terms: ["עגבני", "מלפפון", "ברוקולי", "גזר", "פלפל", "חסה", "בצל", "כרוב", "קישוא", "חציל", "תרד", "ירק", "סלט", "פטריות", "כרובית", "סלק"] },
 ];
 
-// Natural meal slots per group (Problem 4 in the spec).
+// Natural meal slots per group (Problem 4 in the spec). Lunch may also be a
+// dairy/egg meal (shakshuka, an omelette or cheese with bread and salad) —
+// kosher separation and one main protein per plate still apply.
 const ROLES = {
   coffee:        ["Breakfast", "Snacks"],
   tea:           ["Breakfast", "Snacks"],
   milk:          ["Breakfast"],
   plant_milk:    ["Breakfast"],
   cereal:        ["Breakfast"],
-  bread:         ["Breakfast", "Dinner"],
-  eggs:          ["Breakfast", "Dinner"],
-  dairy_protein: ["Breakfast", "Dinner"],
+  bread:         ["Breakfast", "Lunch", "Dinner"],
+  eggs:          ["Breakfast", "Lunch", "Dinner"],
+  dairy_protein: ["Breakfast", "Lunch", "Dinner"],
   yogurt:        ["Breakfast", "Dinner", "Snacks"],
   meat:          ["Lunch"],
   fish:          ["Lunch", "Dinner"],
@@ -131,8 +133,9 @@ export function buildProductCatalog(items) {
       category: item.category || "",
       quantity: item.quantity || "",
       group,
-      // Tofu is also a breakfast food (tofu scramble); other legumes stay lunch/dinner
-      meal_roles: group === "legumes" && /טופו/.test(item.name) ? ["Breakfast", ...ROLES[group]] : ROLES[group],
+      // Tofu (scramble) and canned tuna (on bread) are also breakfast foods
+      meal_roles: (group === "legumes" && /טופו/.test(item.name)) || (group === "fish" && /טונה/.test(item.name))
+        ? ["Breakfast", ...ROLES[group]] : ROLES[group],
       kosher: kosherType(group),
       // per-list totals, used by the AI to estimate per-portion macros
       calories: item.calories,

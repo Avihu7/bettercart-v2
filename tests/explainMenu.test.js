@@ -3,7 +3,7 @@ import { generateNutritionPlan } from "@/lib/nutritionPlanGenerator";
 import { validateMenu } from "@/lib/validateMenu";
 import { explainMenu } from "@/lib/explainMenu";
 import { weeklyBudget } from "@/lib/pricing";
-import { BASKETS } from "./fixtures/baskets";
+import { BASKETS, ITEMS as I } from "./fixtures/baskets";
 
 const explained = {};
 beforeAll(async () => {
@@ -32,7 +32,18 @@ describe("menu explanation", () => {
   });
 
   it("level 2 by the planner: says the basket had alternatives", () => {
-    expect(text(explained.vegetarian)).toMatch(/למרות שיש בסל חלופות/);
+    // chicken at all 7 lunches although the basket has 3 lunch proteins
+    const basket = [I.chicken, I.lentils, I.eggs, I.cottage, I.rice, I.bread, I.tomato, I.cucumber, I.pepper, I.banana, I.apple];
+    const meal = (type, ...items) => ({ meal_type: type, meal_name: "ארוחה", items: items.map(([p, g]) => ({ food_name: p.name, grams: g, calories: 0, protein: 0, carbs: 0, fat: 0 })) });
+    const plan = { days: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(day_name => ({ day_name, meals: [
+      meal("Breakfast", [I.bread, 100], [I.cottage, 150], [I.tomato, 100]),
+      meal("Lunch", [I.chicken, 200], [I.rice, 200], [I.cucumber, 100]),
+      meal("Dinner", [I.eggs, 120], [I.bread, 80], [I.pepper, 100]),
+      meal("Snacks", [I.banana, 150]),
+    ] })) };
+    const profile = { ...BASKETS.rich.profile, daily_calories: null, protein_target: null, fat_target: null, carbs_target: null };
+    const e = explainMenu(validateMenu({ plan, basketItems: basket, profile }), { plan, basketItems: basket, profile });
+    expect(text(e)).toMatch(/מופיע ב-7 ארוחות צהריים, למרות שיש בסל חלופות/);
   });
 
   it("level 3 over budget: amount, the protein trade-off, and the way to the basket", () => {
