@@ -569,6 +569,17 @@ export default function ShoppingListPage() {
   };
 
   const replaceItem = option => replaceItemAt(replacing, option);
+  // The budget card's recommended swaps, approved together
+  const replaceMany = swaps => {
+    const byIndex = new Map(swaps.map(s => [s.index, buildReplacementItem(s.option)]));
+    const items = showList.items.map((it, i) => byIndex.get(i) || it);
+    requestChange({
+      items,
+      item: swaps.map(s => showList.items[s.index]?.name).join(", "),
+      title: `החלפת ${swaps.length} מוצרים לחיסכון`,
+      done: () => toast({ title: `${swaps.length} מוצרים הוחלפו בחלופות זולות יותר`, description: "כדי לראות את העלות המעודכנת, בנו את התפריט מחדש." }),
+    });
+  };
   const replaceItemAt = (index, option) => {
     const old = showList.items[index];
     const replacement = buildReplacementItem(option);
@@ -761,6 +772,7 @@ export default function ShoppingListPage() {
             profile={profile}
             budget={profile ? basketBudget(profile, showList) : 0}
             onReplace={replaceItemAt}
+            onReplaceMany={replaceMany}
             saving={saveItemsMutation.isPending}
             menuOutdated={basketChangedSincePlan}
           />

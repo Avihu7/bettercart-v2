@@ -73,6 +73,16 @@ export function budgetDrivers(basketItems, costs) {
     .slice(0, SEARCHED);
 }
 
+// Dairy names state their fat ("קוטג' 1%", "גבינה לבנה 5%"), while catalog values are
+// often one average for the whole type — the stated % is the truer fat per 100 g
+const DAIRY_GROUPS = new Set(["dairy_protein", "yogurt", "milk"]);
+function withNamedFat(per100, name, group) {
+  const pct = DAIRY_GROUPS.has(group) && String(name || "").match(/(\d+(?:\.\d+)?)\s*%/);
+  if (!per100 || !pct) return per100;
+  const fat = parseFloat(pct[1]);
+  return { ...per100, kcal: Math.max(0, per100.kcal + (fat - per100.fat) * 9), fat };
+}
+
 /**
  * One replacement option priced for this week: the amount that gives the same
  * protein (protein foods) or the same calories (everything else) as the
@@ -81,8 +91,8 @@ export function budgetDrivers(basketItems, costs) {
 export function priceReplacement(item, driver, option) {
   const replacement = buildReplacementItem(option);
   const group = itemGroup(item);
-  const before = itemPer100g(item, group);
-  const after = option.per100;
+  const before = withNamedFat(itemPer100g(item, group), item.name, group);
+  const after = withNamedFat(option.per100, option.product.original_product_name, option.group);
   const eaten = driver.usedGrams || driver.grams;
   if (!before || !after || !(eaten > 0)) return null;
   const keepProtein = PROTEIN_GROUPS.has(group) && before.protein > 0 && after.protein > 0;
@@ -116,16 +126,30 @@ export async function basketBudgetPicture({ basketItems, planDays, profile, budg
   const costs = weeklyCosts(basketItems, planDays);
   const total = round1(costs.reduce((s, c) => s + c.cost, 0));
   const searched = budgetDrivers(basketItems, costs);
+  const priced = (d, found) => found
+    .map(o => priceReplacement(d.item, d, o))
+    .filter(o => o && o.saving >= MIN_SAVING && o.keepsProteinGoal !== false)
+    .sort((x, y) => y.saving - x.saving || x.option.product.original_product_name.localeCompare(y.option.product.original_product_name, "he"))
+    .slice(0, 3);
   const withOptions = await Promise.all(searched.map(async d => {
-    const found = await findAlternatives(d.item, basketItems, profile, { max: 8, sameFood: true }).catch(() => []);
-    const options = found
-      .map(o => priceReplacement(d.item, d, o))
-      .filter(o => o && o.saving >= MIN_SAVING && o.keepsProteinGoal !== false)
-      .sort((x, y) => y.saving - x.saving || x.option.product.original_product_name.localeCompare(y.option.product.original_product_name, "he"))
-      .slice(0, 3);
-    return { ...d, options };
+    // Safe: the same kind of food (a cheaper version or a close relative).
+    // Broad: another kind of food in the same role (e.g. beef → lentils) — shown on request
+    const [similar, other] = await Promise.all([
+      findAlternatives(d.item, basketItems, profile, { max: 8, sameFood: true }).catch(() => []),
+      findAlternatives(d.item, basketItems, profile, { max: 8, broad: true }).catch(() => []),
+    ]);
+    // Safe = the same food group, so the meals stay the same kind (bread for
+    // bread, rice for pasta, any meat for meat); a carb of another group (bread →
+    // oats) changes the meal, so it counts as a broad swap
+    const group = itemGroup(d.item);
+    const sameGroup = o => o.group === group || PROTEIN_GROUPS.has(group);
+    const safe = similar.filter(sameGroup);
+    const broad = [...other, ...similar.filter(o => !sameGroup(o))];
+    return { ...d, reasons: whyExpensive(d), options: priced(d, safe), broadOptions: priced(d, broad) };
   }));
-  const maxSaving = withOptions.reduce((s, d) => s + (d.options[0]?.saving || 0), 0);
+  const best = list => list[0]?.saving || 0;
+  const maxSaving = withOptions.reduce((s, d) => s + best(d.options), 0);
+  const maxBroadSaving = withOptions.reduce((s, d) => s + Math.max(best(d.options), best(d.broadOptions)), 0);
   const bestTotal = round1(total - maxSaving);
   return {
     total,
@@ -134,8 +158,39 @@ export async function basketBudgetPicture({ basketItems, planDays, profile, budg
     source: planDays?.length ? "menu" : "basket",
     costs,
     drivers: withOptions.slice(0, TOP_DRIVERS),
+    // The safe swaps worth making, largest saving first, until the budget is met
+    recommended: recommendedSwaps(withOptions, total, budget),
     bestTotal,
     maxSaving: round1(maxSaving),
     reachable: !(budget > 0) || bestTotal <= budget,
+    bestBroadTotal: round1(total - maxBroadSaving),
+    reachableBroad: !(budget > 0) || total - maxBroadSaving <= budget,
   };
+}
+
+/** Why a product weighs on the budget, in Hebrew (its share, its unit price, the amount needed). */
+function whyExpensive(d) {
+  const reasons = [];
+  if (d.share >= 0.15) reasons.push(`לבדו ${Math.round(d.share * 100)}% מעלות השבוע`);
+  const perKg = Number(d.item.price_per_kg) || 0;
+  if (perKg >= 40) reasons.push(`מחיר גבוה לק"ג (₪${round1(perKg)})`);
+  if (d.source === "menu" && d.usedGrams >= 1200) reasons.push(`התפריט צריך ממנו כמות גדולה (${round1(d.usedGrams / 1000)} ק"ג)`);
+  if (!reasons.length) reasons.push(`₪${round1(d.cost)} השבוע — מהמוצרים היקרים בסל`);
+  return reasons;
+}
+
+/** Best safe swap per driver, largest saving first, stopping once the total fits the budget. */
+function recommendedSwaps(drivers, total, budget) {
+  const picks = drivers
+    .filter(d => d.options.length)
+    .map(d => ({ index: d.index, name: d.item.name, choice: d.options[0] }))
+    .sort((a, b) => b.choice.saving - a.choice.saving);
+  const out = [];
+  let left = total;
+  for (const p of picks) {
+    if (budget > 0 && left <= budget) break;
+    out.push(p);
+    left -= p.choice.saving;
+  }
+  return { swaps: out, saving: round1(total - left), totalAfter: round1(left) };
 }

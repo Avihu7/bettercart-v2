@@ -359,17 +359,20 @@ export function itemFamily(item) {
  * Returns [] when the item has no replaceable role or nothing suitable exists.
  */
 // sameFood: also a cheaper version of the same food (e.g. frozen for fresh ground beef) — for budget savings
-export async function findAlternatives(item, basketItems, profile, { max = 5, sameFood = false } = {}) {
+// broad: another kind of food in the same role (e.g. beef → lentils, eggs, tuna) — only when the user asks for it
+export async function findAlternatives(item, basketItems, profile, { max = 5, sameFood = false, broad = false } = {}) {
   const family = itemFamily(item);
   if (!family) return [];
   const kosher = kosherOf(itemGroup(item));
+  const role = itemRole(item);
   const disliked = profile?.disliked_foods || [];
   const others = basketItems.filter(b => b !== item);
 
-  // Strict: same family and same kosher type only — never widened to another kind of food
+  // Strict: same family and same kosher type only. Broad: other families of the
+  // same role (diet and allergies still apply; the menu keeps meat/dairy apart)
   const eligible = CANDIDATES.filter(c =>
-    familyOf(c) === family &&
-    (c.family === "plant_drink" || kosherOf(candidateGroup(c)) === kosher) &&
+    (broad ? familyOf(c) !== family && c.role === role : familyOf(c) === family) &&
+    (broad || c.family === "plant_drink" || kosherOf(candidateGroup(c)) === kosher) &&
     !violatesProfile(c, profile) &&
     !isDisliked(c.label, disliked, candidateGroup(c)) &&
     // never the same food again (unless a cheaper version is asked for), never something already in the basket
