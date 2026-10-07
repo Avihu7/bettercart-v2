@@ -23,7 +23,9 @@ import FlowSteps from "@/components/FlowSteps";
 import { basketSufficiency } from "@/lib/basketAlternatives";
 import { basketBudget } from "@/lib/pricing";
 import StatCard from "@/components/dashboard/StatCard";
-import BudgetNotice from "@/components/BudgetNotice";
+import MenuQualityCard from "@/components/MenuQualityCard";
+import { validateMenu } from "@/lib/validateMenu";
+import { explainMenu } from "@/lib/explainMenu";
 
 const mealIcons = {
   Breakfast: Sun,
@@ -57,7 +59,7 @@ export default function NutritionPlanPage() {
   const listId = urlParams.get("list_id");
 
   // Basket (step 2) this plan is built from, latest plan, and its final list (step 4)
-  const { profile, basket: sourceList, plan: latestPlan, planOutdated, finalList, completed, isLoading: flowLoading } = useFlowData(user, { listId });
+  const { profile, basket: sourceList, plan: latestPlan, planBasket, planOutdated, finalList, completed, isLoading: flowLoading } = useFlowData(user, { listId });
 
   const generateMutation = useMutation({
     mutationFn: async () => {
@@ -126,6 +128,12 @@ export default function NutritionPlanPage() {
   const changedItems = [...new Set(userWarnings.map(w => w.item).filter(Boolean))];
   // Days the menu could not bring to every target with the basket as it is
   const shortDays = (showPlan?.days || []).filter(d => d.target_warnings?.length);
+  // Menu quality: one validation of the whole week (src/lib/validateMenu.js) and its explanation
+  const planItems = (planBasket || sourceList)?.items;
+  const quality = showPlan?.days?.length && planItems?.length && profile
+    ? explainMenu(validateMenu({ plan: showPlan, basketItems: planItems, profile, budget: basketBudget(profile, planBasket || sourceList) }),
+      { plan: showPlan, basketItems: planItems, profile })
+    : null;
   const planProtein = showPlan?.days?.length
     ? Math.round(showPlan.days.reduce((s, d) => s + (Number(d.total_protein) || 0), 0) / showPlan.days.length)
     : null;
@@ -172,7 +180,7 @@ export default function NutritionPlanPage() {
         </Card>
       )}
 
-      {(!sufficiency.ok || shortDays.length > 0) && !generateMutation.isPending && (
+      {!showPlan && !sufficiency.ok && !generateMutation.isPending && (
         <Card className="p-4 border-amber-300 bg-amber-50/60 space-y-2">
           <p className="font-medium text-sm flex items-start gap-2">
             <AlertCircle className="w-4 h-4 mt-0.5 text-amber-600 shrink-0" />
@@ -255,7 +263,7 @@ export default function NutritionPlanPage() {
             <StatCard title="ימים מתוכננים" value={showPlan.days?.length || 0} icon={UtensilsCrossed} color="blue" />
           </div>
 
-          <BudgetNotice budget={showPlan.budget} onBasket={() => navigate("/shopping-list#budget")} />
+          <MenuQualityCard explanation={quality} onBasket={budget => navigate(budget ? "/shopping-list#budget" : "/shopping-list")} />
 
           {/* Day Tabs */}
           <Tabs key={showPlan.id} defaultValue={planDays[0]?.day_name} dir="rtl" className="w-full">
