@@ -71,7 +71,8 @@ const FOOD = new RegExp([
 ].join('|'));
 
 // Pet food is food — but never for the user's basket ("סלמון לחתול")
-const PET = /לחתול|לכלב|לחתולים|לכלבים|פורינה|בונזו/;
+// Never food for the user, even next to a food word ("סלמון לחתול", "סרום אורז", "שפתון תות")
+const PET = /לחתול|לכלב|לחתולים|לכלבים|פורינה|בונזו|סרום|מסקרה|שפתון|אדפ|אדט|דאודורנט|שמפו|תחליב|מייקאפ/;
 
 const rows = db.prepare(`SELECT id, original_product_name AS name FROM products WHERE is_food = 1 AND category = 'other'`).all();
 const strong = [], weak = [];
