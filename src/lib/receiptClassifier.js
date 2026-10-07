@@ -14,7 +14,7 @@
 import { classifyProduct } from "@/lib/mealPlanRules";
 import { productHealthScore } from "@/lib/healthScore";
 import { isNonFoodName } from "@/lib/nonFood";
-import { isSupplement } from "@/lib/basketAlternatives";
+import { isSupplement, itemGroup } from "@/lib/basketAlternatives";
 
 // Food group → basket category
 const CATEGORY_BY_GROUP = {
@@ -30,7 +30,8 @@ const MENU_MIN_HEALTH = 4;
 
 /** The basket category of a food product name. */
 export function categoryOf(name) {
-  const group = classifyProduct(name);
+  // packing liquids aside ("טונה בשמן" is fish, not oil)
+  const group = itemGroup({ name });
   if (CATEGORY_BY_GROUP[group]) return CATEGORY_BY_GROUP[group];
   if (DRINK.test(name)) return "drink";
   const score = productHealthScore(name);
@@ -123,7 +124,7 @@ export function receiptInsights(items) {
   const nameOf = i => i.normalized_name || i.original_name || "";
   const groups = new Map();
   for (const i of food) {
-    const g = classifyProduct(nameOf(i));
+    const g = itemGroup({ name: nameOf(i) });
     if (GROUP_LABELS[g]) groups.set(g, (groups.get(g) || 0) + 1);
   }
   const spend = new Map();

@@ -10,6 +10,8 @@ const STYLE = {
   warn: { card: "border-amber-300 bg-amber-50/60", icon: AlertCircle, color: "text-amber-600", badge: "bg-amber-100 text-amber-800" },
   bad: { card: "border-red-300 bg-red-50/60", icon: XCircle, color: "text-red-600", badge: "bg-red-100 text-red-800" },
 };
+const shekel = n => `₪${Math.round(n * 10) / 10}`;
+
 const AREA_LABELS = {
   coverage: "מה חסר בסל", safety: "בטיחות", realism: "ארוחות", budget: "תקציב",
   nutrition: "תזונה", variety: "מגוון", summary: "סיכום",
@@ -20,7 +22,7 @@ const AREA_LABELS = {
  * explainMenu(validateMenu(...)): level, headline, the reasons by area, what
  * to add to the basket, and the way to the basket's budget card.
  */
-export default function MenuQualityCard({ explanation, onBasket }) {
+export default function MenuQualityCard({ explanation, savings, onBasket }) {
   if (!explanation) return null;
   const s = STYLE[explanation.tone] || STYLE.info;
   const Icon = s.icon;
@@ -48,6 +50,21 @@ export default function MenuQualityCard({ explanation, onBasket }) {
             </li>
           ))}
         </ul>
+      )}
+
+      {explanation.budgetAction && savings?.recommended?.swaps?.length > 0 && (
+        <div className="text-sm rounded-md bg-background/70 border p-2.5">
+          <p className="font-medium mb-1">החלפות זולות יותר שמצאנו בסל (אותו סוג מזון):</p>
+          <ul className="list-disc pr-5 space-y-0.5">
+            {savings.recommended.swaps.map(s => (
+              <li key={s.index}>{s.name} ← {s.choice.option.product.original_product_name} (חיסכון של כ-{shekel(s.choice.saving)})</li>
+            ))}
+          </ul>
+          <p className="mt-1">
+            יחד כ-{shekel(savings.recommended.saving)} בשבוע — העלות יורדת לכ-{shekel(savings.recommended.totalAfter)}
+            {savings.budget > 0 && (savings.recommended.totalAfter <= savings.budget ? ", בתוך התקציב." : `, עדיין ${shekel(savings.recommended.totalAfter - savings.budget)} מעל התקציב.`)}
+          </p>
+        </div>
       )}
 
       {explanation.add.length > 0 && (

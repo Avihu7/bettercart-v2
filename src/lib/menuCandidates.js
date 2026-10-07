@@ -44,6 +44,8 @@ const PORTION = {
 const MIN_PROTEIN = { meat: 100, fish: 100, legumes: 120, eggs: 100, dairy_protein: 50, yogurt: 120 };
 const HARD_CHEESE = /צהוב|מוצרלה|בולגרית|צפתית|פרמזן|עמק/;
 const MAX_VEG = 6; // vegetables considered for a plate (best first)
+// Seasoning, not a salad vegetable: never 120 g of raw onion beside breakfast
+const SEASONING = /בצל|שום|לימונ|ג.ינג.ר|פטרוזיליה|כוסברה|שמיר|נענע|בזיליקום|צ.ילי|פלפל חריף/;
 
 const has = (p, mealType) => p.meal_roles?.includes(mealType);
 const byName = (a, b) => a.name_he.localeCompare(b.name_he, "he");
@@ -118,7 +120,7 @@ export function generateCandidates({ catalog, densities, profile }) {
   };
   const it = (p, grams) => (p ? { product: p, grams } : null);
   const protein = (p, mealType) => it(p, proteinGrams(p, densities.get(p.id), proteinTarget, MEAL_SHARE[mealType]));
-  const vegPairs = mealType => rotatingPairs(of(["vegetable"], mealType).slice(0, MAX_VEG));
+  const vegPairs = mealType => rotatingPairs(of(["vegetable"], mealType).filter(v => !SEASONING.test(v.name_he)).slice(0, MAX_VEG));
   const coffee = of(["coffee", "tea"], "Breakfast")[0];
   const milk = of(["milk", "plant_milk"], "Breakfast");
   // coffee beside a food breakfast (with milk when there is milk)

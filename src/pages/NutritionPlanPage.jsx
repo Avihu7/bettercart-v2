@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/api/localAPI";
 import { useAuth } from "@/lib/AuthContext";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +26,7 @@ import StatCard from "@/components/dashboard/StatCard";
 import MenuQualityCard from "@/components/MenuQualityCard";
 import { validateMenu } from "@/lib/validateMenu";
 import { explainMenu } from "@/lib/explainMenu";
+import { basketBudgetPicture } from "@/lib/basketBudget";
 
 const mealIcons = {
   Breakfast: Sun,
@@ -134,6 +135,13 @@ export default function NutritionPlanPage() {
     ? explainMenu(validateMenu({ plan: showPlan, basketItems: planItems, profile, budget: basketBudget(profile, planBasket || sourceList) }),
       { plan: showPlan, basketItems: planItems, profile })
     : null;
+  // Over budget: the basket's recommended cheaper swaps (the same calculation as the basket's budget card)
+  const { data: savings } = useQuery({
+    queryKey: ["menuSavings", showPlan?.id, planItems?.map(i => i.name).join("|")],
+    queryFn: () => basketBudgetPicture({ basketItems: planItems, planDays: showPlan.days, profile, budget: basketBudget(profile, planBasket || sourceList) }),
+    enabled: !!quality?.budgetAction,
+    staleTime: 5 * 60 * 1000,
+  });
   const planProtein = showPlan?.days?.length
     ? Math.round(showPlan.days.reduce((s, d) => s + (Number(d.total_protein) || 0), 0) / showPlan.days.length)
     : null;
@@ -263,7 +271,7 @@ export default function NutritionPlanPage() {
             <StatCard title="ימים מתוכננים" value={showPlan.days?.length || 0} icon={UtensilsCrossed} color="blue" />
           </div>
 
-          <MenuQualityCard explanation={quality} onBasket={budget => navigate(budget ? "/shopping-list#budget" : "/shopping-list")} />
+          <MenuQualityCard explanation={quality} savings={savings} onBasket={budget => navigate(budget ? "/shopping-list#budget" : "/shopping-list")} />
 
           {/* Day Tabs */}
           <Tabs key={showPlan.id} defaultValue={planDays[0]?.day_name} dir="rtl" className="w-full">

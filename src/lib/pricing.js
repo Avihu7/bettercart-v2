@@ -92,9 +92,12 @@ export function pricingFields({ price, packGrams: rawPack, soldByWeight, grams }
   if (!(price > 0) || !(packGrams > 0)) return {};
   const perKg = Math.round(price / packGrams * 1000 * 100) / 100;
   const amount = grams > 0 ? grams : packGrams;
+  // The amount the basket item stands for, in packs: the nearest whole number
+  // (one 170 g yogurt is one 150 g catalog pack, not two). Buying for the menu
+  // rounds up instead — see purchaseCost.
   const estimated = soldByWeight
     ? round1(perKg * amount / 1000)
-    : round1(Math.max(1, Math.ceil(amount / packGrams - 1e-9)) * price);
+    : round1(Math.max(1, Math.round(amount / packGrams)) * price);
   return {
     price_per_kg: perKg,
     sold_by_weight: !!soldByWeight,

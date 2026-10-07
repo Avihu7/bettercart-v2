@@ -470,6 +470,8 @@ function addFatSides(day, kcal, catalog, densities, usedIds) {
     if (added >= kcal) break;
     const meal = day.meals.find(m => m.meal_type === mealType);
     if (!meal || meal.items.some(i => FAT_GROUPS.has(catalog.find(p => p.id === i.product_id)?.group))) continue;
+    // Oil/tahini go on bread or a salad — never into a yogurt-and-fruit or cereal breakfast
+    if (mealType === "Breakfast" && !meal.items.some(i => ["bread", "vegetable"].includes(catalog.find(p => p.id === i.product_id)?.group))) continue;
     const p = fats.find(f => f.meal_roles?.includes(mealType));
     if (!p) continue;
     const d = densities.get(p.id);

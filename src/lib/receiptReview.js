@@ -70,6 +70,13 @@ export const EMPTY_CATALOG = {
   catalog_match_type: null, catalog_match_confidence: null,
 };
 
+// Words that make a catalog product a different product than the plain one
+const PRODUCT_CHANGING = /במלח|כבוש|כבושים|חמוצ|מוחמץ|מיובש|ברוטב|מטוגן|מעושן|ממולא|ירוק|בטעם|מצופה|שימורי|בשמן|במים|מתוק/;
+function changesProduct(receiptName, catalogName) {
+  const words = String(catalogName || "").match(new RegExp(PRODUCT_CHANGING.source, "g")) || [];
+  return words.some(w => !String(receiptName || "").includes(w));
+}
+
 /**
  * Item patch for one /api/products/match-items result.
  * Recognized automatically only when: no non-food signal, and an exact/strong
@@ -103,7 +110,10 @@ export function matchPatch(item, match) {
     const agree = categoriesAgree(item.category, match.category);
     const strong = match.match_type === "exact" || !match.needs_review;
     const plausible = match.match_confidence >= 0.78 && sameFirstWord(name, match.matched_name);
-    const confident = !nonFood && agree && (strong || plausible);
+    // A catalog name that turns the product into another one ("מלפפונים במלח" for
+    // cucumbers, "בצל ירוק" for onions) is never a confident match
+    const changes = changesProduct(name, match.matched_name);
+    const confident = !nonFood && agree && !changes && (strong || plausible);
     patch.catalog_match_status = nonFood ? "possible_non_food" : confident ? "matched" : "needs_review";
     patch.catalog_needs_review = !confident;
     // Missing AI nutrition is only filled from a confident match

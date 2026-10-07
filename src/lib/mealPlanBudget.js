@@ -25,6 +25,20 @@ const SWAP_CLASS = {
   fruit: "fruit", vegetable: "vegetable",
 };
 const KEEP = { protein: "protein", carb: "kcal", fat: "kcal", fruit: "kcal", vegetable: "grams" };
+// A swap keeps the meal the same kind of meal: a protein plate stays a protein
+// plate (no "eggs with pasta"), a dairy/egg meal keeps its bread (no "cottage with
+// pasta"), a cooked carb stays a cooked carb. At a bread breakfast, cheese/eggs
+// and tuna/tofu may replace each other.
+const SHAPE = {
+  meat: "plate", fish: "plate", legumes: "plate", eggs: "dairy", dairy_protein: "dairy", yogurt: "yogurt",
+  grain: "cooked", starch_veg: "cooked", bread: "bread", cereal: "cereal",
+  oil: "dressing", tahini: "dressing", nuts: "nuts", avocado: "avocado", fruit: "fruit", vegetable: "vegetable",
+};
+function keepsMealShape(meal, from, to, catalog) {
+  if (SHAPE[from.group] === SHAPE[to.group]) return true;
+  const breadBreakfast = meal.meal_type === "Breakfast" && meal.items.some(i => catalog.find(p => p.id === i.product_id)?.group === "bread");
+  return breadBreakfast && ["plate", "dairy"].includes(SHAPE[from.group]) && ["plate", "dairy"].includes(SHAPE[to.group]);
+}
 
 const MAX_SWAPS = 40;
 const MIN_SAVING = 0.5; // ₪ — smaller changes are noise from rounding
@@ -104,6 +118,7 @@ function candidateSwaps(plan, catalog, densities, fromProduct, priced, swappedIn
       if (!priced.has(to.name_he)) continue;
       if (!to.meal_roles?.includes(meal.meal_type)) continue;
       if (meal.items.some(i => i.product_id === to.id)) continue;
+      if (!keepsMealShape(meal, fromProduct, to, catalog)) continue;
       swaps.push({ di, mi, idx, from: fromProduct, to, keep: KEEP[cls] });
     }
   }));

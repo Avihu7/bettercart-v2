@@ -23,8 +23,7 @@ import { isBasketReady, isUnresolved, receiptItemName } from "@/lib/receiptRevie
 import { weeklyBudget as profileWeeklyBudget, basketBudget } from "@/lib/pricing";
 import { applyReceiptRules } from "@/lib/receiptClassifier";
 import { buildBasket, receiptToBasketItem, sameFood, basketTotals, basketLooksThin, REGULAR_MIN_SCORE } from "@/lib/basketBuilder";
-import { planCost } from "@/lib/mealPlanBudget";
-import { weeklyCosts, budgetDrivers, priceFacts } from "@/lib/basketBudget";
+import { weeklyCosts, budgetDrivers, priceFacts, changeBudgetImpact } from "@/lib/basketBudget";
 import BudgetImpactCard from "@/components/BudgetImpactCard";
 import { findAlternatives, buildReplacementItem, isDisliked, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement, proteinShortText } from "@/lib/basketAlternatives";
 
@@ -318,29 +317,11 @@ export default function ShoppingListPage() {
    * priced at the old one's weekly amount (the final list's calculation);
    * otherwise by the basket's own prices.
    */
-  const budgetImpact = (items, { replaced, added } = {}) => {
-    const limit = basketBudget(profile, showList);
-    if (!(limit > 0)) return null;
-    const menuHere = plan?.days?.length && planBasket?.id === showList.id;
-    let current, next;
-    if (menuHere) {
-      current = planCost(showList.items, plan.days);
-      const days = replaced
-        ? plan.days.map(d => ({ ...d, meals: d.meals.map(m => ({ ...m, items: m.items.map(i => (i.food_name === replaced.from ? { ...i, food_name: replaced.to } : i)) })) }))
-        : plan.days;
-      // added products are not in the menu yet: priced at the basket's own price
-      next = planCost(items, days) + [added || []].flat().reduce((s, i) => s + (Number(i.estimated_price) || 0), 0);
-    } else {
-      current = basketTotals(showList.items).total_estimated_cost;
-      next = basketTotals(items).total_estimated_cost;
-    }
-    const round1 = n => Math.round(n * 10) / 10;
-    const increase = round1(next - current);
-    const over = round1(next - limit);
-    if (increase <= 0 || over <= 0) return null;
-    const verb = replaced ? "החלפת המוצר" : Array.isArray(added) && added.length > 1 ? "הוספת המוצרים" : "הוספת המוצר";
-    return { increase, over, total: Math.ceil(next), verb };
-  };
+  // What a change does to the week's cost (src/lib/basketBudget.js) — null when it stays within budget
+  const budgetImpact = (items, { replaced, added } = {}) => changeBudgetImpact({
+    basketItems: showList.items, newItems: items, replaced, added, limit: basketBudget(profile, showList),
+    planDays: plan?.days?.length && planBasket?.id === showList.id ? plan.days : null,
+  });
 
   const applyChange = ({ items, issues = [], item, done, budget, clearWarnings }) => {
     // Completing the basket answers the old warnings; other changes add their own

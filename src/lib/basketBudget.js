@@ -139,10 +139,10 @@ export async function basketBudgetPicture({ basketItems, planDays, profile, budg
       findAlternatives(d.item, basketItems, profile, { max: 8, broad: true }).catch(() => []),
     ]);
     // Safe = the same food group, so the meals stay the same kind (bread for
-    // bread, rice for pasta, any meat for meat); a carb of another group (bread →
-    // oats) changes the meal, so it counts as a broad swap
+    // bread, rice for pasta, meat for meat, yogurt for yogurt); another group
+    // (bread → oats, a snack yogurt → a tub of cheese) changes the meal: a broad swap
     const group = itemGroup(d.item);
-    const sameGroup = o => o.group === group || PROTEIN_GROUPS.has(group);
+    const sameGroup = o => o.group === group;
     const safe = similar.filter(sameGroup);
     const broad = [...other, ...similar.filter(o => !sameGroup(o))];
     return { ...d, reasons: whyExpensive(d), options: priced(d, safe), broadOptions: priced(d, broad) };
@@ -193,4 +193,34 @@ function recommendedSwaps(drivers, total, budget) {
     left -= p.choice.saving;
   }
   return { swaps: out, saving: round1(total - left), totalAfter: round1(left) };
+}
+
+/**
+ * What a manual basket change does to the week's cost — the warning shown
+ * before it is applied. With a menu built from this basket, the new product
+ * is priced at the old one's weekly amount (the final list's calculation;
+ * added products at their basket price, they are not in the menu yet);
+ * otherwise by the basket's own prices.
+ * Returns null when the change costs less or stays within the limit, else
+ * { increase, over, total, verb } (₪; total rounded up — the new weekly limit if accepted).
+ */
+export function changeBudgetImpact({ basketItems, newItems, planDays = null, limit, replaced = null, added = null }) {
+  if (!(limit > 0)) return null;
+  const sum = items => items.reduce((s, i) => s + (Number(i.estimated_price) || 0), 0);
+  let current, next;
+  if (planDays?.length) {
+    current = buildFinalShoppingList(basketItems, planDays).total_estimated_cost;
+    const days = replaced
+      ? planDays.map(d => ({ ...d, meals: d.meals.map(m => ({ ...m, items: m.items.map(i => (i.food_name === replaced.from ? { ...i, food_name: replaced.to } : i)) })) }))
+      : planDays;
+    next = buildFinalShoppingList(newItems, days).total_estimated_cost + sum([added || []].flat());
+  } else {
+    current = sum(basketItems);
+    next = sum(newItems);
+  }
+  const increase = round1(next - current);
+  const over = round1(next - limit);
+  if (increase <= 0 || over <= 0) return null;
+  const verb = replaced ? "החלפת המוצר" : Array.isArray(added) && added.length > 1 ? "הוספת המוצרים" : "הוספת המוצר";
+  return { increase, over, total: Math.ceil(next), verb };
 }

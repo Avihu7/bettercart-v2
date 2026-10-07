@@ -38,7 +38,8 @@ describe("fitPlanToBudget", () => {
   });
 
   it("reaches a reachable budget with valid swaps, keeping calories and protein", () => {
-    const budget = Math.round(before * 0.8);
+    // reachable while keeping meal shapes and ≤3 lunches per protein
+    const budget = Math.round(before * 0.85);
     const p = structuredClone(plan);
     const r = fitPlanToBudget({ plan: p, catalog, densities, targets, basketItems: basket, budget, reports });
     recomputeTotals(p);
