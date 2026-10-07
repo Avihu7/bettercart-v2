@@ -27,6 +27,7 @@ import MenuQualityCard from "@/components/MenuQualityCard";
 import { validateMenu } from "@/lib/validateMenu";
 import { explainMenu } from "@/lib/explainMenu";
 import { basketBudgetPicture } from "@/lib/basketBudget";
+import { receiptSpending, spendingComparison } from "@/lib/receiptClassifier";
 
 const mealIcons = {
   Breakfast: Sun,
@@ -71,16 +72,17 @@ export default function NutritionPlanPage() {
       // accepted for this basket) before it is saved
       const result = await generateNutritionPlan({ list, profile, budget: basketBudget(profile, list) });
 
-      // Calculate before_after from real user data
-      // The menu is for a week: a month is 30/7 weeks
-      const weeksPerMonth = 30 / 7;
-      // The week's real cost is the menu's purchase cost (the final list's total)
-      const listCost = result.estimated_weekly_cost ?? list.total_estimated_cost ?? 0;
-      // "Before" = what they actually spend monthly (their stated monthly budget)
-      const previousMonthlySpending = profile?.monthly_budget || (listCost * weeksPerMonth);
-      // "After" = the new weekly basket cost × weeks per month
-      const estimatedNewMonthlySpending = listCost * weeksPerMonth;
-      const monthlySavings = Math.max(0, previousMonthlySpending - estimatedNewMonthlySpending);
+      // Before / after, food against food: what all the user's receipts show they spend
+      // on the food the menu replaces vs. the menu's purchase cost (src/lib/receiptClassifier.js)
+      const [receipts, receiptItems] = await Promise.all([
+        api.entities.Receipt.filter({ created_by: user.email }),
+        api.entities.ReceiptItem.filter({ created_by: user.email }),
+      ]);
+      const spending = receiptSpending(receipts, receiptItems, { purchasesPerMonth: profile?.purchases_per_month || 4 });
+      const comparison = spendingComparison({
+        spending, monthlyBudget: profile?.monthly_budget,
+        weeklyMenuCost: result.estimated_weekly_cost ?? list.total_estimated_cost ?? 0,
+      });
       const previousHealthScore = profile?.health_score || 50;
       // New health score: based on avg health_score of shopping list items (scale 0-10 → 0-100)
       const itemHealthScores = list.items?.filter(i => i.health_score != null).map(i => i.health_score) || [];
@@ -92,10 +94,7 @@ export default function NutritionPlanPage() {
         : Math.min(100, previousHealthScore + 10);
 
       const before_after = {
-        previous_monthly_spending: Math.round(previousMonthlySpending),
-        estimated_new_monthly_spending: Math.round(estimatedNewMonthlySpending),
-        monthly_savings: Math.round(monthlySavings),
-        yearly_savings: Math.round(monthlySavings * 12),
+        ...comparison,
         previous_health_score: previousHealthScore,
         new_health_score: newHealthScore,
       };

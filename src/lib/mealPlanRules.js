@@ -36,7 +36,7 @@ const GROUPS = [
   // Avocado is a fat, eaten on bread or in a salad — not a sweet fruit snack
   { group: "avocado",   terms: ["אבוקדו"] },
   { group: "fruit",     terms: ["בננ", "תפוח", "תפוז", "אגס", "ענב", "אבטיח", "מלון", "קלמנטינ", "תות", "אפרסק", "מנגו", "אננס", "פרי", "פירות"] },
-  { group: "vegetable", terms: ["עגבני", "מלפפון", "ברוקולי", "גזר", "פלפל", "חסה", "בצל", "כרוב", "קישוא", "חציל", "תרד", "ירק", "סלט", "פטריות", "כרובית", "סלק"] },
+  { group: "vegetable", terms: ["עגבני", "מלפפון", "ברוקולי", "גזר", "פלפל", "חסה", "בצל", "כרוב", "קישוא", "חציל", "תרד", "ירק", "סלט", "פטרי", "כרובית", "סלק"] },
 ];
 
 // Natural meal slots per group (Problem 4 in the spec). Lunch may also be a
@@ -332,7 +332,8 @@ export function dishWord(name) {
   const words = shortProductName(name)
     .replace(/[+/,()]/g, " ")
     .split(/\s+/)
-    .map(w => w.replace(/\d.*$/, "").replace(/[-–]+$/, ""))
+    // "10פיתות" → "פיתות", "מלא100%" → "מלא"
+    .map(w => w.replace(/^\d+/, "").replace(/\d.*$/, "").replace(/[-–]+$/, ""))
     .filter(w => w && w.length > 1 && !/["״׳']/.test(w.slice(1, -1)) && !NOISE_WORDS.has(w));
   return words.slice(0, 3).join(" ") || shortProductName(name);
 }

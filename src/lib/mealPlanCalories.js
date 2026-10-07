@@ -106,6 +106,12 @@ export function parseQuantityGrams(text, group) {
   else if ((v = num(/(\d+(?:\.\d+)?)\s*(?:g|gr|gram|grams)(?![a-z])/i)) != null) g = v;
   else if (group === "eggs" && (v = num(/(\d+)\s*(?:יחידות|יח'|ביצים)/)) != null) g = v * 60;
   else if (group === "avocado" && (v = num(/(\d+)\s*(?:יחידות|יח')/)) != null) g = v * 170;
+  // A multipack written without a unit ("6x1", "6×1.5"): litres for a small
+  // second number (bottles), grams for a larger one ("4x80")
+  if (g == null) {
+    const pack = s.match(/^\s*(\d+)\s*[×x*]\s*(\d+(?:\.\d+)?)\s*$/i);
+    if (pack) return Number(pack[1]) * Number(pack[2]) * (Number(pack[2]) <= 3 ? 1000 : 1);
+  }
   if (g == null && group === "eggs") {
     const n = num(/(?:תבנית|מארז)\s*(\d+)/);
     if (n) g = n * 60;

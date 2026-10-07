@@ -29,6 +29,14 @@
  *   carbs         Σ uses² of each carb in lunch/dinner
  *   produce       Σ uses² of each vegetable / fruit
  *   identical     the exact same meal again
+ *   mealRepeat    Σ (uses − 1)² of each lunch/dinner "meal signature" — pattern +
+ *                 main protein + carb, whatever the vegetables and whether lunch or
+ *                 dinner: changing one vegetable, or moving the meal to dinner, is no variety
+ *   breakfastRepeat  the same for breakfasts
+ *   unusedProduce  basket vegetables / fruit the week never uses
+ *   cost          estimated weekly cost as a share of the budget: free up to 70%, mild
+ *                 to 85%, steep beyond — the headroom goes to variety, not to saving more,
+ *                 and the week stays meaningfully below the budget
  *   budget        estimated weekly cost over the budget (fraction over)
  *   proteinShort  each day's protein share below the target (no slack: protein first)
  *   dayFit        each day's protein above +15% and fat share beyond ±10% of the targets
@@ -41,12 +49,23 @@ export const WEIGHTS = {
   protein: 3, fat: 2, carbs: 1, kcal: 0.5, price: 1.5, proteinPrice: 1.5, realism: 2, favorite: 1, expensive: 1.5,
   // weeklyPenalty
   lunchRepeat: 6, proteinSpread: 0.35, dominance: 3, sameDay: 1.5, consecutive: 0.8,
-  breakfast: 0.6, carbs: 0.25, produce: 0.15, identical: 2, budget: 40, proteinShort: 12, dayFit: 2,
+  breakfast: 0.6, carbs: 0.25, produce: 0.3, identical: 2, budget: 40, proteinShort: 12, dayFit: 2,
+  mealRepeat: 2, breakfastRepeat: 0.8, unusedProduce: 0.6, cost: 8,
 };
 // Cost after portion balancing and buying whole packs is above the raw portion cost
 const PURCHASE_OVERHEAD = 1.15;
 // Aim a little under the budget: the estimate is not the final purchase cost
 const BUDGET_AIM = 0.97;
+// Below this share of the budget, a costlier week is not penalized — the headroom buys variety
+const COST_FREE_SHARE = 0.7;
+
+// Spending pressure by share of the budget: none up to 70%, mild to 85%, steep past it —
+// the week should stay meaningfully below the budget, using the headroom for variety
+const COMFORT_SHARE = 0.85;
+const costPressure = share => Math.max(0, share - COST_FREE_SHARE) + 4 * Math.max(0, share - COMFORT_SHARE);
+
+/** What a meal is, for variety: its pattern, main protein and carb — not its vegetables or meal slot. */
+export const signature = c => `${c.pattern}|${c.main?.id || "-"}|${c.carb?.id || "-"}`;
 // Protein that carb sides add while balancing fills the day to its calories
 const CARB_PROTEIN_PER_KCAL = 0.035;
 // Aim a little above the validator's 90% so a day does not end just under it
@@ -82,6 +101,8 @@ export function scoringContext({ catalog, densities, profile, budget, candidates
     favorites: (profile?.favorite_foods || []).filter(Boolean),
     // 7 lunches with each protein in at most 3 needs 3 lunch proteins — with fewer,
     // the rule cannot hold and is not penalized (as in validateMenu)
+    // vegetables / fruit the candidates can use — the week should use them
+    produceOffered: new Set(Object.values(candidates).flat().flatMap(c => c.produce)),
     lunchRule: new Set((candidates.Lunch || []).filter(c => c.main).map(c => c.main.id)).size >= 3,
     refPerKcal: median(all.map(c => (c.nutrition.kcal > 0 ? c.cost / c.nutrition.kcal : null))) || 0.01,
     refPerProtein: median(foods.filter(p => PROTEIN_GROUPS.has(p.group)).map(perProtein)) || 0.1,
@@ -122,6 +143,7 @@ const sumSquares = m => [...m.values()].reduce((s, v) => s + v * v, 0);
  */
 export function weeklyPenalty(week, ctx) {
   const lunchMain = new Map(), mainUse = new Map(), breakfast = new Map(), carbs = new Map(), produce = new Map(), identical = new Map();
+  const mealSig = new Map(), breakfastSig = new Map();
   let sameDay = 0, consecutive = 0, mains = 0, cost = 0, kcal = 0, dayFit = 0, proteinShort = 0;
   week.forEach((day, di) => {
     const mainsToday = new Map();
@@ -132,6 +154,8 @@ export function weeklyPenalty(week, ctx) {
       cost += c.cost; kcal += c.nutrition.kcal;
       dk += c.nutrition.kcal; dp += c.nutrition.protein; df += c.nutrition.fat;
       for (const p of c.produce) bump(produce, p);
+      if (c.mealType === "Lunch" || c.mealType === "Dinner") bump(mealSig, signature(c));
+      if (c.mealType === "Breakfast") bump(breakfastSig, signature(c));
       if (c.mealType === "Breakfast") bump(breakfast, c.style);
       if (c.main && c.mealType !== "Snacks") bump(mainsToday, c.main.id);
       if (c.mealType === "Lunch" || c.mealType === "Dinner") {
@@ -166,6 +190,10 @@ export function weeklyPenalty(week, ctx) {
     carbs: sumSquares(carbs) / 7,
     produce: sumSquares(produce) / 7,
     identical: [...identical.values()].reduce((s, n) => s + Math.max(0, n - 1), 0),
+    mealRepeat: [...mealSig.values()].reduce((s, n) => s + (n - 1) ** 2, 0),
+    breakfastRepeat: [...breakfastSig.values()].reduce((s, n) => s + (n - 1) ** 2, 0) / 2,
+    unusedProduce: ctx.produceOffered ? [...ctx.produceOffered].filter(p => !produce.has(p)).length : 0,
+    cost: ctx.budget && kcal > 0 ? costPressure((cost / kcal) * ctx.kcal * 7 * PURCHASE_OVERHEAD / ctx.budget) : 0,
     // weekly cost estimate: the week's ₪ per kcal × the calories the week will have after balancing
     budget: ctx.budget && kcal > 0 ? Math.max(0, (cost / kcal) * ctx.kcal * 7 * PURCHASE_OVERHEAD / (ctx.budget * BUDGET_AIM) - 1) : 0,
     proteinShort,

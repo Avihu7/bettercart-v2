@@ -47,6 +47,12 @@ export function weeklyCosts(basketItems, planDays = null) {
  * Price facts for one basket item: price, ₪/kg (weighed or packed), ₪/100 g,
  * and for protein foods ₪ per 10 g of protein (the fairest way to compare them).
  */
+// Liquids are priced per litre: drinks and milk by their food group or name, anything sold in litres / ml
+const LIQUID_GROUPS = new Set(["milk", "plant_milk", "oil"]);
+const LIQUID_NAME = /משקה|מיץ|(^| )מים( |$)|מי |סודה|נקטר|ליטר|מ"ל/;
+export const isLiquid = item => LIQUID_GROUPS.has(itemGroup(item)) || LIQUID_NAME.test(String(item?.name || "")) ||
+  /ליטר|מ"ל|מל(?![א-ת])/.test(String(item?.quantity || ""));
+
 export function priceFacts(item) {
   const group = itemGroup(item);
   const grams = parseQuantityGrams(item.quantity, group) || Number(item.pack_grams) || null;
@@ -59,7 +65,7 @@ export function priceFacts(item) {
     per100g: perGram ? Math.round(perGram * 100 * 100) / 100 : null,
     perTenGramsProtein: perGram && proteinPer100 ? Math.round(perGram * 100 / proteinPer100 * 10 * 100) / 100 : null,
     soldByWeight: !!item.sold_by_weight,
-    liquid: /ליטר|מ"ל|מל(?![א-ת])/.test(String(item.quantity || "")),
+    liquid: isLiquid(item),
   };
 }
 
@@ -172,9 +178,12 @@ export async function basketBudgetPicture({ basketItems, planDays, profile, budg
 function whyExpensive(d) {
   const reasons = [];
   if (d.share >= 0.15) reasons.push(`לבדו ${Math.round(d.share * 100)}% מעלות השבוע`);
+  // ₪ per litre for liquids (oil is always dear per litre, so it is not called out), per kg otherwise
   const perKg = Number(d.item.price_per_kg) || 0;
-  if (perKg >= 40) reasons.push(`מחיר גבוה לק"ג (₪${round1(perKg)})`);
-  if (d.source === "menu" && d.usedGrams >= 1200) reasons.push(`התפריט צריך ממנו כמות גדולה (${round1(d.usedGrams / 1000)} ק"ג)`);
+  const liquid = isLiquid(d.item);
+  if (liquid && itemGroup(d.item) !== "oil" && perKg >= 20) reasons.push(`מחיר גבוה לליטר (₪${round1(perKg)})`);
+  if (!liquid && perKg >= 40) reasons.push(`מחיר גבוה לק"ג (₪${round1(perKg)})`);
+  if (d.source === "menu" && d.usedGrams >= 1200) reasons.push(`התפריט צריך ממנו כמות גדולה (${round1(d.usedGrams / 1000)} ${isLiquid(d.item) ? "ליטר" : "ק\"ג"})`);
   if (!reasons.length) reasons.push(`₪${round1(d.cost)} השבוע — מהמוצרים היקרים בסל`);
   return reasons;
 }

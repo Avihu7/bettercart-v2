@@ -13,10 +13,9 @@
  */
 import { classifyProduct, normalizeHebrew } from "@/lib/mealPlanRules";
 import { parseQuantityGrams, plausiblePer100g } from "@/lib/mealPlanCalories";
-import { applyReceiptRules } from "@/lib/receiptClassifier";
+import { applyReceiptRules, foodName, isDiscountLine } from "@/lib/receiptClassifier";
 import { productHealthScore } from "@/lib/healthScore";
 import { pricingFields, isWeighedGroup } from "@/lib/pricing";
-import { receiptItemName } from "@/lib/receiptReview";
 import { buildSmartAdditions } from "@/lib/smartBasketEngine";
 import { missingStaples, isDisliked, profileConflict, isSupplement, itemRole } from "@/lib/basketAlternatives";
 
@@ -77,7 +76,8 @@ export function normalizeCategory(category) {
 export function receiptToBasketItem(raw) {
   // category and menu suitability by the rules (or the user's own edit)
   const i = getEffectiveItemData(applyReceiptRules(raw));
-  const name = receiptItemName(i);
+  // the catalog name when the receipt's reading names no food ("חפוח אדמה" → "תפוח אדמה 1 ק"ג")
+  const name = foodName(i);
   const group = classifyProduct(name, normalizeCategory(i.category));
   // Avocado is a healthy fat in the basket, whatever the receipt called it
   const category = group === "avocado" ? "fat" : normalizeCategory(i.category);
@@ -192,7 +192,7 @@ export async function buildBasket({
   const fitting = history
     .filter(h => h.confidence >= 0.4 && h.history_score > 0.5)
     // menu suitability by the rules (or the user's edit), as for receipt items
-    .filter(h => !h.latest_item || applyReceiptRules(h.latest_item).is_approved_for_menu)
+    .filter(h => !h.latest_item || (applyReceiptRules(h.latest_item).is_approved_for_menu && !isDiscountLine(h.latest_item)))
     .filter(h => !profileConflict({ name: h.name, category: h.latest_item?.category }, profile))
     .filter(h => !isSupplement({ name: h.name }) && !isDisliked(h.name, disliked));
   const historyCandidates = fitting.slice(0, HISTORY_TOP);

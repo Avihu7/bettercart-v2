@@ -217,8 +217,23 @@ export default function FinalResults() {
                 <TrendingDown className="w-5 h-5 text-primary" /> לפני ואחרי
               </h2>
               <p className="text-xs text-muted-foreground mb-4">
-                לפני = התקציב החודשי שהגדרתם בפרופיל · אחרי = עלות סל הקניות החדש × מספר ביקורים בחודש
+                {ba.comparison_basis === "receipts_food"
+                  ? `לפני = ההוצאה החודשית על מזון מהסוג שבתפריט, לפי ${ba.receipts_counted} ${ba.receipts_counted === 1 ? "קבלה" : "קבלות"} · אחרי = עלות סל הקניות של התפריט לחודש`
+                  : "לפני = התקציב החודשי שהגדרתם בפרופיל (עדיין אין קבלות להשוואה) · אחרי = עלות סל הקניות של התפריט לחודש"}
               </p>
+              {ba.comparison_basis === "receipts_food" && ba.estimated_new_monthly_spending > ba.previous_monthly_spending && (
+                <p className="text-xs text-amber-800 bg-amber-50 rounded-md p-2 -mt-2 mb-4">
+                  התפריט עולה יותר ממה שהקבלות מראות שאתם מוציאים על מזון כזה ({formatCurrency(ba.previous_monthly_spending)} בחודש) —
+                  התפריט מכסה את כל הארוחות של השבוע, והקבלות שהעליתם כנראה לא מכסות את כל הקניות שלכם.
+                  ככל שתעלו יותר קבלות, ההשוואה תהיה מדויקת יותר.
+                </p>
+              )}
+              {ba.comparison_basis === "receipts_food" && (ba.monthly_food_non_plannable > 0 || ba.monthly_non_food > 0) && (
+                <p className="text-xs text-muted-foreground -mt-2 mb-4">
+                  לא נכללים בהשוואה: כ-{formatCurrency(ba.monthly_food_non_plannable)} בחודש על מזון שלא בתפריט (חטיפים, משקאות, תבלינים)
+                  ו-כ-{formatCurrency(ba.monthly_non_food)} על מוצרים שאינם מזון (ניקיון, היגיינה, בית). סך הקבלות בחודש: כ-{formatCurrency(ba.monthly_receipts_total)}.
+                </p>
+              )}
               <div className="grid sm:grid-cols-3 gap-4">
                 {/* Before Column */}
                 <div className="space-y-3">
@@ -226,7 +241,7 @@ export default function FinalResults() {
                   <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-center">
                     <p className="text-xs text-muted-foreground mb-1">הוצאה חודשית</p>
                     <p className="text-xl font-heading font-bold text-red-600">{formatCurrency(ba.previous_monthly_spending)}</p>
-                    <p className="text-xs text-muted-foreground mt-1">התקציב שהגדרתם בפרופיל</p>
+                    <p className="text-xs text-muted-foreground mt-1">{ba.comparison_basis === "receipts_food" ? "מזון לתפריט, לפי הקבלות" : "התקציב שהגדרתם בפרופיל"}</p>
                   </div>
                   <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-center">
                     <p className="text-xs text-muted-foreground mb-1">ציון בריאות</p>
@@ -259,7 +274,7 @@ export default function FinalResults() {
                     <p className="text-xs text-muted-foreground mb-1">הוצאה חודשית</p>
                     <p className="text-xl font-heading font-bold text-green-600">{formatCurrency(ba.estimated_new_monthly_spending)}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {formatCurrency(planBasket?.total_estimated_cost)} לשבוע × כ-4.3 שבועות
+                      {formatCurrency(plan?.estimated_weekly_cost ?? planBasket?.total_estimated_cost)} לשבוע × כ-4.3 שבועות
                     </p>
                   </div>
                   <div className="p-4 rounded-xl bg-green-50 border border-green-100 text-center">

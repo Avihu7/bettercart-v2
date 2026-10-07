@@ -56,7 +56,9 @@ export function basketOffer(basketItems, profile) {
   if (by(["cereal"]).length && (by(["milk", "plant_milk", "yogurt"]).length)) breakfastStyles.add("cereal");
   if (by(["eggs"]).length) breakfastStyles.add("eggs");
   if (by(["yogurt"]).length && by(["fruit"]).length) breakfastStyles.add("yogurt");
-  if (by(["bread"]).length) for (const p of by(["dairy_protein", "legumes"])) breakfastStyles.add(`bread:${p}`);
+  // bread with a protein the meal rules allow at breakfast (cheese, cottage, tofu, canned tuna)
+  const breakfastProteins = buildProductCatalog(eatable).filter(p => ["dairy_protein", "legumes", "fish"].includes(p.group) && p.meal_roles?.includes("Breakfast")).map(p => p.name_he);
+  if (by(["bread"]).length) for (const p of breakfastProteins) breakfastStyles.add(`bread:${p}`);
   return {
     eatable: eatable.map(i => i.name),
     lunchProteins,
@@ -190,6 +192,29 @@ export function validateMenu({ plan, basketItems, profile, budget = null }) {
   rotation("vegetable_rotation", "ירקות מתחלפים במהלך השבוע", usedAll(new Set(["vegetable"])), offer.vegetables.length, 3);
   rotation("fruit_rotation", "פירות מתחלפים במהלך השבוע", usedAll(new Set(["fruit"])), offer.fruits.length, 2);
 
+  // Meals that are really the same meal: the same main protein with the same carb,
+  // whatever the vegetables and whether lunch or dinner. With enough combinations
+  // in the basket, none should fill more than 3 of the 14 main meals.
+  const sig = m => `${mainProtein(m) || "-"}|${m.items.find(i => CARB_SIDE.has(classifyProduct(i.food_name)))?.food_name || "-"}`;
+  const sigUse = count(mains.map(sig));
+  const repeated = [...sigUse].filter(([, n]) => n > 3).map(([meal, n]) => ({ meal, times: n }));
+  const combos = Math.max(1, offer.mainProteins.length) * Math.max(1, offer.carbs.length);
+  add("meal_repeat", "variety", repeated.length === 0 || combos < 5, "אותה ארוחה (אותו חלבון ואותה פחמימה) לא יותר מ-3 פעמים בשבוע",
+    { repeated, distinct: sigUse.size, of: mains.length, combos }, repeated.length > 0 && combos < 5);
+
+  // Diversity score 0..1 (for comparing weeks): distinct main meals, breakfasts,
+  // proteins, carbs and produce, each against what the basket allows
+  const ratio = (n, max) => (max > 0 ? Math.min(1, n / max) : 1);
+  const breakfastSigs = new Set(days.map(d => d.meals.find(m => m.meal_type === "Breakfast")).filter(Boolean)
+    .map(m => m.items.filter(i => !CARB_SIDE.has(classifyProduct(i.food_name)) || classifyProduct(i.food_name) === "bread").map(i => classifyProduct(i.food_name) === "vegetable" ? "" : i.food_name).sort().join("+"))).size;
+  const diversity = Math.round((
+    ratio(sigUse.size, Math.min(mains.length, combos)) * 3 +
+    ratio(breakfastSigs, Math.min(7, Math.max(1, offer.breakfastStyles.length * Math.max(1, offer.carbs.length)))) * 2 +
+    ratio(usedProteins, Math.min(6, offer.mainProteins.length)) * 2 +
+    ratio(used(CARB_SIDE), Math.min(4, offer.carbs.length)) +
+    ratio(usedAll(new Set(["vegetable"])), Math.min(6, offer.vegetables.length)) +
+    ratio(usedAll(new Set(["fruit"])), Math.min(3, offer.fruits.length))) / 10 * 100) / 100;
+
   // ── level
   const failed = checks.filter(c => !c.ok && c.area !== "nutrition_info");
   const fails = area => failed.some(c => c.area === area);
@@ -204,6 +229,6 @@ export function validateMenu({ plan, basketItems, profile, budget = null }) {
     failed: failed.map(c => c.id),
     limited: limited.map(c => c.id),
     offer,
-    stats: { perDay, cost: listCost, budget, lunchProteins: Object.fromEntries(lunchUse), mainProteins: Object.fromEntries(mainUse) },
+    stats: { perDay, cost: listCost, budget, diversity, lunchProteins: Object.fromEntries(lunchUse), mainProteins: Object.fromEntries(mainUse) },
   };
 }

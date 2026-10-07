@@ -161,6 +161,7 @@ export function purchaseHistoryForUser(db, productsDb, userId, now = new Date())
     JOIN receipts r ON r.id = i.receipt_id AND r.created_by = i.created_by
     WHERE i.created_by = ?
       AND i.is_food = 1
+      AND COALESCE(i.price, 0) >= 0  -- discount lines are not products
       AND i.catalog_match_status IN ('matched', 'approved')
       AND COALESCE(i.catalog_needs_review, 0) = 0
   `).all(userId);

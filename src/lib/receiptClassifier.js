@@ -28,6 +28,27 @@ const CATEGORY_BY_GROUP = {
 const DRINK = /משקה|מיץ|קולה|סודה|(^| )מים( |$)|מי עדן|נביעות|ספרייט|פאנטה|נקטר|בירה|(^| )יין( |$)|אייס/;
 const MENU_MIN_HEALTH = 4;
 
+// Plain water adds nothing to a meal — food, but not part of the menu
+const PLAIN_WATER = /^\s*(מים|מי ברז|מי מעיין|סודה|מים מוגזים|מי סודה|מי עדן|נביעות|מי נביעות|נביעות טבעיות)(?![א-ת])/;
+export const isPlainWater = name => PLAIN_WATER.test(String(name || ""));
+
+/** A discount line on the receipt ("קטיף מלפפון −3.42"): money, not a product. */
+export const isDiscountLine = item => Number(item?.price) < 0;
+
+const STRONG_MATCH = new Set(["matched", "approved"]);
+/**
+ * The name to treat a receipt item as: the user's chosen product, else the
+ * receipt's reading — unless that reading names no food group (an OCR slip such
+ * as "חפוח אדמה" or "פיתוח כוסמי") and the catalog matched it with confidence:
+ * then the catalog product ("תפוח אדמה 1 ק"ג", "10פיתות כוסמין").
+ */
+export function foodName(item) {
+  const name = (item?.catalog_match_type === "manual" && item.matched_product_name) || item?.normalized_name || item?.original_name || "";
+  if (classifyProduct(name) !== "other") return name;
+  const matched = STRONG_MATCH.has(item?.catalog_match_status) && !item?.catalog_needs_review && item?.matched_product_name;
+  return matched && classifyProduct(matched) !== "other" ? matched : name;
+}
+
 /** The basket category of a food product name. */
 export function categoryOf(name) {
   // packing liquids aside ("טונה בשמן" is fish, not oil)
@@ -69,14 +90,14 @@ const USER_FOOD_DECISION = new Set(["non_food", "ignored"]);
  */
 export function applyReceiptRules(item) {
   if (!item || item.user_edited === true || item.user_edited === 1) return item;
-  const rule = classifyReceiptLine(item);
+  const rule = classifyReceiptLine({ ...item, normalized_name: foodName(item) });
   const userSaidNotFood = USER_FOOD_DECISION.has(item.catalog_match_status);
   const isFood = userSaidNotFood ? false : rule.is_food;
   return {
     ...item,
     is_food: isFood,
     category: isFood ? rule.category : "other",
-    is_approved_for_menu: isFood && rule.is_approved_for_menu,
+    is_approved_for_menu: isFood && rule.is_approved_for_menu && !isDiscountLine(item),
     reasoning: rule.reasoning,
   };
 }
@@ -91,7 +112,7 @@ export function receiptLines(result) {
     ...(result?.food_items || []),
     ...(result?.non_food_items || []).map(i => ({ original_name: i.name, normalized_name: i.name, price: i.price })),
   ];
-  return lines
+  const read = lines
     .map(l => ({
       original_name: String(l.original_name || l.normalized_name || "").trim(),
       normalized_name: String(l.normalized_name || l.original_name || "").trim(),
@@ -99,6 +120,16 @@ export function receiptLines(result) {
       price: Number(l.price) || null,
     }))
     .filter(l => l.original_name || l.normalized_name);
+  // A discount line lowers the price of the product above it — it is not a product
+  const out = [];
+  for (const l of read) {
+    if (isDiscountLine(l) && out.length) {
+      const prev = out[out.length - 1];
+      prev.price = Math.round(((prev.price || 0) + l.price) * 100) / 100;
+      prev.discount = Math.round(((prev.discount || 0) - l.price) * 100) / 100;
+    } else if (!isDiscountLine(l)) out.push(l);
+  }
+  return out;
 }
 
 // ─── Insights ────────────────────────────────────────────────────────────────
@@ -146,5 +177,83 @@ export function receiptInsights(items) {
       .map(([c, v]) => `${CATEGORY_LABELS[c] || c} (₪${Math.round(v)})`),
     less_healthy_patterns: low.length ? [`מוצרים עם ציון בריאות נמוך: ${low.slice(0, 4).join(", ")}`] : [],
     recommended_improvements: improvements,
+  };
+}
+
+// ─── Spending classes ───────────────────────────────────────────────────────
+
+/**
+ * What a receipt line's money was spent on:
+ *   food_plannable      food the weekly menu can use (menu-fit, has a food group, not plain water)
+ *   food_non_plannable  food outside the menu: treats, sweet drinks, water, spices…
+ *   non_food            household, cleaning, hygiene
+ * Discount lines belong to the line above them (see receiptSpending).
+ */
+export function spendClass(raw) {
+  const item = applyReceiptRules(raw);
+  if (!item.is_food) return "non_food";
+  const name = foodName(raw);
+  const plannable = item.is_approved_for_menu && !isPlainWater(name) && classifyProduct(name) !== "other";
+  return plannable ? "food_plannable" : "food_non_plannable";
+}
+
+const CLASSES = ["food_plannable", "food_non_plannable", "non_food"];
+const round2 = n => Math.round(n * 100) / 100;
+
+/**
+ * Spending from all of a user's receipts, split by class.
+ *   receipts: [{ id, purchase_date, created_date }]; items: their receipt items
+ *   (in receipt order — a discount line is credited to the line above it).
+ * Returns { receipts: [{ id, date, food_plannable, food_non_plannable, non_food, total }],
+ *           count, perReceipt: {...averages}, perMonth: {...} } — perMonth uses the
+ * profile's purchases per month (default 4). Receipts with no lines are left out.
+ */
+export function receiptSpending(receipts, items, { purchasesPerMonth = 4 } = {}) {
+  const rows = [];
+  for (const r of receipts || []) {
+    const lines = (items || []).filter(i => i.receipt_id === r.id);
+    if (!lines.length) continue;
+    const sums = Object.fromEntries(CLASSES.map(c => [c, 0]));
+    let last = "food_non_plannable";
+    for (const l of lines) {
+      const price = Number(l.price) || 0;
+      const cls = isDiscountLine(l) ? last : spendClass(l);
+      sums[cls] += price;
+      if (!isDiscountLine(l)) last = cls;
+    }
+    rows.push({ id: r.id, date: r.purchase_date || String(r.created_date || "").slice(0, 10),
+      ...Object.fromEntries(CLASSES.map(c => [c, round2(sums[c])])), total: round2(CLASSES.reduce((s, c) => s + sums[c], 0)) });
+  }
+  const avg = c => (rows.length ? round2(rows.reduce((s, r) => s + r[c], 0) / rows.length) : 0);
+  const perReceipt = Object.fromEntries([...CLASSES, "total"].map(c => [c, avg(c)]));
+  const perMonth = Object.fromEntries(Object.entries(perReceipt).map(([c, v]) => [c, Math.round(v * purchasesPerMonth)]));
+  return { receipts: rows, count: rows.length, perReceipt, perMonth };
+}
+
+/**
+ * "Before / after" for the menu, food against food:
+ *   before = the user's monthly spending on food the menu replaces (food_plannable,
+ *            from all receipts × purchases per month); without receipts, the
+ *            stated monthly budget
+ *   after  = the menu's weekly purchase cost × 30/7
+ * Food outside the menu and non-food items are reported beside it, never
+ * counted as savings. Returns the before_after fields saved with the plan.
+ */
+export function spendingComparison({ spending, monthlyBudget, weeklyMenuCost }) {
+  const after = Math.round((Number(weeklyMenuCost) || 0) * 30 / 7);
+  const fromReceipts = spending?.count > 0 && spending.perMonth.food_plannable > 0;
+  const before = fromReceipts ? spending.perMonth.food_plannable : Math.round(Number(monthlyBudget) || after);
+  const savings = Math.max(0, before - after);
+  return {
+    previous_monthly_spending: before,
+    estimated_new_monthly_spending: after,
+    monthly_savings: savings,
+    yearly_savings: savings * 12,
+    comparison_basis: fromReceipts ? "receipts_food" : "budget",
+    receipts_counted: spending?.count || 0,
+    // the rest of what the receipts show, per month — not part of the comparison
+    monthly_food_non_plannable: fromReceipts ? spending.perMonth.food_non_plannable : null,
+    monthly_non_food: fromReceipts ? spending.perMonth.non_food : null,
+    monthly_receipts_total: fromReceipts ? spending.perMonth.total : null,
   };
 }

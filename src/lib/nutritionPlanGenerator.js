@@ -22,9 +22,8 @@ import { PLANNER_VARIANTS } from '@/lib/mealScoring';
 import { validateMenu } from '@/lib/validateMenu';
 import { fitPlanToBudget, planCost } from '@/lib/mealPlanBudget';
 import { profileConflict, isSupplement, isDisliked } from '@/lib/basketAlternatives';
+import { isPlainWater } from '@/lib/receiptClassifier';
 
-const PLAIN_WATER = /^\s*(מים|מי ברז|מי מעיין|סודה|מים מוגזים|מי סודה|מי עדן|נביעות|מי נביעות|נביעות טבעיות)(?![א-ת])/;
-const isPlainWater = name => PLAIN_WATER.test(String(name || ""));
 
 export const PLAN_FAILED_MESSAGE = "לא הצלחנו לבנות תפריט מהמוצרים שבסל. הוסיפו לסל מוצרים לארוחות (חלבון, פחמימה וירקות) ונסו שוב.";
 
@@ -119,7 +118,7 @@ export async function generateNutritionPlan({ list, profile, budget = null }) {
   // Meal selection: candidates → scoring → greedy + local search (src/lib/weeklyPlanner.js),
   // once per planner variant (balanced / protein first / budget first). Every
   // week is completed and validated, and the best one is kept: the lowest
-  // quality level, then the fewest failed checks, then the lowest cost —
+  // quality level, the fewest failed checks, the most variety, then cost —
   // judged after balancing, when protein and cost are final. Deterministic.
   const quiet = { info() {}, warn() {} };
   const attempts = PLANNER_VARIANTS.map(v => ({ name: v.name, planned: planWeek({ catalog, densities, profile, budget, weights: v.weights }) }));
@@ -133,7 +132,10 @@ export async function generateNutritionPlan({ list, profile, budget = null }) {
   const ranked = results
     .map(r => Object.assign(r, { quality: validateMenu({ plan: { ...r.done.plan, estimated_weekly_cost: r.done.budgetReport.estimated_cost }, basketItems: list.items, profile, budget }) }));
   if (!ranked.length) throw new Error(PLAN_FAILED_MESSAGE);
-  const rank = r => [r.quality.level, r.quality.failed.length, r.quality.limited.length, r.done.budgetReport.estimated_cost];
+  // quality first, then variety; cost decides only above 85% of the budget (below it the
+  // headroom is better spent on variety than on saving more), and last as a tie-break
+  const costOver = r => (budget > 0 ? Math.max(0, r.done.budgetReport.estimated_cost - budget * 0.85) : 0);
+  const rank = r => [r.quality.level, r.quality.failed.length, -r.quality.stats.diversity, Math.round(costOver(r)), r.quality.limited.length, r.done.budgetReport.estimated_cost];
   const better = (x, y) => { const [a, b] = [rank(x), rank(y)]; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] < b[i]; return false; };
   const chosen = ranked.reduce((best, r) => (better(r, best) ? r : best));
   const { plan, budgetReport, problems, initialProblems, balanced, calories } = chosen.done;

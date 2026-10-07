@@ -81,6 +81,8 @@ export default function ReceiptUpload() {
       // The AI only read the lines; food / category / menu suitability are
       // decided here by rules (src/lib/receiptClassifier.js), nutrition later
       // by the catalog match, the health score by the server
+      // A reading with no product lines is a failed reading — never saved as an empty receipt
+      if (!result.lines.length) throw new Error("לא זוהו מוצרים בקבלה. נסו תמונה חדה יותר או הדביקו את טקסט הקבלה.");
       const lines = result.lines.map(line => ({ ...line, ...classifyReceiptLine(line) }));
       const food = lines.filter(l => l.is_food);
 
