@@ -56,6 +56,8 @@ console.log(`\n${fix.length} food rows → non-food`);
 if (apply) {
   const upd = db.prepare(`UPDATE products SET is_food = 0, category = 'hygiene' WHERE id = ? AND is_food = 1`);
   db.transaction(() => { for (const r of fix) upd.run(r.id); })();
+  // products.db is committed: move the change out of the WAL file into it
+  db.pragma('wal_checkpoint(TRUNCATE)');
   console.log('applied');
 } else {
   console.log('dry run — pass --apply to write');
