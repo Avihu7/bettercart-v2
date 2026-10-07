@@ -14,6 +14,7 @@
 import { classifyProduct, normalizeHebrew, buildProductCatalog, portionCap } from "@/lib/mealPlanRules";
 import { parseQuantityGrams, plausiblePer100g, buildDensities } from "@/lib/mealPlanCalories";
 import { productHealthScore } from "@/lib/healthScore";
+import { pricingFields } from "@/lib/pricing";
 
 // Nutritional role of a basket item, from its meal-planning food group
 const ROLE_BY_GROUP = {
@@ -263,6 +264,9 @@ export function mentions(name, c) {
 // Package weight of a catalog product: per-kg items ("1") count as 1 kg,
 // obviously wrong ml-scaled values are re-read from the name.
 function packageGrams(p, c, group) {
+  // The server's corrected pack weight (kg-priced rows are 1000 g)
+  const pack = Number(p.pack_grams);
+  if (pack >= 50 && pack <= 5000) return pack;
   const q = Number(p.quantity_in_grams);
   if (q === 1) return 1000;
   if (q >= 50 && q <= 5000) return q;
@@ -418,6 +422,7 @@ export function catalogItem(option, extra) {
     category: c.category,
     quantity: grams >= 1000 && grams % 1000 === 0 ? `${grams / 1000} ק"ג` : `${Math.round(grams)} גרם`,
     estimated_price: p.price,
+    ...pricingFields({ price: p.price, packGrams: grams, soldByWeight: !!p.sold_by_weight, grams }),
     calories: Math.round(per100.kcal * f),
     protein: round1(per100.protein * f),
     carbs: round1(per100.carbs * f),

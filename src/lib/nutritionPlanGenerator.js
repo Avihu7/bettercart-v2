@@ -14,6 +14,7 @@ import {
 } from '@/lib/mealPlanRules';
 import { buildDensities, applyDensities, finalizeDays, closeCalories } from '@/lib/mealPlanCalories';
 import { WEEK_DAYS } from '@/lib/weekDays';
+import { fitPlanToBudget } from '@/lib/mealPlanBudget';
 
 // Israeli week: Sunday is day 1
 const DAY_NAMES = WEEK_DAYS.map(d => d.key);
@@ -321,7 +322,12 @@ async function regenerateDay({ dayIndex, catalog, densities, listDensities, prof
   return report.ok ? { day: single.days[0], report } : null;
 }
 
-export async function generateNutritionPlan({ list, profile }) {
+/**
+ * budget: the weekly food budget (₪). The menu is fitted to it before it is
+ * returned — see src/lib/mealPlanBudget.js — so the final shopping list built
+ * from it already fits; result.budget says whether it does.
+ */
+export async function generateNutritionPlan({ list, profile, budget = null }) {
   // The plan is always a full Israeli week (Sunday → Saturday). The basket's
   // shopping_period_days is about how often the user shops (e.g. 30/6 = 5 days)
   // and must not shorten the weekly menu.
@@ -416,6 +422,19 @@ export async function generateNutritionPlan({ list, profile }) {
       calories = calories.map(r => (r.day === report.day ? fresh.report : r));
     }
   }
+
+  // Budget: the real cost of this menu's purchase quantities; over budget →
+  // cheaper basket products of the same kind, each day rebalanced to its targets
+  const { day_reports: dayReports, ...budgetReport } = fitPlanToBudget({
+    plan, catalog, densities, targets, basketItems: list.items, budget, reports: calories,
+  });
+  // swapped days were rebalanced — their latest reports drive the day warnings
+  calories = calories.map(r => dayReports.find(f => f.day === r.day) || r);
+  if (budgetReport.swaps.length) {
+    console.info(`[nutrition plan] budget: ₪${budgetReport.cost_before} → ₪${budgetReport.estimated_cost} (budget ₪${budget}), swaps:`, budgetReport.swaps);
+  }
+  if (!budgetReport.fits) console.warn(`[nutrition plan] menu costs ₪${budgetReport.estimated_cost}, ₪${budgetReport.over_by} over the weekly budget`);
+
   for (const report of calories) {
     const day = plan.days.find(d => d.day_name === report.day);
     const warnings = targetWarnings(report, targets);
@@ -433,6 +452,9 @@ export async function generateNutritionPlan({ list, profile }) {
   recomputeTotals(plan);
   return {
     ...plan,
+    // the final list's own cost (purchase quantities × prices), not the sum of portions
+    estimated_weekly_cost: budgetReport.estimated_cost,
+    budget: budgetReport,
     validation: {
       initial_issues: initialProblems.length,
       remaining_issues: problems,

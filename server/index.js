@@ -21,6 +21,14 @@ import {
 import { sendPasswordResetEmail } from './email.js';
 import { purchaseHistoryForUser } from './purchaseHistory.js';
 import { productHealthScore, healthScoreName } from '../src/lib/healthScore.js';
+import { catalogPack, catalogPricePer100g } from '../src/lib/pricing.js';
+
+// A catalog row with its real pack weight and price per 100 g (the import stored
+// kg-priced packages with their weight in kg — see src/lib/pricing.js)
+function withPack(row) {
+  const { grams, soldByWeight } = catalogPack(row);
+  return { ...row, pack_grams: grams, sold_by_weight: soldByWeight, price_per_100g: catalogPricePer100g(row) ?? row.price_per_100g ?? null };
+}
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -58,6 +66,31 @@ try {
   }
 } catch (err) {
   console.error('Failed to open products catalog:', err.message);
+}
+
+// Matched receipt items get the real pack weight / per-kg flag and price per
+// 100 g of their catalog product (src/lib/pricing.js) — items matched before
+// these were corrected included. Idempotent: only rows that differ are written.
+if (productsDb) {
+  try {
+    const matched = db.prepare(`SELECT id, matched_product_id, catalog_pack_grams, catalog_sold_by_weight, catalog_price_per_100g
+      FROM receiptItems WHERE matched_product_id IS NOT NULL AND matched_product_id != ''`).all();
+    const product = productsDb.prepare('SELECT price, quantity_in_grams, package_unit, original_product_name FROM products WHERE id = ?');
+    const update = db.prepare('UPDATE receiptItems SET catalog_pack_grams = ?, catalog_sold_by_weight = ?, catalog_price_per_100g = ? WHERE id = ?');
+    const fixed = db.transaction(rows => rows.reduce((n, r) => {
+      const p = product.get(r.matched_product_id);
+      if (!p) return n;
+      const { grams, soldByWeight } = catalogPack(p);
+      const per100 = catalogPricePer100g(p);
+      const weighed = soldByWeight ? 1 : 0;
+      if (r.catalog_pack_grams === grams && r.catalog_sold_by_weight === weighed && r.catalog_price_per_100g === per100) return n;
+      update.run(grams, weighed, per100, r.id);
+      return n + 1;
+    }, 0))(matched);
+    if (fixed) console.log(`Receipt items     → pack weights filled for ${fixed} matched items`);
+  } catch (err) {
+    console.error('Pack weight backfill failed:', err.message);
+  }
 }
 
 // ─── Catalog provider configuration ──────────────────────────────────────────
@@ -112,14 +145,14 @@ const JSON_FIELDS = {
   receipts:      ['insights'],
   receiptItems:  [],
   shoppingLists: ['items', 'basket_warnings'],
-  nutritionPlans: ['days', 'before_after'],
+  nutritionPlans: ['days', 'before_after', 'budget'],
 };
 
 // Fields stored as 0/1 integers (booleans) in SQLite
 const BOOL_FIELDS = {
   userProfile:   ['onboarding_complete'],
   receipts:      [],
-  receiptItems:  ['is_food', 'is_approved_for_menu', 'catalog_needs_review'],
+  receiptItems:  ['is_food', 'is_approved_for_menu', 'catalog_needs_review', 'catalog_sold_by_weight'],
   shoppingLists: ['complementary_added'],
   nutritionPlans: [],
 };
@@ -273,6 +306,7 @@ app.get('/api/products/search', (req, res) => {
       price,
       price_per_100g,
       quantity_in_grams,
+      package_unit,
       calories_per_100g,
       protein_per_100g,
       carbs_per_100g,
@@ -303,7 +337,7 @@ app.get('/api/products/search', (req, res) => {
         query,
         active_catalog_chain: ACTIVE_CATALOG_CHAIN,
         total: rows.length,
-        results: rows.map(r => ({ ...r, match_type: 'prefix' })),
+        results: rows.map(r => ({ ...withPack(r), match_type: 'prefix' })),
       });
     } catch (err) {
       return res.status(500).json({ error: err.message, results: [] });
@@ -340,7 +374,7 @@ app.get('/api/products/search', (req, res) => {
     `).all(...terms.flatMap(t => [`%${t}%`, `%${t}%`]), chainFilter, ...rankArgs);
     const results = rows.map(r => {
       const exact = r.normalized_product_name === query || r.original_product_name === query;
-      return { ...r, match_type: exact ? 'exact' : 'partial', match_confidence: exact ? 'high' : 'medium' };
+      return { ...withPack(r), match_type: exact ? 'exact' : 'partial', match_confidence: exact ? 'high' : 'medium' };
     });
 
     res.json({
@@ -408,6 +442,8 @@ app.post('/api/products/match-items', (req, res) => {
       category,
       price,
       price_per_100g,
+      quantity_in_grams,
+      package_unit,
       calories_per_100g,
       protein_per_100g,
       carbs_per_100g,
@@ -417,7 +453,8 @@ app.post('/api/products/match-items', (req, res) => {
     WHERE is_food = 1
   `;
 
-  function buildMatch(base, row, matchType, confidence, extra = {}) {
+  function buildMatch(base, rawRow, matchType, confidence, extra = {}) {
+    const row = withPack(rawRow);
     return {
       ...base,
       matched: true,
@@ -427,6 +464,8 @@ app.post('/api/products/match-items', (req, res) => {
       chain: row.chain,
       price: row.price ?? null,
       price_per_100g: row.price_per_100g ?? null,
+      pack_grams: row.pack_grams ?? null,
+      sold_by_weight: row.sold_by_weight,
       category: row.category ?? null,
       calories_per_100g: row.calories_per_100g ?? null,
       protein_per_100g: row.protein_per_100g ?? null,

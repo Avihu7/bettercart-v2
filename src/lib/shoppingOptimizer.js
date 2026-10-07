@@ -15,6 +15,7 @@
 
 import { classifyProduct } from '@/lib/mealPlanRules';
 import { quantityCandidates, parseQuantityGrams } from '@/lib/mealPlanCalories';
+import { purchaseCost } from '@/lib/pricing';
 
 // Category-based package size rules (common Israeli supermarket sizes)
 const PACKAGE_SIZES = {
@@ -210,7 +211,14 @@ function purchaseQuantity(item, eatenGrams, group) {
     const cartons = Math.ceil(eggs / 12);
     return { label: cartons === 1 ? 'תבנית 12 ביצים' : `תבנית 12 ביצים × ${cartons}`, purchaseGrams: cartons * 12 * 60 };
   }
-  if (WEIGHED_GROUPS.has(group) && !productUnit(item, group)) {
+  // Known pricing unit (see src/lib/pricing.js): weighed → by the 100 g, packed → whole packs
+  const knownPack = !item.sold_by_weight && Number(item.pack_grams) > 0 ? Number(item.pack_grams) : null;
+  if (knownPack) {
+    const packs = Math.max(1, Math.ceil(need / knownPack));
+    const label = packLabel(knownPack, group);
+    return { label: packs === 1 ? label : `${label} × ${packs}`, purchaseGrams: packs * knownPack };
+  }
+  if (item.sold_by_weight || (WEIGHED_GROUPS.has(group) && !productUnit(item, group))) {
     // Sold by weight: round up to the next 100g (at least 250g)
     const grams = Math.max(250, Math.ceil(need / 100) * 100);
     return { label: `כ-${formatWeight(grams)}`, purchaseGrams: grams };
@@ -259,17 +267,18 @@ export function optimizeShoppingQuantities(shoppingListItems, nutritionPlanDays)
     const group = classifyProduct(item.name, item.category);
     const { label, purchaseGrams } = purchaseQuantity(item, eaten, group);
 
-    // Price from the list's own price per gram (its quantity is the pack it priced)
+    // Price per kg / per pack from the item's pricing fields; older items fall
+    // back to the list's own price ÷ quantity (its quantity is the pack it priced)
     const listGrams = quantityCandidates(item.quantity, group)[0];
-    const pricePerGram = listGrams && item.estimated_price ? item.estimated_price / listGrams : null;
+    const priced = purchaseCost(item, purchaseGrams, listGrams);
 
     return {
       ...item,
       quantity: label,
       weekly_usage_grams: Math.round(eaten),
       purchase_grams: Math.round(purchaseGrams),
-      estimated_price: pricePerGram ? Math.round(pricePerGram * purchaseGrams * 10) / 10 : item.estimated_price,
-      price_is_estimate: !pricePerGram,
+      estimated_price: priced ? priced.cost : item.estimated_price,
+      price_is_estimate: !priced,
       _optimized: true,
       _gramsNeeded: eaten,
     };

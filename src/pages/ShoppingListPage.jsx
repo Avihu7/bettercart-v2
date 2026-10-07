@@ -23,10 +23,14 @@ import { isBasketReady, isUnresolved, receiptItemName } from "@/lib/receiptRevie
 import { classifyProduct, normalizeHebrew } from "@/lib/mealPlanRules";
 import { parseQuantityGrams } from "@/lib/mealPlanCalories";
 import { productHealthScore } from "@/lib/healthScore";
+import { pricingFields, isWeighedGroup, weeklyBudget as profileWeeklyBudget, basketBudget } from "@/lib/pricing";
 import { buildSmartAdditions } from "@/lib/smartBasketEngine";
+import { planCost } from "@/lib/mealPlanBudget";
 import { findAlternatives, buildReplacementItem, isDisliked, itemRole, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement, proteinShortText } from "@/lib/basketAlternatives";
 
 const MIN_FOOD_ITEMS = 3;
+
+const formatShekel = n => `₪${Math.round(n * 10) / 10}`;
 
 // Pack size assumed when a receipt line has no readable quantity
 const DEFAULT_PACK_GRAMS = 500;
@@ -42,14 +46,29 @@ function receiptToBasketItem(raw) {
   // Avocado is a healthy fat in the basket, whatever the receipt called it
   const category = group === "avocado" ? "fat" : normalizeCategory(i.category);
   const parsed = parseQuantityGrams(i.quantity, group) || parseQuantityGrams(i.matched_product_name, group);
-  const grams = parsed || DEFAULT_PACK_GRAMS;
+  // Catalog price with its real unit: a weighed product's price is per kg, a
+  // packed one's per pack — never the price of the receipt's own amount
+  // packaged — unless the catalog matched a different pack size than the one
+  // bought (e.g. 100 g for a 1 kg bag): then the receipt's own price is the truer one
+  const receiptPrice = Number(i.price) || 0;
+  const packGrams = Number(i.catalog_pack_grams) || 0;
+  const otherPack = !i.catalog_sold_by_weight && parsed && packGrams && receiptPrice > 0 &&
+    (parsed / packGrams > 1.5 || parsed / packGrams < 0.67);
+  const catalogPriced = i.data_source === "catalog" && Number(i.catalog_price) > 0 && packGrams > 0 && !otherPack;
+  const grams = parsed || (catalogPriced ? packGrams : DEFAULT_PACK_GRAMS);
   const f = grams / 100;
   const per = v => (v == null ? null : Math.round(Number(v) * f * 10) / 10);
+  const pricing = catalogPriced
+    ? pricingFields({ price: Number(i.catalog_price), packGrams: Number(i.catalog_pack_grams), soldByWeight: !!i.catalog_sold_by_weight, grams })
+    : receiptPrice > 0
+      ? pricingFields({ price: receiptPrice, packGrams: grams, soldByWeight: isWeighedGroup(group, name), grams })
+      : {};
   return {
     name,
     category,
     quantity: parsed && i.quantity ? i.quantity : `${grams} גרם`,
     estimated_price: Number(i.effective_price ?? i.price ?? 0) || 0,
+    ...pricing,
     calories: Math.round((Number(i.effective_calories_per_100g) || 0) * f),
     protein: per(i.effective_protein_per_100g),
     carbs: per(i.effective_carbs_per_100g),
@@ -307,9 +326,7 @@ export default function ShoppingListPage() {
       // BetterCart plans a full week: one weekly menu and one weekly basket,
       // whatever the shopping frequency (which only splits the budget)
       const daysPerPurchase = 7;
-      const weeklyBudget = Math.round(profile?.monthly_budget
-        ? profile.monthly_budget * 7 / 30
-        : (profile?.budget_per_purchase || 500) * Math.max(1, (profile?.purchases_per_month || 4) / 4.3));
+      const weeklyBudget = profileWeeklyBudget(profile);
       // The receipt is the basis of the basket: its recognized, menu-fit food
       // items (not disliked) go in as they are; the engine only adds around them
       const receiptBasket = [];
@@ -397,7 +414,7 @@ export default function ShoppingListPage() {
   });
 
   // Baskets only — a final shopping list (step 4) is never shown here
-  const { basket: showList, planBasket, planOutdated, completed, isLoading: flowLoading } = useFlowData(user);
+  const { basket: showList, plan, planBasket, planOutdated, completed, isLoading: flowLoading } = useFlowData(user);
 
   // One click from the receipt: arriving with ?build=1 builds the basket right
   // away, unless a basket for this receipt already exists. Runs once; the flag
@@ -415,8 +432,9 @@ export default function ShoppingListPage() {
   const [replacing, setReplacing] = useState(null); // index of the item being replaced
   const [removedSome, setRemovedSome] = useState(false);
   const saveItemsMutation = useMutation({
-    mutationFn: ({ items, warnings }) => api.entities.ShoppingList.update(showList.id, {
+    mutationFn: ({ items, warnings, acceptedBudget }) => api.entities.ShoppingList.update(showList.id, {
       items, ...basketTotals(items), ...(warnings ? { basket_warnings: warnings } : {}),
+      ...(acceptedBudget ? { accepted_budget: Math.max(acceptedBudget, Number(showList.accepted_budget) || 0) } : {}),
     }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: [FLOW_QUERY_KEY] }),
     onError: () => toast({ title: "השינוי לא נשמר", description: "נסו שוב בעוד רגע.", variant: "destructive" }),
@@ -453,20 +471,55 @@ export default function ShoppingListPage() {
   };
   const addFromReceipt = raw => {
     const item = { ...receiptToBasketItem(raw), reason: "הוספת מהקבלה שלך.", user_added: true };
-    applyChange({
+    requestChange({
       items: [...showList.items, item],
+      title: `הוספת ${item.name}`,
+      impact: { added: item },
       done: () => toast({ title: `${item.name} נוסף לסל`, description: "כדי שייכנס לתפריט, בנו את התפריט מחדש." }),
     });
   };
 
-  const applyChange = ({ items, issues = [], item, done }) => {
-    const warnings = issues.length ? [...savedWarnings, ...issues.map(i => ({ ...i, item }))] : undefined;
-    saveItemsMutation.mutate({ items, warnings }, { onSuccess: done });
+  /**
+   * What a change does to the week's cost, or null when it stays within budget
+   * (or costs less). With a menu built from this basket, the new product is
+   * priced at the old one's weekly amount (the final list's calculation);
+   * otherwise by the basket's own prices.
+   */
+  const budgetImpact = (items, { replaced, added } = {}) => {
+    const limit = basketBudget(profile, showList);
+    if (!(limit > 0)) return null;
+    const menuHere = plan?.days?.length && planBasket?.id === showList.id;
+    let current, next;
+    if (menuHere) {
+      current = planCost(showList.items, plan.days);
+      const days = replaced
+        ? plan.days.map(d => ({ ...d, meals: d.meals.map(m => ({ ...m, items: m.items.map(i => (i.food_name === replaced.from ? { ...i, food_name: replaced.to } : i)) })) }))
+        : plan.days;
+      // added products are not in the menu yet: priced at the basket's own price
+      next = planCost(items, days) + [added || []].flat().reduce((s, i) => s + (Number(i.estimated_price) || 0), 0);
+    } else {
+      current = basketTotals(showList.items).total_estimated_cost;
+      next = basketTotals(items).total_estimated_cost;
+    }
+    const round1 = n => Math.round(n * 10) / 10;
+    const increase = round1(next - current);
+    const over = round1(next - limit);
+    if (increase <= 0 || over <= 0) return null;
+    const verb = replaced ? "החלפת המוצר" : Array.isArray(added) && added.length > 1 ? "הוספת המוצרים" : "הוספת המוצר";
+    return { increase, over, total: Math.ceil(next), verb };
+  };
+
+  const applyChange = ({ items, issues = [], item, done, budget, clearWarnings }) => {
+    // Completing the basket answers the old warnings; other changes add their own
+    const warnings = clearWarnings ? [] : issues.length ? [...savedWarnings, ...issues.map(i => ({ ...i, item }))] : undefined;
+    // An accepted budget increase is kept on the basket: the menu is then fitted to it
+    saveItemsMutation.mutate({ items, warnings, acceptedBudget: budget?.total }, { onSuccess: done });
   };
   const requestChange = change => {
     const before = new Set(sufficiency.issues.map(i => i.key));
     const issues = basketSufficiency(change.items, profile).issues.filter(i => !before.has(i.key));
-    if (issues.length) setPendingChange({ ...change, issues });
+    const budget = budgetImpact(change.items, change.impact);
+    if (issues.length || budget) setPendingChange({ ...change, issues, budget });
     else applyChange(change);
   };
 
@@ -486,27 +539,35 @@ export default function ShoppingListPage() {
   const replaceItem = option => {
     const index = replacing;
     const old = showList.items[index];
-    const items = showList.items.map((it, i) => (i === index ? buildReplacementItem(option) : it));
+    const replacement = buildReplacementItem(option);
+    const items = showList.items.map((it, i) => (i === index ? replacement : it));
     setReplacing(null);
     requestChange({
       items,
       item: old.name,
       title: `החלפת ${old.name}`,
+      impact: { replaced: { from: old.name, to: replacement.name } },
       done: () => toast({ title: `${old.name} הוחלף ב${option.candidate.label}` }),
     });
   };
 
   // "השלמת הסל": add only what is missing (no new basket), and clear old warnings
+  // The additions are found first and saved through requestChange, so a
+  // completion that takes the basket over budget asks before it is applied
   const completeMutation = useMutation({
-    mutationFn: async () => {
-      const added = await missingStaples(showList.items, profile);
-      const items = [...showList.items, ...added];
-      await api.entities.ShoppingList.update(showList.id, { items, ...basketTotals(items), basket_warnings: [] });
-      return added;
-    },
+    mutationFn: () => missingStaples(showList.items, profile),
     onSuccess: added => {
-      queryClient.invalidateQueries({ queryKey: [FLOW_QUERY_KEY] });
-      toast({ title: added.length ? `נוספו לסל ${added.length} מוצרים` : "לא נמצאו מוצרים מתאימים להשלמה" });
+      if (!added.length) {
+        toast({ title: "לא נמצאו מוצרים מתאימים להשלמה" });
+        return;
+      }
+      requestChange({
+        items: [...showList.items, ...added],
+        title: "השלמת הסל",
+        impact: { added },
+        clearWarnings: true,
+        done: () => toast({ title: `נוספו לסל ${added.length} מוצרים` }),
+      });
     },
   });
 
@@ -786,18 +847,31 @@ export default function ShoppingListPage() {
                 <AlertDialogTitle>{pendingChange?.title}</AlertDialogTitle>
                 <AlertDialogDescription asChild>
                   <div className="space-y-2 text-sm text-muted-foreground">
-                    <p>אחרי השינוי הזה לא נוכל לבנות תפריט שבועי שעומד ביעדים שלך:</p>
-                    <ul className="list-disc pr-5 space-y-0.5">
-                      {pendingChange?.issues.map(i => <li key={i.key}>{i.text}</li>)}
-                    </ul>
-                    <p>אפשר להמשיך בכל זאת — התפריט ייבנה מהמוצרים שיישארו, וזה יצוין בו.</p>
+                    {pendingChange?.budget && (
+                      <p className="rounded-lg bg-amber-50 text-amber-800 p-3">
+                        {pendingChange.budget.verb} תעלה את הסכום הכולל ב-{formatShekel(pendingChange.budget.increase)} ותגרום
+                        לסל הקניות לחרוג מהתקציב השבועי שלך ב-{formatShekel(pendingChange.budget.over)}.
+                      </p>
+                    )}
+                    {pendingChange?.issues.length > 0 && (
+                      <>
+                        <p>אחרי השינוי הזה לא נוכל לבנות תפריט שבועי שעומד ביעדים שלך:</p>
+                        <ul className="list-disc pr-5 space-y-0.5">
+                          {pendingChange.issues.map(i => <li key={i.key}>{i.text}</li>)}
+                        </ul>
+                        <p>אפשר להמשיך בכל זאת — התפריט ייבנה מהמוצרים שיישארו, וזה יצוין בו.</p>
+                      </>
+                    )}
+                    {pendingChange?.budget && (
+                      <p>אם תאשרו, התפריט וסל הקניות הסופי ייבנו לפי תקציב של {formatShekel(pendingChange.budget.total)} לשבוע.</p>
+                    )}
                   </div>
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2 sm:gap-2 sm:justify-start">
                 <AlertDialogCancel className="mt-0">ביטול</AlertDialogCancel>
                 <AlertDialogAction onClick={() => { const c = pendingChange; setPendingChange(null); applyChange(c); }}>
-                  להמשיך בכל זאת
+                  {pendingChange?.budget ? "לאשר את העלייה בתקציב" : "להמשיך בכל זאת"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

@@ -8,6 +8,7 @@ import { buildFinalShoppingList, weeklyUsageLabel } from "@/lib/shoppingOptimize
 import { formatCurrency } from "@/lib/calculations";
 import FlowSteps from "@/components/FlowSteps";
 import StatCard from "@/components/dashboard/StatCard";
+import BudgetNotice from "@/components/BudgetNotice";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -118,6 +119,17 @@ export default function FinalShoppingList() {
             <StatCard title="עלות משוערת לשבוע" value={formatCurrency(finalList.total_estimated_cost)} icon={ShekelIcon} color="green" />
             <StatCard title="מוצרים לקנייה" value={finalList.items?.length || 0} icon={ShoppingCart} color="blue" />
           </div>
+
+          {/* The same check the menu passed: this list is that menu's purchase cost */}
+          <BudgetNotice
+            budget={plan?.budget?.weekly_budget > 0 ? {
+              ...plan.budget,
+              estimated_cost: finalList.total_estimated_cost,
+              fits: finalList.total_estimated_cost <= plan.budget.weekly_budget,
+              over_by: Math.max(0, Math.round((finalList.total_estimated_cost - plan.budget.weekly_budget) * 10) / 10),
+            } : null}
+            onBasket={() => navigate("/shopping-list")}
+          />
 
           <Card className="overflow-hidden">
             <div className="p-4 border-b flex items-center justify-between">

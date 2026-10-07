@@ -140,6 +140,8 @@ export function buildProductCatalog(items) {
       carbs: item.carbs,
       fat: item.fat,
       price: item.estimated_price,
+      // ₪ per kg as bought (src/lib/pricing.js), when known
+      price_per_kg: Number(item.price_per_kg) > 0 ? Number(item.price_per_kg) : null,
     };
   });
 }

@@ -129,6 +129,13 @@ const catalogCols = [
   "ALTER TABLE receiptItems ADD COLUMN catalog_match_confidence  REAL",
   "ALTER TABLE receiptItems ADD COLUMN catalog_needs_review      INTEGER DEFAULT 0",
   "ALTER TABLE receiptItems ADD COLUMN catalog_match_status      TEXT DEFAULT 'not_checked'",
+  // Real pack weight of the matched product, and whether its price is per kg
+  "ALTER TABLE receiptItems ADD COLUMN catalog_pack_grams        REAL",
+  "ALTER TABLE receiptItems ADD COLUMN catalog_sold_by_weight    INTEGER",
+  // Budget: a higher weekly amount the user accepted for a basket, and the
+  // menu's cost check ({ weekly_budget, estimated_cost, fits, over_by, swaps })
+  "ALTER TABLE shoppingLists ADD COLUMN accepted_budget          REAL",
+  "ALTER TABLE nutritionPlans ADD COLUMN budget                  TEXT DEFAULT '{}'",
 ];
 for (const sql of catalogCols) {
   try { db.exec(sql); } catch { /* column already exists — skip */ }

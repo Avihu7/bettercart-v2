@@ -21,7 +21,9 @@ import { sortDays, dayLabel } from "@/lib/weekDays";
 import { useFlowData, FLOW_QUERY_KEY } from "@/lib/flowData";
 import FlowSteps from "@/components/FlowSteps";
 import { basketSufficiency } from "@/lib/basketAlternatives";
+import { basketBudget } from "@/lib/pricing";
 import StatCard from "@/components/dashboard/StatCard";
+import BudgetNotice from "@/components/BudgetNotice";
 
 const mealIcons = {
   Breakfast: Sun,
@@ -62,12 +64,15 @@ export default function NutritionPlanPage() {
       const list = sourceList;
       if (!list?.items?.length) return;
 
-      const result = await generateNutritionPlan({ list, profile });
+      // The menu is fitted to the weekly budget (or a higher amount the user
+      // accepted for this basket) before it is saved
+      const result = await generateNutritionPlan({ list, profile, budget: basketBudget(profile, list) });
 
       // Calculate before_after from real user data
-      // The basket is a weekly basket: a month is 30/7 weeks
+      // The menu is for a week: a month is 30/7 weeks
       const weeksPerMonth = 30 / 7;
-      const listCost = list.total_estimated_cost || 0;
+      // The week's real cost is the menu's purchase cost (the final list's total)
+      const listCost = result.estimated_weekly_cost ?? list.total_estimated_cost ?? 0;
       // "Before" = what they actually spend monthly (their stated monthly budget)
       const previousMonthlySpending = profile?.monthly_budget || (listCost * weeksPerMonth);
       // "After" = the new weekly basket cost × weeks per month
@@ -101,6 +106,7 @@ export default function NutritionPlanPage() {
         status: "draft",
         days: result.days,
         before_after,
+        budget: result.budget || {},
       });
 
       return plan;
@@ -248,6 +254,8 @@ export default function NutritionPlanPage() {
             <StatCard title="עלות שבועית" value={formatCurrency(showPlan.estimated_weekly_cost)} icon={ShekelIcon} color="green" />
             <StatCard title="ימים מתוכננים" value={showPlan.days?.length || 0} icon={UtensilsCrossed} color="blue" />
           </div>
+
+          <BudgetNotice budget={showPlan.budget} onBasket={() => navigate("/shopping-list")} />
 
           {/* Day Tabs */}
           <Tabs key={showPlan.id} defaultValue={planDays[0]?.day_name} dir="rtl" className="w-full">

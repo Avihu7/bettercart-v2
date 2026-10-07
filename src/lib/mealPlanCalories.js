@@ -69,6 +69,8 @@ export function plausiblePer100g(p, values) {
 
 // Portions are "as eaten": a dry-weight density for rice/pasta/legumes is converted to cooked.
 const COOKED_FACTOR = { grain: 2.7, legumes: 3 };
+// Ready-to-eat products in those groups are eaten as bought (same as shoppingOptimizer)
+const READY_TO_EAT = /טופו|שימורי|קופסה|מבושל|מוכן/;
 
 // Smallest sensible portion when scaling down (grams).
 const MIN_GRAMS = {
@@ -182,7 +184,11 @@ export function buildDensities(catalog, plan) {
       densities.set(p.id, {
         ...d,
         source: fromList ? "list" : aiOk ? "ai" : "reference",
-        pricePerGram: d.pricePerGram || fromList?.pricePerGram || fromAi?.pricePerGram || null,
+        // The real unit price when known (per gram as eaten: dry rice/pasta/legumes
+        // weigh ~2.7–3× more cooked), else derived from the list or the AI
+        pricePerGram: p.price_per_kg
+          ? p.price_per_kg / 1000 / (COOKED_FACTOR[p.group] && !READY_TO_EAT.test(p.name_he) ? COOKED_FACTOR[p.group] : 1)
+          : d.pricePerGram || fromList?.pricePerGram || fromAi?.pricePerGram || null,
       });
     }
   }
