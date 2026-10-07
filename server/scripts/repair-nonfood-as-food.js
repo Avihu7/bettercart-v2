@@ -32,7 +32,7 @@ const stem = w => `(?:^|[^א-ת])[והלב]?${w}`;
 
 // Never eaten, whatever else the name says
 const STRONG = new RegExp([
-  stem('שמפו'), stem('מרכך'), stem('סבון'), stem('אלסבון'), stem('סרום'), stem('מסקרה'), stem('שפתון'),
+  stem('שמפו'), stem('מרכך'), stem('סבון'), stem('אלסבון'), stem('סרום'), stem('מסקרה'), stem('מסקרת'), word('גבות'), stem('לגבות'), stem('שפתון'),
   stem('ליפ גלוס'), stem('קונסילר'), stem('פודרה'), '(?:^|[^א-ת])(?<!תבלין )סומק', stem('צללית'), stem('אייליינר'),
   stem('מייקאפ'), stem('איפור'), stem('פריימר'), word('אדפ'), word('אדט'), 'EDP', 'EDT', stem('בושם'),
   stem('דאודורנט'), stem('תחליב'), stem('תרחיץ'), stem('מברשת'), stem('משחת שיניים'), stem('מי פה'),
