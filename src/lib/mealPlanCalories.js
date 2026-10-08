@@ -539,6 +539,8 @@ function densifyProtein(day, proteinNeeded, catalog, densities) {
       // calories to move: what the gap needs, what the low item can give, what the dense item can take
       const kcal = Math.min((proteinNeeded - gained) / (ratio(better) - ratio(low.p)), lowSpare * dLow.kcal / 100, room * dHigh.kcal / 100);
       if (kcal < 40) continue;
+      // a new meat / fish / legume food goes in as a real portion or not at all (no 35 g of seitan)
+      if (!target && PLATE_PROTEIN.has(better.group) && kcal * 100 / dHigh.kcal < (MIN_GRAMS[better.group] || 50)) continue;
       const before = sumOf(day, "protein");
       setGrams(low.i, roundGrams(Number(low.i.grams) - kcal * 100 / dLow.kcal), dLow);
       if (!target) {

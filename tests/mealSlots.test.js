@@ -46,6 +46,10 @@ describe("every day has breakfast, lunch and dinner", () => {
     }
     const v = validateMenu({ plan, basketItems: VEGAN_NO_BREAKFAST_PROTEIN, profile: VEGAN_PROFILE, budget: weeklyBudget(VEGAN_PROFILE) });
     expect(v.failed).not.toContain("meal_slots");
+    // QA round 7: a valid menu (not level 4) — no token second legume (35 g seitan beside beans)
+    expect(v.level).toBeLessThan(4);
+    const tiny = plan.days.flatMap(d => d.meals.flatMap(m => m.items.filter(i => classifyProduct(i.food_name) === "legumes" && i.grams < 50).map(i => `${d.day_name}/${m.meal_type} ${i.food_name} ${i.grams}g`)));
+    expect(tiny).toEqual([]);
   });
 
   it.each(Object.entries(BASKETS).filter(([, b]) => b.adequate))("%s basket: breakfast, lunch and dinner every day", async (label, { items, profile }) => {

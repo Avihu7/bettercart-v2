@@ -16,7 +16,7 @@ const ShekelIcon = ({ className }) => (
   <span className={`${className} flex items-center justify-center font-bold`} style={{ fontSize: '0.9rem' }}>₪</span>
 );
 import { formatCurrency } from "@/lib/calculations";
-import { generateNutritionPlan, ONLY_MENU_MESSAGE } from "@/lib/nutritionPlanGenerator";
+import { generateNutritionPlan, ONLY_MENU_MESSAGE, NO_ACCEPTABLE_MENU_MESSAGE } from "@/lib/nutritionPlanGenerator";
 import { sortDays, dayLabel } from "@/lib/weekDays";
 import { useFlowData, FLOW_QUERY_KEY } from "@/lib/flowData";
 import FlowSteps from "@/components/FlowSteps";
@@ -145,6 +145,10 @@ export default function NutritionPlanPage() {
     ? explainMenu(validateMenu({ plan: showPlan, basketItems: planItems, profile, budget: basketBudget(profile, planBasket || sourceList) }),
       { plan: showPlan, basketItems: planItems, profile })
     : null;
+  // A menu that misses a goal (level 3) is shown as the closest one, never as acceptable;
+  // a saved menu that breaks a rule (level 4) is not shown at all
+  const acceptable = !quality || quality.level <= 2;
+  const onlyMenuText = acceptable ? ONLY_MENU_MESSAGE : NO_ACCEPTABLE_MENU_MESSAGE;
   // Over budget: the basket's recommended cheaper swaps (the same calculation as the basket's budget card)
   const { data: savings } = useQuery({
     queryKey: ["menuSavings", showPlan?.id, planItems?.map(i => i.name).join("|")],
@@ -201,7 +205,7 @@ export default function NutritionPlanPage() {
 
       {!generateMutation.isPending && generateMutation.data?.exhausted && (
         <Card className="p-4 border-amber-200 bg-amber-50/60 text-sm text-amber-900">
-          {ONLY_MENU_MESSAGE}
+          {onlyMenuText}
           כדי לקבל תפריט אחר, הוסיפו לסל עוד מקור חלבון (ביצים, טונה, קטניות, עוף) או עוד סוג פחמימה.
         </Card>
       )}
@@ -213,7 +217,7 @@ export default function NutritionPlanPage() {
               ? `חזרנו לתפריט הראשון — עברת על כל ${of} התפריטים השונים שאפשר לבנות מהסל הזה.`
               : index > 0
                 ? `תפריט חלופי ${index + 1} מתוך ${of} — ${ALTERNATIVE_LABELS[name] || "תפריט אחר"}.`
-                : of > 1 ? `התפריט המומלץ (1 מתוך ${of}). "בנייה מחדש" תציג תפריט חלופי.` : ONLY_MENU_MESSAGE}
+                : of > 1 ? `התפריט המומלץ (1 מתוך ${of}). "בנייה מחדש" תציג תפריט חלופי.` : onlyMenuText}
           </p>
         );
       })()}
@@ -301,7 +305,32 @@ export default function NutritionPlanPage() {
         </Card>
       )}
 
-      {showPlan && !generateMutation.isPending && (
+      {showPlan && !generateMutation.isPending && quality?.level >= 4 && (
+        <>
+          <Card className="p-6 text-center border-red-300 bg-red-50/60">
+            <h2 className="font-heading font-semibold text-lg mb-2">התפריט השמור לא תקין</h2>
+            <p className="text-sm text-muted-foreground mb-4">הוא לא עומד בכללי הבטיחות או הארוחות, ולכן הוא לא מוצג. הפירוט למטה — בנו את התפריט מחדש מהסל הנוכחי.</p>
+            <Button onClick={() => generateMutation.mutate()}><Sparkles className="w-4 h-4 ml-2" /> בניית תפריט מחדש</Button>
+          </Card>
+          <MenuQualityCard explanation={quality} savings={savings} onBasket={budget => navigate(budget ? "/shopping-list#budget" : "/shopping-list")} />
+        </>
+      )}
+
+      {showPlan && !generateMutation.isPending && quality?.level === 3 && (
+        <Card className="p-4 border-amber-300 bg-amber-50/70" role="alert" data-testid="menu-not-acceptable">
+          <h2 className="font-heading font-semibold text-amber-900">לא נמצא תפריט שעומד בכל היעדים עם הסל הנוכחי</h2>
+          <p className="text-sm text-amber-900 mt-1">
+            התפריט שמוצג הוא הקרוב ביותר, אבל הוא לא עומד בכל היעדים (פירוט בכרטיס איכות התפריט). כדי לקבל תפריט שעומד בהם אפשר
+            לבחור סל אחר, להוסיף לסל מקורות חלבון זולים יותר, או לעדכן את התקציב והיעדים בפרופיל.
+          </p>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <Button size="sm" variant="outline" onClick={() => navigate("/shopping-list")}>לסל המוצרים</Button>
+            <Button size="sm" variant="outline" onClick={() => navigate("/onboarding")}>עדכון תקציב ויעדים</Button>
+          </div>
+        </Card>
+      )}
+
+      {showPlan && !generateMutation.isPending && !(quality?.level >= 4) && (
         <>
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

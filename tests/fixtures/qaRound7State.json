@@ -1,0 +1,2093 @@
+{
+ "profile": {
+  "id": "muzidp45dpugt8",
+  "created_date": "2026-10-08T12:24:28.517Z",
+  "age": 28,
+  "gender": "male",
+  "height": 184,
+  "weight": 94,
+  "activity_level": "lightly_active",
+  "goal": "weight_loss",
+  "allergies": [],
+  "dietary_preferences": [],
+  "favorite_foods": [
+   "שניצל תירס"
+  ],
+  "disliked_foods": [],
+  "monthly_budget": 1900,
+  "purchases_per_month": 4,
+  "budget_per_purchase": 475,
+  "bmi": 27.8,
+  "bmr": 1955,
+  "daily_calories": 2288,
+  "protein_target": 179,
+  "carbs_target": 222,
+  "fat_target": 76,
+  "health_score": 53,
+  "onboarding_complete": true,
+  "strength_training": "1-2"
+ },
+ "basket": {
+  "id": "muzigcmkuvlsii",
+  "receipt_id": "muzif6hfs2nl5m",
+  "items": [
+   {
+    "name": "קישואים מובחר",
+    "category": "vegetable",
+    "quantity": "0.555 ק\"ג",
+    "estimated_price": 7.2,
+    "price_per_kg": 12.9,
+    "sold_by_weight": true,
+    "pack_grams": null,
+    "pack_price": null,
+    "calories": 167,
+    "protein": 8.3,
+    "carbs": 27.8,
+    "fat": 1.1,
+    "nutrition_source": "catalog",
+    "health_score": 10,
+    "reason": "נמצא בקבלה שלך, ולכן נשאר בסל.",
+    "from_receipt": true,
+    "receipt_item_id": "muzif6hmfyofe4",
+    "catalog_product_id": "3763",
+    "catalog_chain": "shufersal",
+    "catalog_name": "קישואים מובחר",
+    "catalog_price": 12.9
+   },
+   {
+    "name": "גבינה בולגרית 5%",
+    "category": "dairy",
+    "quantity": "0.286 ק\"ג",
+    "estimated_price": 16.9,
+    "price_per_kg": 59,
+    "sold_by_weight": true,
+    "pack_grams": null,
+    "pack_price": null,
+    "calories": 1001,
+    "protein": 71.5,
+    "carbs": 2.9,
+    "fat": 77.2,
+    "nutrition_source": "reference",
+    "health_score": 8,
+    "reason": "נמצא בקבלה שלך, ולכן נשאר בסל.",
+    "from_receipt": true,
+    "receipt_item_id": "muzif6hou33cgr",
+    "catalog_product_id": "4502",
+    "catalog_chain": "shufersal",
+    "catalog_name": "גבינה בולגרית 5%במשקל",
+    "catalog_price": 59
+   },
+   {
+    "name": "פלפל אדום",
+    "category": "vegetable",
+    "quantity": "0.650 ק\"ג",
+    "estimated_price": 8.4,
+    "price_per_kg": 12.9,
+    "sold_by_weight": true,
+    "pack_grams": null,
+    "pack_price": null,
+    "calories": 195,
+    "protein": 9.8,
+    "carbs": 32.5,
+    "fat": 1.3,
+    "nutrition_source": "catalog",
+    "health_score": 10,
+    "reason": "נמצא בקבלה שלך, ולכן נשאר בסל.",
+    "from_receipt": true,
+    "receipt_item_id": "muzif6hpxyi5fo",
+    "catalog_product_id": "3765",
+    "catalog_chain": "shufersal",
+    "catalog_name": "פלפל אדום",
+    "catalog_price": 12.9
+   },
+   {
+    "name": "פילה סלמון טרי",
+    "category": "protein",
+    "quantity": "0.628 ק\"ג",
+    "estimated_price": 75.3,
+    "price_per_kg": 119.9,
+    "sold_by_weight": true,
+    "pack_grams": null,
+    "pack_price": null,
+    "calories": 816,
+    "protein": 138.2,
+    "carbs": 0,
+    "fat": 31.4,
+    "nutrition_source": "catalog",
+    "health_score": 9,
+    "reason": "נמצא בקבלה שלך, ולכן נשאר בסל.",
+    "from_receipt": true,
+    "receipt_item_id": "muzif6hpmvl8yx",
+    "catalog_product_id": "5102",
+    "catalog_chain": "shufersal",
+    "catalog_name": "פילה סלמון טרי",
+    "catalog_price": 119.9
+   },
+   {
+    "name": "גרעיני חומוס",
+    "category": "protein",
+    "quantity": "500 גרם",
+    "estimated_price": 10,
+    "price_per_kg": 20,
+    "sold_by_weight": false,
+    "pack_grams": 500,
+    "pack_price": 10,
+    "calories": 580,
+    "protein": 45,
+    "carbs": 100,
+    "fat": 2,
+    "nutrition_source": "reference",
+    "health_score": 9,
+    "reason": "נמצא בקבלה שלך, ולכן נשאר בסל.",
+    "from_receipt": true,
+    "receipt_item_id": "muzif6hp4ve2nu",
+    "catalog_product_id": "38005",
+    "catalog_chain": "shufersal",
+    "catalog_name": "גרעיני חומוס",
+    "catalog_price": 9.9
+   },
+   {
+    "name": "קינואה",
+    "category": "carb",
+    "quantity": "500 גרם",
+    "estimated_price": 12.9,
+    "price_per_kg": 32.25,
+    "sold_by_weight": false,
+    "pack_grams": 400,
+    "pack_price": 12.9,
+    "calories": 675,
+    "protein": 15,
+    "carbs": 140,
+    "fat": 2.5,
+    "nutrition_source": "reference",
+    "health_score": 8,
+    "reason": "נמצא בקבלה שלך, ולכן נשאר בסל.",
+    "from_receipt": true,
+    "receipt_item_id": "muzif6hqpgxrk0",
+    "catalog_product_id": "7723",
+    "catalog_chain": "shufersal",
+    "catalog_name": "קינואה 400 גרם",
+    "catalog_price": 12.9
+   },
+   {
+    "name": "קוטג 5% 250 גרם",
+    "category": "dairy",
+    "quantity": "250 גרם",
+    "estimated_price": 6.1,
+    "price_per_kg": 24.4,
+    "sold_by_weight": false,
+    "pack_grams": 250,
+    "pack_price": 6.1,
+    "calories": 245,
+    "protein": 27.5,
+    "carbs": 8.5,
+    "fat": 10.8,
+    "nutrition_source": "catalog",
+    "health_score": 8,
+    "reason": "נמצא בקבלה שלך, ולכן נשאר בסל.",
+    "from_receipt": true,
+    "receipt_item_id": "muzif6hq9qu734",
+    "catalog_product_id": "5571",
+    "catalog_chain": "shufersal",
+    "catalog_name": "קוטג' 5% 250 גרם בעלז",
+    "catalog_price": 6.1
+   },
+   {
+    "name": "חלב 3% מהדרין",
+    "category": "dairy",
+    "quantity": "2000 גרם",
+    "estimated_price": 14.7,
+    "price_per_kg": 7.35,
+    "sold_by_weight": false,
+    "pack_grams": 2000,
+    "pack_price": 14.7,
+    "calories": 1220,
+    "protein": 64,
+    "carbs": 96,
+    "fat": 64,
+    "nutrition_source": "catalog",
+    "health_score": 8,
+    "reason": "נמצא בקבלה שלך, ולכן נשאר בסל.",
+    "from_receipt": true,
+    "receipt_item_id": "muzif6hrw7voch",
+    "catalog_product_id": "62079",
+    "catalog_chain": "shufersal",
+    "catalog_name": "חלב 3% מהדרין 2ל תנובה",
+    "catalog_price": 14.7
+   },
+   {
+    "name": "עגבניה",
+    "category": "vegetable",
+    "quantity": "0.780 ק\"ג",
+    "estimated_price": 7.7,
+    "price_per_kg": 9.9,
+    "sold_by_weight": true,
+    "pack_grams": null,
+    "pack_price": null,
+    "calories": 234,
+    "protein": 11.7,
+    "carbs": 39,
+    "fat": 1.6,
+    "nutrition_source": "catalog",
+    "health_score": 10,
+    "reason": "נמצא בקבלה שלך, ולכן נשאר בסל.",
+    "from_receipt": true,
+    "receipt_item_id": "muzif6hrwr1uo1",
+    "catalog_product_id": "3761",
+    "catalog_chain": "shufersal",
+    "catalog_name": "עגבניה",
+    "catalog_price": 9.9
+   },
+   {
+    "name": "חסה קטיף כהלכה",
+    "category": "vegetable",
+    "quantity": "500 גרם",
+    "estimated_price": 4.9,
+    "price_per_kg": 9.8,
+    "sold_by_weight": true,
+    "pack_grams": null,
+    "pack_price": null,
+    "calories": 100,
+    "protein": 5,
+    "carbs": 20,
+    "fat": 1,
+    "nutrition_source": "reference",
+    "health_score": 10,
+    "reason": "נמצא בקבלה שלך, ולכן נשאר בסל.",
+    "from_receipt": true,
+    "receipt_item_id": "muzif6hrkgysuy",
+    "catalog_product_id": "38851",
+    "catalog_chain": "shufersal",
+    "catalog_name": "חסה קטיף כהלכה",
+    "catalog_price": 6.9
+   },
+   {
+    "name": "תפוח אדמה 1 ק\"ג",
+    "category": "carb",
+    "quantity": "0.925 ק\"ג",
+    "estimated_price": 6.4,
+    "price_per_kg": 6.9,
+    "sold_by_weight": true,
+    "pack_grams": null,
+    "pack_price": null,
+    "calories": 786,
+    "protein": 16.7,
+    "carbs": 175.8,
+    "fat": 0.9,
+    "nutrition_source": "reference",
+    "health_score": 8,
+    "reason": "נמצא בקבלה שלך, ולכן נשאר בסל.",
+    "from_receipt": true,
+    "receipt_item_id": "muzif6hras5hx0",
+    "catalog_product_id": "16",
+    "catalog_chain": "shufersal",
+    "catalog_name": "תפוח אדמה 1 ק\"ג",
+    "catalog_price": 5.9
+   },
+   {
+    "name": "בצל יבש",
+    "category": "vegetable",
+    "quantity": "1.305 ק\"ג",
+    "estimated_price": 7.7,
+    "price_per_kg": 5.9,
+    "sold_by_weight": true,
+    "pack_grams": null,
+    "pack_price": null,
+    "calories": 392,
+    "protein": 19.6,
+    "carbs": 65.3,
+    "fat": 2.6,
+    "nutrition_source": "catalog",
+    "health_score": 10,
+    "reason": "נמצא בקבלה שלך, ולכן נשאר בסל.",
+    "from_receipt": true,
+    "receipt_item_id": "muzif6hrblaovx",
+    "catalog_product_id": "3776",
+    "catalog_chain": "shufersal",
+    "catalog_name": "בצל יבש",
+    "catalog_price": 5.9
+   },
+   {
+    "name": "פריכיות אורז",
+    "category": "carb",
+    "quantity": "140 גרם",
+    "estimated_price": 6.9,
+    "price_per_kg": 49.29,
+    "sold_by_weight": false,
+    "pack_grams": 140,
+    "pack_price": 6.9,
+    "calories": 542,
+    "protein": 11.2,
+    "carbs": 113.4,
+    "fat": 4.2,
+    "health_score": 5,
+    "catalog_product_id": "36114",
+    "catalog_chain": "shufersal",
+    "catalog_name": "פריכיות אורז",
+    "catalog_price": 6.9,
+    "catalog_price_per_100g": 4.93,
+    "catalog_calories_per_100g": 130,
+    "catalog_protein_per_100g": 2.7,
+    "catalog_carbs_per_100g": 28,
+    "catalog_fat_per_100g": 0.3,
+    "nutrition_source": "reference",
+    "reason": "הוספנו לחם לארוחות הבוקר והערב, כדי שהתפריט יגיע ליעד הקלורי שלך.",
+    "from_engine": true,
+    "basket_need": "bread",
+    "added_staple": true,
+    "candidate_score": 0.633
+   },
+   {
+    "name": "שמן זית  750 מ\"ל",
+    "category": "fat",
+    "quantity": "750 גרם",
+    "estimated_price": 34.9,
+    "price_per_kg": 46.53,
+    "sold_by_weight": false,
+    "pack_grams": 750,
+    "pack_price": 34.9,
+    "calories": 6630,
+    "protein": 0,
+    "carbs": 0,
+    "fat": 750,
+    "health_score": 8,
+    "catalog_product_id": "41322",
+    "catalog_chain": "shufersal",
+    "catalog_name": "שמן זית  750 מ\"ל",
+    "catalog_price": 34.9,
+    "catalog_price_per_100g": 4.65,
+    "catalog_calories_per_100g": 884,
+    "catalog_protein_per_100g": 0,
+    "catalog_carbs_per_100g": 0,
+    "catalog_fat_per_100g": 100,
+    "nutrition_source": "catalog",
+    "reason": "הוספנו שמן לבישול ולסלטים.",
+    "from_engine": true,
+    "basket_need": "oil",
+    "candidate_score": 0.775
+   },
+   {
+    "name": "אגוזי מלך 200 גרם",
+    "category": "fat",
+    "quantity": "200 גרם",
+    "estimated_price": 15.9,
+    "price_per_kg": 79.5,
+    "sold_by_weight": false,
+    "pack_grams": 200,
+    "pack_price": 15.9,
+    "calories": 1160,
+    "protein": 40,
+    "carbs": 40,
+    "fat": 100,
+    "health_score": 8,
+    "catalog_product_id": "39527",
+    "catalog_chain": "shufersal",
+    "catalog_name": "אגוזי מלך 200 גרם",
+    "catalog_price": 15.9,
+    "catalog_price_per_100g": 7.95,
+    "catalog_calories_per_100g": 580,
+    "catalog_protein_per_100g": 20,
+    "catalog_carbs_per_100g": 20,
+    "catalog_fat_per_100g": 50,
+    "nutrition_source": "catalog",
+    "reason": "הוספנו מקור שומן בריא לסל.",
+    "from_engine": true,
+    "basket_need": "fat",
+    "added_staple": true,
+    "candidate_score": 0.621
+   },
+   {
+    "name": "קלמנטינה",
+    "category": "fruit",
+    "quantity": "1 ק\"ג",
+    "estimated_price": 4.9,
+    "price_per_kg": 4.9,
+    "sold_by_weight": true,
+    "pack_grams": null,
+    "pack_price": null,
+    "calories": 600,
+    "protein": 8,
+    "carbs": 140,
+    "fat": 2,
+    "health_score": 9,
+    "catalog_product_id": "37252",
+    "catalog_chain": "shufersal",
+    "catalog_name": "קלמנטינה",
+    "catalog_price": 4.9,
+    "catalog_price_per_100g": 0.49,
+    "catalog_calories_per_100g": 60,
+    "catalog_protein_per_100g": 0.8,
+    "catalog_carbs_per_100g": 14,
+    "catalog_fat_per_100g": 0.2,
+    "nutrition_source": "catalog",
+    "reason": "הוספנו פרי כדי להשלים את הסל לשבוע.",
+    "from_engine": true,
+    "basket_need": "fruit",
+    "candidate_score": 0.825
+   },
+   {
+    "name": "בננה 1 ק\"ג",
+    "category": "fruit",
+    "quantity": "1 ק\"ג",
+    "estimated_price": 5.9,
+    "price_per_kg": 5.9,
+    "sold_by_weight": false,
+    "pack_grams": 1000,
+    "pack_price": 5.9,
+    "calories": 600,
+    "protein": 8,
+    "carbs": 140,
+    "fat": 2,
+    "health_score": 9,
+    "catalog_product_id": "30",
+    "catalog_chain": "shufersal",
+    "catalog_name": "בננה 1 ק\"ג",
+    "catalog_price": 5.9,
+    "catalog_price_per_100g": 0.59,
+    "catalog_calories_per_100g": 60,
+    "catalog_protein_per_100g": 0.8,
+    "catalog_carbs_per_100g": 14,
+    "catalog_fat_per_100g": 0.2,
+    "nutrition_source": "catalog",
+    "reason": "הוספנו פרי כדי להשלים את הסל לשבוע.",
+    "from_engine": true,
+    "basket_need": "fruit",
+    "candidate_score": 0.825
+   },
+   {
+    "name": "יוגורט בכד 4% 1.5 ל'",
+    "category": "dairy",
+    "quantity": "1500 גרם",
+    "estimated_price": 21.9,
+    "price_per_kg": 14.6,
+    "sold_by_weight": false,
+    "pack_grams": 1500,
+    "pack_price": 21.9,
+    "calories": 1050,
+    "protein": 67.5,
+    "carbs": 75,
+    "fat": 45,
+    "health_score": 8,
+    "catalog_product_id": "3836",
+    "catalog_chain": "shufersal",
+    "catalog_name": "יוגורט בכד 4% 1.5 ל'",
+    "catalog_price": 21.9,
+    "catalog_price_per_100g": 1.46,
+    "catalog_calories_per_100g": 59,
+    "catalog_protein_per_100g": 10,
+    "catalog_carbs_per_100g": 3.6,
+    "catalog_fat_per_100g": 0.4,
+    "nutrition_source": "reference",
+    "reason": "הוספנו מוצר לארוחת הבוקר, כדי שיהיו בתפריט ארוחות בוקר מגוונות.",
+    "from_engine": true,
+    "basket_need": "breakfast",
+    "candidate_score": 0.679
+   },
+   {
+    "name": "טונה במים בד\"צ כשל\"פ 960",
+    "category": "protein",
+    "quantity": "960 גרם",
+    "estimated_price": 29.9,
+    "price_per_kg": 31.15,
+    "sold_by_weight": false,
+    "pack_grams": 960,
+    "pack_price": 29.9,
+    "calories": 1114,
+    "protein": 249.6,
+    "carbs": 0,
+    "fat": 9.6,
+    "health_score": 9,
+    "reason": "הוספנו מקור חלבון כדי שהתפריט יגיע ליעד החלבון שלך.",
+    "added_staple": true,
+    "protein_completion": true,
+    "catalog_product_id": "39270",
+    "catalog_chain": "shufersal",
+    "catalog_name": "טונה במים בד\"צ כשל\"פ 960",
+    "catalog_price": 29.9,
+    "catalog_price_per_100g": 3.11,
+    "catalog_calories_per_100g": 130,
+    "catalog_protein_per_100g": 22,
+    "catalog_carbs_per_100g": 0,
+    "catalog_fat_per_100g": 5,
+    "nutrition_source": "reference"
+   }
+  ]
+ },
+ "plan": {
+  "id": "muziggtzyyf3an",
+  "shopping_list_id": "muzigcmkuvlsii",
+  "daily_calories": 2288,
+  "days": [
+   {
+    "day_name": "Sunday",
+    "meals": [
+     {
+      "meal_type": "Breakfast",
+      "meal_name": "יוגורט בכד עם קלמנטינה ואגוזי מלך וקוטג",
+      "items": [
+       {
+        "product_id": "p18",
+        "food_name": "יוגורט בכד 4% 1.5 ל'",
+        "grams": 250,
+        "calories": 175,
+        "protein": 11.3,
+        "carbs": 12.5,
+        "fat": 7.5,
+        "estimated_cost": 3.7
+       },
+       {
+        "product_id": "p16",
+        "food_name": "קלמנטינה",
+        "grams": 145,
+        "calories": 87,
+        "protein": 1.2,
+        "carbs": 20.3,
+        "fat": 0.3,
+        "estimated_cost": 0.7
+       },
+       {
+        "product_id": "p15",
+        "food_name": "אגוזי מלך 200 גרם",
+        "grams": 14,
+        "calories": 81,
+        "protein": 2.8,
+        "carbs": 2.8,
+        "fat": 7,
+        "estimated_cost": 1.1
+       },
+       {
+        "product_id": "p7",
+        "food_name": "קוטג 5% 250 גרם",
+        "grams": 130,
+        "calories": 127,
+        "protein": 14.3,
+        "carbs": 4.4,
+        "fat": 5.6,
+        "estimated_cost": 3.2
+       }
+      ],
+      "total_calories": 470,
+      "total_protein": 30,
+      "total_carbs": 40,
+      "total_fat": 20,
+      "estimated_cost": 8.7
+     },
+     {
+      "meal_type": "Lunch",
+      "meal_name": "טונה במים עם קינואה, עגבניה ופלפל אדום",
+      "items": [
+       {
+        "product_id": "p19",
+        "food_name": "טונה במים בד\"צ כשל\"פ 960",
+        "grams": 250,
+        "calories": 290,
+        "protein": 65,
+        "carbs": 0,
+        "fat": 2.5,
+        "estimated_cost": 7.8
+       },
+       {
+        "product_id": "p6",
+        "food_name": "קינואה",
+        "grams": 170,
+        "calories": 230,
+        "protein": 5.1,
+        "carbs": 47.6,
+        "fat": 0.9,
+        "estimated_cost": 2
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p3",
+        "food_name": "פלפל אדום",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.5
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 5,
+        "calories": 44,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 5,
+        "estimated_cost": 0.2
+       }
+      ],
+      "total_calories": 636,
+      "total_protein": 74,
+      "total_carbs": 60,
+      "total_fat": 9,
+      "estimated_cost": 12.7
+     },
+     {
+      "meal_type": "Dinner",
+      "meal_name": "קוטג עם פריכיות אורז, עגבניה ופלפל אדום וגבינה בולגרית",
+      "items": [
+       {
+        "product_id": "p7",
+        "food_name": "קוטג 5% 250 גרם",
+        "grams": 250,
+        "calories": 245,
+        "protein": 27.5,
+        "carbs": 8.5,
+        "fat": 10.8,
+        "estimated_cost": 6.1
+       },
+       {
+        "product_id": "p13",
+        "food_name": "פריכיות אורז",
+        "grams": 80,
+        "calories": 310,
+        "protein": 6.4,
+        "carbs": 64.8,
+        "fat": 2.4,
+        "estimated_cost": 3.9
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p3",
+        "food_name": "פלפל אדום",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.5
+       },
+       {
+        "product_id": "p2",
+        "food_name": "גבינה בולגרית 5%",
+        "grams": 85,
+        "calories": 298,
+        "protein": 21.3,
+        "carbs": 0.9,
+        "fat": 22.9,
+        "estimated_cost": 5
+       }
+      ],
+      "total_calories": 925,
+      "total_protein": 59,
+      "total_carbs": 86,
+      "total_fat": 37,
+      "estimated_cost": 17.7
+     },
+     {
+      "meal_type": "Snacks",
+      "meal_name": "יוגורט בכד עם בננה",
+      "items": [
+       {
+        "product_id": "p18",
+        "food_name": "יוגורט בכד 4% 1.5 ל'",
+        "grams": 250,
+        "calories": 175,
+        "protein": 11.3,
+        "carbs": 12.5,
+        "fat": 7.5,
+        "estimated_cost": 3.7
+       },
+       {
+        "product_id": "p17",
+        "food_name": "בננה 1 ק\"ג",
+        "grams": 135,
+        "calories": 81,
+        "protein": 1.1,
+        "carbs": 18.9,
+        "fat": 0.3,
+        "estimated_cost": 0.8
+       }
+      ],
+      "total_calories": 256,
+      "total_protein": 12,
+      "total_carbs": 31,
+      "total_fat": 8,
+      "estimated_cost": 4.5
+     }
+    ],
+    "total_calories": 2287,
+    "total_protein": 175,
+    "total_carbs": 217,
+    "total_fat": 74,
+    "estimated_cost": 43.6
+   },
+   {
+    "day_name": "Monday",
+    "meals": [
+     {
+      "meal_type": "Breakfast",
+      "meal_name": "גבינה בולגרית עם פריכיות אורז, חסה קטיף כהלכה ועגבניה ושמן זית וקוטג",
+      "items": [
+       {
+        "product_id": "p2",
+        "food_name": "גבינה בולגרית 5%",
+        "grams": 85,
+        "calories": 298,
+        "protein": 21.3,
+        "carbs": 0.9,
+        "fat": 22.9,
+        "estimated_cost": 5
+       },
+       {
+        "product_id": "p13",
+        "food_name": "פריכיות אורז",
+        "grams": 60,
+        "calories": 232,
+        "protein": 4.8,
+        "carbs": 48.6,
+        "fat": 1.8,
+        "estimated_cost": 3
+       },
+       {
+        "product_id": "p10",
+        "food_name": "חסה קטיף כהלכה",
+        "grams": 120,
+        "calories": 24,
+        "protein": 1.2,
+        "carbs": 4.8,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 7,
+        "calories": 62,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 7,
+        "estimated_cost": 0.3
+       },
+       {
+        "product_id": "p7",
+        "food_name": "קוטג 5% 250 גרם",
+        "grams": 250,
+        "calories": 245,
+        "protein": 27.5,
+        "carbs": 8.5,
+        "fat": 10.8,
+        "estimated_cost": 6.1
+       }
+      ],
+      "total_calories": 897,
+      "total_protein": 57,
+      "total_carbs": 69,
+      "total_fat": 43,
+      "estimated_cost": 16.8
+     },
+     {
+      "meal_type": "Lunch",
+      "meal_name": "טונה במים עם תפוח אדמה, עגבניה ופלפל אדום",
+      "items": [
+       {
+        "product_id": "p19",
+        "food_name": "טונה במים בד\"צ כשל\"פ 960",
+        "grams": 250,
+        "calories": 290,
+        "protein": 65,
+        "carbs": 0,
+        "fat": 2.5,
+        "estimated_cost": 7.8
+       },
+       {
+        "product_id": "p11",
+        "food_name": "תפוח אדמה 1 ק\"ג",
+        "grams": 155,
+        "calories": 132,
+        "protein": 2.8,
+        "carbs": 29.5,
+        "fat": 0.2,
+        "estimated_cost": 1.1
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p3",
+        "food_name": "פלפל אדום",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.5
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 10,
+        "calories": 88,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 10,
+        "estimated_cost": 0.5
+       }
+      ],
+      "total_calories": 582,
+      "total_protein": 71,
+      "total_carbs": 42,
+      "total_fat": 13,
+      "estimated_cost": 12.1
+     },
+     {
+      "meal_type": "Dinner",
+      "meal_name": "גרעיני חומוס עם תפוח אדמה, חסה קטיף כהלכה ועגבניה",
+      "items": [
+       {
+        "product_id": "p5",
+        "food_name": "גרעיני חומוס",
+        "grams": 250,
+        "calories": 290,
+        "protein": 22.5,
+        "carbs": 50,
+        "fat": 1,
+        "estimated_cost": 1.7
+       },
+       {
+        "product_id": "p11",
+        "food_name": "תפוח אדמה 1 ק\"ג",
+        "grams": 155,
+        "calories": 132,
+        "protein": 2.8,
+        "carbs": 29.5,
+        "fat": 0.2,
+        "estimated_cost": 1.1
+       },
+       {
+        "product_id": "p10",
+        "food_name": "חסה קטיף כהלכה",
+        "grams": 120,
+        "calories": 24,
+        "protein": 1.2,
+        "carbs": 4.8,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 10,
+        "calories": 88,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 10,
+        "estimated_cost": 0.5
+       }
+      ],
+      "total_calories": 570,
+      "total_protein": 28,
+      "total_carbs": 90,
+      "total_fat": 12,
+      "estimated_cost": 5.7
+     },
+     {
+      "meal_type": "Snacks",
+      "meal_name": "יוגורט בכד עם בננה",
+      "items": [
+       {
+        "product_id": "p18",
+        "food_name": "יוגורט בכד 4% 1.5 ל'",
+        "grams": 250,
+        "calories": 175,
+        "protein": 11.3,
+        "carbs": 12.5,
+        "fat": 7.5,
+        "estimated_cost": 3.7
+       },
+       {
+        "product_id": "p17",
+        "food_name": "בננה 1 ק\"ג",
+        "grams": 95,
+        "calories": 57,
+        "protein": 0.8,
+        "carbs": 13.3,
+        "fat": 0.2,
+        "estimated_cost": 0.6
+       }
+      ],
+      "total_calories": 232,
+      "total_protein": 12,
+      "total_carbs": 26,
+      "total_fat": 8,
+      "estimated_cost": 4.3
+     }
+    ],
+    "total_calories": 2281,
+    "total_protein": 168,
+    "total_carbs": 227,
+    "total_fat": 76,
+    "estimated_cost": 38.9
+   },
+   {
+    "day_name": "Tuesday",
+    "meals": [
+     {
+      "meal_type": "Breakfast",
+      "meal_name": "יוגורט בכד עם קלמנטינה ואגוזי מלך",
+      "items": [
+       {
+        "product_id": "p18",
+        "food_name": "יוגורט בכד 4% 1.5 ל'",
+        "grams": 250,
+        "calories": 175,
+        "protein": 11.3,
+        "carbs": 12.5,
+        "fat": 7.5,
+        "estimated_cost": 3.7
+       },
+       {
+        "product_id": "p16",
+        "food_name": "קלמנטינה",
+        "grams": 160,
+        "calories": 96,
+        "protein": 1.3,
+        "carbs": 22.4,
+        "fat": 0.3,
+        "estimated_cost": 0.8
+       },
+       {
+        "product_id": "p15",
+        "food_name": "אגוזי מלך 200 גרם",
+        "grams": 35,
+        "calories": 203,
+        "protein": 7,
+        "carbs": 7,
+        "fat": 17.5,
+        "estimated_cost": 2.8
+       }
+      ],
+      "total_calories": 474,
+      "total_protein": 20,
+      "total_carbs": 42,
+      "total_fat": 25,
+      "estimated_cost": 7.3
+     },
+     {
+      "meal_type": "Lunch",
+      "meal_name": "טונה במים עם קינואה, חסה קטיף כהלכה ועגבניה",
+      "items": [
+       {
+        "product_id": "p19",
+        "food_name": "טונה במים בד\"צ כשל\"פ 960",
+        "grams": 245,
+        "calories": 284,
+        "protein": 63.7,
+        "carbs": 0,
+        "fat": 2.5,
+        "estimated_cost": 7.6
+       },
+       {
+        "product_id": "p6",
+        "food_name": "קינואה",
+        "grams": 210,
+        "calories": 284,
+        "protein": 6.3,
+        "carbs": 58.8,
+        "fat": 1.1,
+        "estimated_cost": 2.5
+       },
+       {
+        "product_id": "p10",
+        "food_name": "חסה קטיף כהלכה",
+        "grams": 120,
+        "calories": 24,
+        "protein": 1.2,
+        "carbs": 4.8,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 16,
+        "calories": 141,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 16,
+        "estimated_cost": 0.7
+       }
+      ],
+      "total_calories": 769,
+      "total_protein": 73,
+      "total_carbs": 70,
+      "total_fat": 20,
+      "estimated_cost": 13.2
+     },
+     {
+      "meal_type": "Dinner",
+      "meal_name": "טונה במים עם פריכיות אורז, עגבניה ופלפל אדום",
+      "items": [
+       {
+        "product_id": "p19",
+        "food_name": "טונה במים בד\"צ כשל\"פ 960",
+        "grams": 230,
+        "calories": 267,
+        "protein": 59.8,
+        "carbs": 0,
+        "fat": 2.3,
+        "estimated_cost": 7.2
+       },
+       {
+        "product_id": "p13",
+        "food_name": "פריכיות אורז",
+        "grams": 85,
+        "calories": 329,
+        "protein": 6.8,
+        "carbs": 68.9,
+        "fat": 2.6,
+        "estimated_cost": 4.2
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p3",
+        "food_name": "פלפל אדום",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.5
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 16,
+        "calories": 141,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 16,
+        "estimated_cost": 0.7
+       }
+      ],
+      "total_calories": 809,
+      "total_protein": 70,
+      "total_carbs": 81,
+      "total_fat": 21,
+      "estimated_cost": 14.8
+     },
+     {
+      "meal_type": "Snacks",
+      "meal_name": "יוגורט בכד עם בננה",
+      "items": [
+       {
+        "product_id": "p18",
+        "food_name": "יוגורט בכד 4% 1.5 ל'",
+        "grams": 235,
+        "calories": 165,
+        "protein": 10.6,
+        "carbs": 11.8,
+        "fat": 7.1,
+        "estimated_cost": 3.4
+       },
+       {
+        "product_id": "p17",
+        "food_name": "בננה 1 ק\"ג",
+        "grams": 115,
+        "calories": 69,
+        "protein": 0.9,
+        "carbs": 16.1,
+        "fat": 0.2,
+        "estimated_cost": 0.7
+       }
+      ],
+      "total_calories": 234,
+      "total_protein": 12,
+      "total_carbs": 28,
+      "total_fat": 7,
+      "estimated_cost": 4.1
+     }
+    ],
+    "total_calories": 2286,
+    "total_protein": 175,
+    "total_carbs": 221,
+    "total_fat": 73,
+    "estimated_cost": 39.4
+   },
+   {
+    "day_name": "Wednesday",
+    "meals": [
+     {
+      "meal_type": "Breakfast",
+      "meal_name": "גבינה בולגרית עם פריכיות אורז, פלפל אדום וקישואים מובחר",
+      "items": [
+       {
+        "product_id": "p2",
+        "food_name": "גבינה בולגרית 5%",
+        "grams": 100,
+        "calories": 350,
+        "protein": 25,
+        "carbs": 1,
+        "fat": 27,
+        "estimated_cost": 5.9
+       },
+       {
+        "product_id": "p13",
+        "food_name": "פריכיות אורז",
+        "grams": 65,
+        "calories": 252,
+        "protein": 5.2,
+        "carbs": 52.7,
+        "fat": 2,
+        "estimated_cost": 3.2
+       },
+       {
+        "product_id": "p3",
+        "food_name": "פלפל אדום",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.5
+       },
+       {
+        "product_id": "p1",
+        "food_name": "קישואים מובחר",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.5
+       }
+      ],
+      "total_calories": 674,
+      "total_protein": 34,
+      "total_carbs": 66,
+      "total_fat": 29,
+      "estimated_cost": 12.1
+     },
+     {
+      "meal_type": "Lunch",
+      "meal_name": "טונה במים עם תפוח אדמה, חסה קטיף כהלכה ועגבניה",
+      "items": [
+       {
+        "product_id": "p19",
+        "food_name": "טונה במים בד\"צ כשל\"פ 960",
+        "grams": 250,
+        "calories": 290,
+        "protein": 65,
+        "carbs": 0,
+        "fat": 2.5,
+        "estimated_cost": 7.8
+       },
+       {
+        "product_id": "p11",
+        "food_name": "תפוח אדמה 1 ק\"ג",
+        "grams": 160,
+        "calories": 136,
+        "protein": 2.9,
+        "carbs": 30.4,
+        "fat": 0.2,
+        "estimated_cost": 1.1
+       },
+       {
+        "product_id": "p10",
+        "food_name": "חסה קטיף כהלכה",
+        "grams": 120,
+        "calories": 24,
+        "protein": 1.2,
+        "carbs": 4.8,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 3,
+        "calories": 27,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 3,
+        "estimated_cost": 0.1
+       }
+      ],
+      "total_calories": 513,
+      "total_protein": 71,
+      "total_carbs": 41,
+      "total_fat": 6,
+      "estimated_cost": 11.4
+     },
+     {
+      "meal_type": "Dinner",
+      "meal_name": "גבינה בולגרית עם פריכיות אורז, עגבניה ופלפל אדום ושמן זית וקוטג",
+      "items": [
+       {
+        "product_id": "p2",
+        "food_name": "גבינה בולגרית 5%",
+        "grams": 100,
+        "calories": 350,
+        "protein": 25,
+        "carbs": 1,
+        "fat": 27,
+        "estimated_cost": 5.9
+       },
+       {
+        "product_id": "p13",
+        "food_name": "פריכיות אורז",
+        "grams": 60,
+        "calories": 232,
+        "protein": 4.8,
+        "carbs": 48.6,
+        "fat": 1.8,
+        "estimated_cost": 3
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p3",
+        "food_name": "פלפל אדום",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.5
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 3,
+        "calories": 27,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 3,
+        "estimated_cost": 0.1
+       },
+       {
+        "product_id": "p7",
+        "food_name": "קוטג 5% 250 גרם",
+        "grams": 200,
+        "calories": 196,
+        "protein": 22,
+        "carbs": 6.8,
+        "fat": 8.6,
+        "estimated_cost": 4.9
+       }
+      ],
+      "total_calories": 877,
+      "total_protein": 55,
+      "total_carbs": 68,
+      "total_fat": 41,
+      "estimated_cost": 16.6
+     },
+     {
+      "meal_type": "Snacks",
+      "meal_name": "יוגורט בכד עם בננה",
+      "items": [
+       {
+        "product_id": "p18",
+        "food_name": "יוגורט בכד 4% 1.5 ל'",
+        "grams": 250,
+        "calories": 175,
+        "protein": 11.3,
+        "carbs": 12.5,
+        "fat": 7.5,
+        "estimated_cost": 3.7
+       },
+       {
+        "product_id": "p17",
+        "food_name": "בננה 1 ק\"ג",
+        "grams": 95,
+        "calories": 57,
+        "protein": 0.8,
+        "carbs": 13.3,
+        "fat": 0.2,
+        "estimated_cost": 0.6
+       }
+      ],
+      "total_calories": 232,
+      "total_protein": 12,
+      "total_carbs": 26,
+      "total_fat": 8,
+      "estimated_cost": 4.3
+     }
+    ],
+    "total_calories": 2296,
+    "total_protein": 172,
+    "total_carbs": 201,
+    "total_fat": 84,
+    "estimated_cost": 44.4
+   },
+   {
+    "day_name": "Thursday",
+    "meals": [
+     {
+      "meal_type": "Breakfast",
+      "meal_name": "יוגורט בכד עם קלמנטינה ואגוזי מלך וגבינה בולגרית",
+      "items": [
+       {
+        "product_id": "p18",
+        "food_name": "יוגורט בכד 4% 1.5 ל'",
+        "grams": 250,
+        "calories": 175,
+        "protein": 11.3,
+        "carbs": 12.5,
+        "fat": 7.5,
+        "estimated_cost": 3.7
+       },
+       {
+        "product_id": "p16",
+        "food_name": "קלמנטינה",
+        "grams": 195,
+        "calories": 117,
+        "protein": 1.6,
+        "carbs": 27.3,
+        "fat": 0.4,
+        "estimated_cost": 1
+       },
+       {
+        "product_id": "p15",
+        "food_name": "אגוזי מלך 200 גרם",
+        "grams": 13,
+        "calories": 75,
+        "protein": 2.6,
+        "carbs": 2.6,
+        "fat": 6.5,
+        "estimated_cost": 1
+       },
+       {
+        "product_id": "p2",
+        "food_name": "גבינה בולגרית 5%",
+        "grams": 60,
+        "calories": 210,
+        "protein": 15,
+        "carbs": 0.6,
+        "fat": 16.2,
+        "estimated_cost": 3.5
+       }
+      ],
+      "total_calories": 577,
+      "total_protein": 31,
+      "total_carbs": 43,
+      "total_fat": 31,
+      "estimated_cost": 9.2
+     },
+     {
+      "meal_type": "Lunch",
+      "meal_name": "פילה סלמון עם קינואה, עגבניה ופלפל אדום",
+      "items": [
+       {
+        "product_id": "p4",
+        "food_name": "פילה סלמון טרי",
+        "grams": 250,
+        "calories": 325,
+        "protein": 55,
+        "carbs": 0,
+        "fat": 12.5,
+        "estimated_cost": 30
+       },
+       {
+        "product_id": "p6",
+        "food_name": "קינואה",
+        "grams": 235,
+        "calories": 317,
+        "protein": 7.1,
+        "carbs": 65.8,
+        "fat": 1.2,
+        "estimated_cost": 2.8
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p3",
+        "food_name": "פלפל אדום",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.5
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 5,
+        "calories": 44,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 5,
+        "estimated_cost": 0.2
+       }
+      ],
+      "total_calories": 758,
+      "total_protein": 66,
+      "total_carbs": 78,
+      "total_fat": 19,
+      "estimated_cost": 35.7
+     },
+     {
+      "meal_type": "Dinner",
+      "meal_name": "פילה סלמון עם תפוח אדמה, חסה קטיף כהלכה ועגבניה",
+      "items": [
+       {
+        "product_id": "p4",
+        "food_name": "פילה סלמון טרי",
+        "grams": 250,
+        "calories": 325,
+        "protein": 55,
+        "carbs": 0,
+        "fat": 12.5,
+        "estimated_cost": 30
+       },
+       {
+        "product_id": "p11",
+        "food_name": "תפוח אדמה 1 ק\"ג",
+        "grams": 275,
+        "calories": 234,
+        "protein": 5,
+        "carbs": 52.3,
+        "fat": 0.3,
+        "estimated_cost": 1.9
+       },
+       {
+        "product_id": "p10",
+        "food_name": "חסה קטיף כהלכה",
+        "grams": 120,
+        "calories": 24,
+        "protein": 1.2,
+        "carbs": 4.8,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 5,
+        "calories": 44,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 5,
+        "estimated_cost": 0.2
+       }
+      ],
+      "total_calories": 663,
+      "total_protein": 63,
+      "total_carbs": 63,
+      "total_fat": 18,
+      "estimated_cost": 34.5
+     },
+     {
+      "meal_type": "Snacks",
+      "meal_name": "יוגורט בכד עם בננה",
+      "items": [
+       {
+        "product_id": "p18",
+        "food_name": "יוגורט בכד 4% 1.5 ל'",
+        "grams": 250,
+        "calories": 175,
+        "protein": 11.3,
+        "carbs": 12.5,
+        "fat": 7.5,
+        "estimated_cost": 3.7
+       },
+       {
+        "product_id": "p17",
+        "food_name": "בננה 1 ק\"ג",
+        "grams": 195,
+        "calories": 117,
+        "protein": 1.6,
+        "carbs": 27.3,
+        "fat": 0.4,
+        "estimated_cost": 1.2
+       }
+      ],
+      "total_calories": 292,
+      "total_protein": 13,
+      "total_carbs": 40,
+      "total_fat": 8,
+      "estimated_cost": 4.9
+     }
+    ],
+    "total_calories": 2290,
+    "total_protein": 173,
+    "total_carbs": 224,
+    "total_fat": 76,
+    "estimated_cost": 84.3
+   },
+   {
+    "day_name": "Friday",
+    "meals": [
+     {
+      "meal_type": "Breakfast",
+      "meal_name": "טונה במים עם פריכיות אורז, עגבניה ופלפל אדום ושמן זית",
+      "items": [
+       {
+        "product_id": "p19",
+        "food_name": "טונה במים בד\"צ כשל\"פ 960",
+        "grams": 230,
+        "calories": 267,
+        "protein": 59.8,
+        "carbs": 0,
+        "fat": 2.3,
+        "estimated_cost": 7.2
+       },
+       {
+        "product_id": "p13",
+        "food_name": "פריכיות אורז",
+        "grams": 60,
+        "calories": 232,
+        "protein": 4.8,
+        "carbs": 48.6,
+        "fat": 1.8,
+        "estimated_cost": 3
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p3",
+        "food_name": "פלפל אדום",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.5
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 5,
+        "calories": 44,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 5,
+        "estimated_cost": 0.2
+       }
+      ],
+      "total_calories": 615,
+      "total_protein": 68,
+      "total_carbs": 61,
+      "total_fat": 10,
+      "estimated_cost": 13.1
+     },
+     {
+      "meal_type": "Lunch",
+      "meal_name": "גרעיני חומוס עם קינואה, חסה קטיף כהלכה ועגבניה ושמן זית",
+      "items": [
+       {
+        "product_id": "p5",
+        "food_name": "גרעיני חומוס",
+        "grams": 250,
+        "calories": 290,
+        "protein": 22.5,
+        "carbs": 50,
+        "fat": 1,
+        "estimated_cost": 1.7
+       },
+       {
+        "product_id": "p6",
+        "food_name": "קינואה",
+        "grams": 125,
+        "calories": 169,
+        "protein": 3.8,
+        "carbs": 35,
+        "fat": 0.6,
+        "estimated_cost": 1.5
+       },
+       {
+        "product_id": "p10",
+        "food_name": "חסה קטיף כהלכה",
+        "grams": 120,
+        "calories": 24,
+        "protein": 1.2,
+        "carbs": 4.8,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 13,
+        "calories": 115,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 13,
+        "estimated_cost": 0.6
+       }
+      ],
+      "total_calories": 634,
+      "total_protein": 29,
+      "total_carbs": 96,
+      "total_fat": 15,
+      "estimated_cost": 6.2
+     },
+     {
+      "meal_type": "Dinner",
+      "meal_name": "פילה סלמון עם פריכיות אורז, עגבניה ופלפל אדום",
+      "items": [
+       {
+        "product_id": "p4",
+        "food_name": "פילה סלמון טרי",
+        "grams": 240,
+        "calories": 312,
+        "protein": 52.8,
+        "carbs": 0,
+        "fat": 12,
+        "estimated_cost": 28.8
+       },
+       {
+        "product_id": "p13",
+        "food_name": "פריכיות אורז",
+        "grams": 55,
+        "calories": 213,
+        "protein": 4.4,
+        "carbs": 44.6,
+        "fat": 1.7,
+        "estimated_cost": 2.7
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p3",
+        "food_name": "פלפל אדום",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.5
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 25,
+        "calories": 221,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 25,
+        "estimated_cost": 1.2
+       }
+      ],
+      "total_calories": 818,
+      "total_protein": 61,
+      "total_carbs": 57,
+      "total_fat": 39,
+      "estimated_cost": 35.4
+     },
+     {
+      "meal_type": "Snacks",
+      "meal_name": "יוגורט בכד עם בננה",
+      "items": [
+       {
+        "product_id": "p18",
+        "food_name": "יוגורט בכד 4% 1.5 ל'",
+        "grams": 235,
+        "calories": 165,
+        "protein": 10.6,
+        "carbs": 11.8,
+        "fat": 7.1,
+        "estimated_cost": 3.4
+       },
+       {
+        "product_id": "p17",
+        "food_name": "בננה 1 ק\"ג",
+        "grams": 75,
+        "calories": 45,
+        "protein": 0.6,
+        "carbs": 10.5,
+        "fat": 0.2,
+        "estimated_cost": 0.4
+       }
+      ],
+      "total_calories": 210,
+      "total_protein": 11,
+      "total_carbs": 22,
+      "total_fat": 7,
+      "estimated_cost": 3.8
+     }
+    ],
+    "total_calories": 2277,
+    "total_protein": 169,
+    "total_carbs": 236,
+    "total_fat": 71,
+    "estimated_cost": 58.5
+   },
+   {
+    "day_name": "Saturday",
+    "meals": [
+     {
+      "meal_type": "Breakfast",
+      "meal_name": "קוטג עם פריכיות אורז, חסה קטיף כהלכה ועגבניה",
+      "items": [
+       {
+        "product_id": "p7",
+        "food_name": "קוטג 5% 250 גרם",
+        "grams": 245,
+        "calories": 240,
+        "protein": 27,
+        "carbs": 8.3,
+        "fat": 10.6,
+        "estimated_cost": 6
+       },
+       {
+        "product_id": "p13",
+        "food_name": "פריכיות אורז",
+        "grams": 80,
+        "calories": 310,
+        "protein": 6.4,
+        "carbs": 64.8,
+        "fat": 2.4,
+        "estimated_cost": 3.9
+       },
+       {
+        "product_id": "p10",
+        "food_name": "חסה קטיף כהלכה",
+        "grams": 120,
+        "calories": 24,
+        "protein": 1.2,
+        "carbs": 4.8,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       }
+      ],
+      "total_calories": 610,
+      "total_protein": 36,
+      "total_carbs": 84,
+      "total_fat": 13,
+      "estimated_cost": 12.3
+     },
+     {
+      "meal_type": "Lunch",
+      "meal_name": "פילה סלמון עם קינואה, חסה קטיף כהלכה ועגבניה",
+      "items": [
+       {
+        "product_id": "p4",
+        "food_name": "פילה סלמון טרי",
+        "grams": 245,
+        "calories": 318,
+        "protein": 53.9,
+        "carbs": 0,
+        "fat": 12.2,
+        "estimated_cost": 29.4
+       },
+       {
+        "product_id": "p6",
+        "food_name": "קינואה",
+        "grams": 165,
+        "calories": 223,
+        "protein": 5,
+        "carbs": 46.2,
+        "fat": 0.8,
+        "estimated_cost": 2
+       },
+       {
+        "product_id": "p10",
+        "food_name": "חסה קטיף כהלכה",
+        "grams": 120,
+        "calories": 24,
+        "protein": 1.2,
+        "carbs": 4.8,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 17,
+        "calories": 150,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 17,
+        "estimated_cost": 0.8
+       }
+      ],
+      "total_calories": 751,
+      "total_protein": 62,
+      "total_carbs": 57,
+      "total_fat": 30,
+      "estimated_cost": 34.6
+     },
+     {
+      "meal_type": "Dinner",
+      "meal_name": "טונה במים עם פריכיות אורז, חסה קטיף כהלכה ועגבניה",
+      "items": [
+       {
+        "product_id": "p19",
+        "food_name": "טונה במים בד\"צ כשל\"פ 960",
+        "grams": 215,
+        "calories": 249,
+        "protein": 55.9,
+        "carbs": 0,
+        "fat": 2.2,
+        "estimated_cost": 6.7
+       },
+       {
+        "product_id": "p13",
+        "food_name": "פריכיות אורז",
+        "grams": 65,
+        "calories": 252,
+        "protein": 5.2,
+        "carbs": 52.7,
+        "fat": 2,
+        "estimated_cost": 3.2
+       },
+       {
+        "product_id": "p10",
+        "food_name": "חסה קטיף כהלכה",
+        "grams": 120,
+        "calories": 24,
+        "protein": 1.2,
+        "carbs": 4.8,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p9",
+        "food_name": "עגבניה",
+        "grams": 120,
+        "calories": 36,
+        "protein": 1.8,
+        "carbs": 6,
+        "fat": 0.2,
+        "estimated_cost": 1.2
+       },
+       {
+        "product_id": "p14",
+        "food_name": "שמן זית  750 מ\"ל",
+        "grams": 17,
+        "calories": 150,
+        "protein": 0,
+        "carbs": 0,
+        "fat": 17,
+        "estimated_cost": 0.8
+       }
+      ],
+      "total_calories": 711,
+      "total_protein": 64,
+      "total_carbs": 64,
+      "total_fat": 22,
+      "estimated_cost": 13.1
+     },
+     {
+      "meal_type": "Snacks",
+      "meal_name": "יוגורט בכד עם בננה",
+      "items": [
+       {
+        "product_id": "p18",
+        "food_name": "יוגורט בכד 4% 1.5 ל'",
+        "grams": 220,
+        "calories": 154,
+        "protein": 9.9,
+        "carbs": 11,
+        "fat": 6.6,
+        "estimated_cost": 3.2
+       },
+       {
+        "product_id": "p17",
+        "food_name": "בננה 1 ק\"ג",
+        "grams": 90,
+        "calories": 54,
+        "protein": 0.7,
+        "carbs": 12.6,
+        "fat": 0.2,
+        "estimated_cost": 0.5
+       }
+      ],
+      "total_calories": 208,
+      "total_protein": 11,
+      "total_carbs": 24,
+      "total_fat": 7,
+      "estimated_cost": 3.7
+     }
+    ],
+    "total_calories": 2280,
+    "total_protein": 173,
+    "total_carbs": 229,
+    "total_fat": 72,
+    "estimated_cost": 63.7
+   }
+  ],
+  "budget": {
+   "weekly_budget": 443,
+   "cost_before": 485.5,
+   "estimated_cost": 472,
+   "fits": false,
+   "over_by": 29,
+   "swaps": [
+    {
+     "from": "טונה במים בד\"צ כשל\"פ 960",
+     "to": "גבינה בולגרית 5%",
+     "day": "Monday",
+     "meal": "Breakfast"
+    },
+    {
+     "from": "טונה במים בד\"צ כשל\"פ 960",
+     "to": "גבינה בולגרית 5%",
+     "day": "Wednesday",
+     "meal": "Breakfast"
+    },
+    {
+     "from": "גבינה בולגרית 5%",
+     "to": "קוטג 5% 250 גרם",
+     "day": "Sunday",
+     "meal": "Breakfast"
+    }
+   ],
+   "top_costs": [
+    {
+     "name": "פילה סלמון טרי",
+     "cost": 131.9
+    },
+    {
+     "name": "טונה במים בד\"צ כשל\"פ 960",
+     "cost": 59.8
+    },
+    {
+     "name": "יוגורט בכד 4% 1.5 ל'",
+     "cost": 43.8
+    }
+   ]
+  },
+  "estimated_weekly_cost": 472
+ }
+}

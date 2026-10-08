@@ -24,6 +24,7 @@ import { buildDensities, applyDensities, finalizeDays, closeCalories } from '@/l
 import { planWeek } from '@/lib/weeklyPlanner';
 import { PLANNER_VARIANTS } from '@/lib/mealScoring';
 import { validateMenu } from '@/lib/validateMenu';
+import { explainMenu } from '@/lib/explainMenu';
 import { fitPlanToBudget, planCost } from '@/lib/mealPlanBudget';
 import { profileConflict, isSupplement, isDisliked } from '@/lib/basketAlternatives';
 import { isPlainWater } from '@/lib/receiptClassifier';
@@ -55,6 +56,8 @@ export const PLAN_FAILED_MESSAGE = "לא הצלחנו לבנות תפריט מה
 
 // Only one realistic menu meets every goal with this basket — said up front and on "בנייה מחדש"
 export const ONLY_MENU_MESSAGE = "לא נמצא תפריט חלופי שונה מספיק שעומד בכל היעדים עם הסל הנוכחי — זה התפריט היחיד שאפשר לבנות ממנו בלי ארוחות לא מציאותיות.";
+// …and when even that menu misses a goal (level 3): never implied to be acceptable
+export const NO_ACCEPTABLE_MENU_MESSAGE = "לא הצלחנו לבנות מהסל הנוכחי תפריט שעומד בכל היעדים, וגם אין תפריט מציאותי אחר. התפריט שמוצג הוא הקרוב ביותר — מה חסר בו ומה אפשר לשנות מפורט בכרטיס איכות התפריט.";
 
 // A week where a day misses breakfast, lunch or dinner is never saved or shown
 const MEAL_LABEL = { Breakfast: "ארוחת בוקר", Lunch: "ארוחת צהריים", Dinner: "ארוחת ערב" };
@@ -68,6 +71,18 @@ export class IncompleteMenuError extends Error {
   }
 }
 const missingSlots = r => r.quality.checks.find(c => c.id === "meal_slots")?.data?.missing || [];
+
+// A week that breaks a safety / realism rule or misses basic food groups (level 4) is
+// never saved or shown: the error says what is wrong and what to add (explainMenu)
+export class UnacceptableMenuError extends Error {
+  constructor(explanation) {
+    const why = explanation.points.filter(p => p.area !== "summary").map(p => p.text).join(" ");
+    const add = explanation.add?.length ? ` מה להוסיף לסל: ${explanation.add.join(", ")}.` : "";
+    super(`לא הצלחנו לבנות מהסל הנוכחי תפריט תקין. ${why}${add}`.trim());
+    this.name = "UnacceptableMenuError";
+    this.explanation = explanation;
+  }
+}
 
 /** Hebrew notes for a day that misses a target, with its real numbers. */
 function targetWarnings(report, { calories, protein, fat }) {
@@ -188,6 +203,9 @@ export async function generateNutritionPlan({ list, profile, budget = null, prev
   const rank = r => [r.quality.level, r.quality.failed.length, -r.quality.stats.diversity, Math.round(costOver(r)), r.quality.limited.length, r.done.budgetReport.estimated_cost];
   const better = (x, y) => { const [a, b] = [rank(x), rank(y)]; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] < b[i]; return false; };
   const best = complete7.reduce((b, r) => (better(r, b) ? r : b));
+  if (best.quality.level >= 4) {
+    throw new UnacceptableMenuError(explainMenu(best.quality, { plan: best.done.plan, basketItems: list.items, profile }));
+  }
   // Asked for a different menu: one more week, planned away from the best week's
   // meals. Planned from the best week — never from the menu on screen — so the
   // list of alternatives is the same on every click and the clicks walk through it.
