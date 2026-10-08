@@ -71,6 +71,18 @@ describe("without a profile, the basket and menu pages say to complete onboardin
     expect(html).not.toMatch(/בניית סל מוצרים חכם<|בניית תפריט תזונה|בחירה מחדש|בנייה מחדש/);
   });
 
+  it("a saved menu with no breakfasts is not shown: the page says it is incomplete and offers a rebuild (QA round 5)", async () => {
+    const meal = meal_type => ({ meal_type, meal_name: "עוף עם אורז", items: [{ food_name: BASKETS.rich.items[0].name, grams: 200, calories: 300, protein: 40, carbs: 0, fat: 5 }] });
+    const broken = { id: "p1", shopping_list_id: "l1", daily_calories: 2200, days: ["Sunday", "Monday"].map(day_name => ({ day_name, meals: [meal("Lunch"), meal("Dinner")] })) };
+    const html = await render("NutritionPlanPage", client => {
+      noProfile(client);
+      client.setQueryData([FLOW_QUERY_KEY, "profile", USER.email], [{ ...BASE_PROFILE, onboarding_complete: true }]);
+      client.setQueryData([FLOW_QUERY_KEY, "plans", USER.email], [broken]);
+    });
+    expect(html).toContain("התפריט השמור לא שלם");
+    expect(html).not.toContain("עוף עם אורז");
+  });
+
   it.each(["ShoppingListPage", "NutritionPlanPage"])("%s with a completed profile shows no notice", async page => {
     const html = await render(page, client => {
       noProfile(client);

@@ -149,7 +149,8 @@ describe("\"בנייה מחדש\": a different valid menu each time, determinist
   }, 120000);
 
   it("a basket with nothing to vary says so instead of returning the same menu as new", async () => {
-    const { items: few, profile: p } = BASKETS.tiny;
+    // one menu only (the tiny basket cannot make breakfast at all — refused, tests/qaRound5.test.js)
+    const few = [I.chicken, I.rice, I.tomato, I.bread, I.cottage], p = BASKETS.tiny.profile;
     const first = await generateNutritionPlan({ list: { items: few }, profile: p, budget: weeklyBudget(p) });
     const again = await generateNutritionPlan({ list: { items: few }, profile: p, budget: weeklyBudget(p), previous: first });
     expect(again.alternative.exhausted).toBe(true);

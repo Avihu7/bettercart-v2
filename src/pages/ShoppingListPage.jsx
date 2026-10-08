@@ -24,7 +24,7 @@ import FlowSteps from "@/components/FlowSteps";
 import { isBasketReady, isUnresolved, receiptItemName } from "@/lib/receiptReview";
 import { weeklyBudget as profileWeeklyBudget, basketBudget } from "@/lib/pricing";
 import { applyReceiptRules } from "@/lib/receiptClassifier";
-import { buildBasket, receiptToBasketItem, userAddedItem, correctedReceiptItems, sameFood, basketTotals, basketLooksThin, REGULAR_MIN_SCORE } from "@/lib/basketBuilder";
+import { buildBasket, sameBasketItems, receiptToBasketItem, userAddedItem, correctedReceiptItems, sameFood, basketTotals, basketLooksThin, REGULAR_MIN_SCORE } from "@/lib/basketBuilder";
 import { weeklyCosts, budgetDrivers, priceFacts, changeBudgetImpact } from "@/lib/basketBudget";
 import BudgetImpactCard from "@/components/BudgetImpactCard";
 import { findAlternatives, buildReplacementItem, isDisliked, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement, proteinShortText, itemFamily } from "@/lib/basketAlternatives";
@@ -286,8 +286,14 @@ export default function ShoppingListPage() {
   // No basket without a completed profile (src/lib/profileGuard.js)
   const needsProfile = profileFetched && !profileReady(profile);
 
+  // One build at a time: a second click before the page re-renders as "pending"
+  // must not start (and save) a second basket
+  const building = useRef(false);
   const generateMutation = useMutation({
     mutationFn: async () => {
+      if (building.current) return { skipped: true };
+      building.current = true;
+      try {
       // BetterCart plans a full week: one weekly menu and one weekly basket,
       // whatever the shopping frequency (which only splits the budget)
       const daysPerPurchase = 7;
@@ -296,6 +302,10 @@ export default function ShoppingListPage() {
       const { items: finalItems, total: runningTotal } = await buildBasket({
         receiptItems, history: await fetchPurchaseHistory(), profile, weeklyBudget,
       });
+      // The same receipt and profile give the same basket: nothing new to save
+      if (showList && (showList.receipt_id || "") === (effectiveReceiptId || "") && sameBasketItems(showList.items, finalItems)) {
+        return { unchanged: true };
+      }
 
       const list = await api.entities.ShoppingList.create({
         receipt_id: effectiveReceiptId || "",
@@ -309,6 +319,9 @@ export default function ShoppingListPage() {
       });
 
       return list;
+      } finally {
+        building.current = false;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shoppingLists"] });
@@ -611,6 +624,13 @@ export default function ShoppingListPage() {
               <p className="text-xs text-muted-foreground mt-0.5 font-mono">{generateMutation.error?.message}</p>
             </div>
           </div>
+        </Card>
+      )}
+
+      {!generateMutation.isPending && generateMutation.data?.unchanged && (
+        <Card className="p-4 border-sky-200 bg-sky-50/60 text-sm text-sky-900">
+          בנינו את הסל מחדש וקיבלנו את אותם מוצרים — אלה עדיין המוצרים המתאימים ביותר לקבלה ולפרופיל שלך, ולכן הסל לא נשמר שוב.
+          אפשר להחליף, להסיר או להוסיף מוצרים ידנית.
         </Card>
       )}
 

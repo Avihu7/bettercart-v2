@@ -13,7 +13,7 @@ import { classifyProduct } from "@/lib/mealPlanRules";
 import { spendClass } from "@/lib/receiptClassifier";
 import { computePurchaseHistory } from "../server/purchaseHistory.js";
 import { weeklyBudget } from "@/lib/pricing";
-import { BASKETS, BASE_PROFILE } from "./fixtures/baskets";
+import { BASKETS, BASE_PROFILE, ITEMS as I } from "./fixtures/baskets";
 
 describe("\"בנייה מחדש\" walks through every alternative", () => {
   const { items, profile } = BASKETS.rich;
@@ -57,7 +57,8 @@ describe("\"בנייה מחדש\" walks through every alternative", () => {
   }, 120000);
 
   it("a basket with nothing else to offer says so", async () => {
-    const { items: few, profile: p } = BASKETS.tiny;
+    // one menu only (the tiny basket cannot make breakfast at all — refused, tests/qaRound5.test.js)
+    const few = [I.chicken, I.rice, I.tomato, I.bread, I.cottage], p = BASKETS.tiny.profile;
     const first = await generateNutritionPlan({ list: { items: few }, profile: p, budget: weeklyBudget(p) });
     const again = await generateNutritionPlan({ list: { items: few }, profile: p, budget: weeklyBudget(p), previous: first });
     expect(again.alternative.exhausted).toBe(true);

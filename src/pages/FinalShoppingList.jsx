@@ -29,7 +29,7 @@ export default function FinalShoppingList() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { plan, planOutdated, planBasket, finalList, completed, isLoading } = useFlowData(user);
+  const { plan, planOutdated, planIncomplete, planBasket, finalList, completed, isLoading } = useFlowData(user);
 
   const buildMutation = useMutation({
     mutationFn: async () => {
@@ -73,13 +73,15 @@ export default function FinalShoppingList() {
       {!isLoading && !plan?.days?.length && (
         <Card className="p-10 text-center">
           <UtensilsCrossed className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-          <h2 className="font-heading font-semibold text-lg mb-2">{planOutdated ? "סל המוצרים עודכן" : "עדיין אין תפריט שבועי"}</h2>
+          <h2 className="font-heading font-semibold text-lg mb-2">{planIncomplete ? "התפריט השמור לא שלם" : planOutdated ? "סל המוצרים עודכן" : "עדיין אין תפריט שבועי"}</h2>
           <p className="text-sm text-muted-foreground mb-6">
-            {planOutdated
+            {planIncomplete
+              ? "בתפריט שנשמר חסרות ארוחות בחלק מהימים. קודם בונים את התפריט מחדש, ואז נחשב את סל הקניות."
+              : planOutdated
               ? "החלפת או הסרת מוצרים מאז שהתפריט נבנה. קודם בונים את התפריט מחדש, ואז נחשב את סל הקניות."
               : "את סל הקניות הסופי מחשבים לפי התפריט. קודם בונים תפריט תזונה."}
           </p>
-          <Button onClick={() => navigate(planOutdated ? "/nutrition-plan?rebuild=1" : "/nutrition-plan")}>בניית תפריט תזונה</Button>
+          <Button onClick={() => navigate(planOutdated || planIncomplete ? "/nutrition-plan?rebuild=1" : "/nutrition-plan")}>בניית תפריט תזונה</Button>
         </Card>
       )}
 

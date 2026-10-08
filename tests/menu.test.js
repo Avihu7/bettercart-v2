@@ -14,7 +14,8 @@ import { BASKETS } from "./fixtures/baskets";
 const mealItems = plan => plan.days.flatMap(d => d.meals.flatMap(m => m.items));
 const VARIETY = /used at more than 3 lunches/;
 
-describe.each(Object.entries(BASKETS))("menu: %s basket", (label, { items, profile, adequate }) => {
+// The tiny basket cannot make a complete week: it is refused (tests/qaRound5.test.js, validateMenu.test.js)
+describe.each(Object.entries(BASKETS).filter(([label]) => label !== "tiny"))("menu: %s basket", (label, { items, profile, adequate }) => {
   const budget = weeklyBudget(profile);
   const build = () => generateNutritionPlan({ list: { items }, profile, budget });
   let plan;

@@ -69,7 +69,7 @@ export default function NutritionPlanPage() {
   const listId = urlParams.get("list_id");
 
   // Basket (step 2) this plan is built from, latest plan, and its final list (step 4)
-  const { profile, profileFetched, basket: sourceList, plan: latestPlan, planBasket, planOutdated, finalList, completed, isLoading: flowLoading } = useFlowData(user, { listId });
+  const { profile, profileFetched, basket: sourceList, plan: latestPlan, planBasket, planOutdated, planIncomplete, finalList, completed, isLoading: flowLoading } = useFlowData(user, { listId });
 
   const generateMutation = useMutation({
     // previous: the menu on screen when the user asks for a different one ("בנייה מחדש")
@@ -164,7 +164,7 @@ export default function NutritionPlanPage() {
     if (autoBuilt.current || !flag || flowLoading || !sourceList?.items?.length || !profileReady(profile) || generateMutation.isPending) return;
     autoBuilt.current = true;
     window.history.replaceState(null, "", window.location.pathname + (listId ? `?list_id=${listId}` : ""));
-    if (planOutdated || !latestPlan || latestPlan.shopping_list_id !== sourceList.id) generateMutation.mutate();
+    if (planOutdated || planIncomplete || !latestPlan || latestPlan.shopping_list_id !== sourceList.id) generateMutation.mutate();
   });
   const planDays = sortDays(showPlan?.days);
   const dailyTarget = showPlan?.daily_calories || profile?.daily_calories;
@@ -279,9 +279,11 @@ export default function NutritionPlanPage() {
       {!generateMutation.isPending && !showPlan && (
         <Card className="p-10 text-center">
           <UtensilsCrossed className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
-          <h2 className="font-heading font-semibold text-lg mb-2">{planOutdated ? "סל המוצרים עודכן" : "עדיין אין תפריט"}</h2>
+          <h2 className="font-heading font-semibold text-lg mb-2">{planIncomplete ? "התפריט השמור לא שלם" : planOutdated ? "סל המוצרים עודכן" : "עדיין אין תפריט"}</h2>
           <p className="text-sm text-muted-foreground mb-6">
-            {planOutdated
+            {planIncomplete
+              ? "בתפריט שנשמר חסרות ארוחות (בוקר, צהריים או ערב) בחלק מהימים, ולכן הוא לא מוצג. נבנה תפריט שלם מחדש."
+              : planOutdated
               ? "החלפת או הסרת מוצרים מאז שהתפריט נבנה. נבנה תפריט חדש מהמוצרים המעודכנים."
               : sourceList?.items?.length
               ? "נבנה תפריט שבועי אישי מהמוצרים שבסל המוצרים שלכם"

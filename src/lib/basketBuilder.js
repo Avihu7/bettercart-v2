@@ -182,6 +182,15 @@ export function receiptToBasketItem(raw) {
 }
 
 /**
+ * True when two baskets hold the same products in the same quantities (order
+ * aside). "בחירה מחדש" that gives the same basket is not saved as a new one.
+ */
+export function sameBasketItems(a, b) {
+  const key = items => (items || []).map(i => `${i.name}|${i.quantity ?? ""}`).sort().join("\n");
+  return key(a) === key(b);
+}
+
+/**
  * Basket items whose receipt line was corrected after the basket was built (a
  * new match or an approved suggestion — e.g. "גרעיני דיריז מתוק" approved as
  * corn): the saved basket still has the old name and values. receiptItems: the

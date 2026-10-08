@@ -80,16 +80,21 @@ describe("baseline: quality level per fixture basket", () => {
   const results = {};
   beforeAll(async () => {
     for (const [label, { items, profile }] of Object.entries(BASKETS)) {
+      if (label === "tiny") continue; // no complete week possible: refused, not graded (below)
       const budget = weeklyBudget(profile);
       const plan = await generateNutritionPlan({ list: { items }, profile, budget });
       results[label] = validateMenu({ plan, basketItems: items, profile, budget });
     }
   }, 120000);
 
-  it.each(Object.keys(BASELINE))("%s basket is no worse than its baseline level", label => {
+  it("tiny basket (no breakfast foods): no menu is built at all, with a clear error", async () => {
+    const { items, profile } = BASKETS.tiny;
+    await expect(generateNutritionPlan({ list: { items }, profile, budget: weeklyBudget(profile) })).rejects.toThrow(/ארוחת בוקר/);
+  });
+  it.each(Object.keys(BASELINE).filter(l => l !== "tiny"))("%s basket is no worse than its baseline level", label => {
     expect(results[label].level).toBeLessThanOrEqual(BASELINE[label]);
   });
-  it.each(Object.keys(CURRENT))("%s basket keeps the weekly planner's level", label => {
+  it.each(Object.keys(CURRENT).filter(l => l !== "tiny"))("%s basket keeps the weekly planner's level", label => {
     expect(results[label].level).toBeLessThanOrEqual(CURRENT[label]);
   });
   it("never breaks safety on any basket", () => {

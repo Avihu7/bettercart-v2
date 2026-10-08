@@ -7,12 +7,19 @@ import { BASKETS, ITEMS as I } from "./fixtures/baskets";
 
 const explained = {};
 beforeAll(async () => {
-  for (const label of ["vegan", "limited", "tiny", "real", "vegetarian"]) {
+  for (const label of ["vegan", "limited", "real", "vegetarian"]) {
     const { items, profile } = BASKETS[label];
     const budget = weeklyBudget(profile);
     const plan = await generateNutritionPlan({ list: { items }, profile, budget });
     explained[label] = explainMenu(validateMenu({ plan, basketItems: items, profile, budget }), { plan, basketItems: items, profile });
   }
+  // The tiny basket cannot make a complete week, so no menu is built for it any more
+  // (tests/qaRound5.test.js). Its level-4 explanation is checked on the week the planner
+  // used to build: chicken, rice and tomato at lunch and dinner, no breakfast.
+  const { items, profile } = BASKETS.tiny;
+  const meal = meal_type => ({ meal_type, meal_name: "עוף עם אורז ועגבניה", items: items.map(i => ({ food_name: i.name, grams: 150, calories: 300, protein: 30, carbs: 30, fat: 5 })) });
+  const plan = { days: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(day_name => ({ day_name, meals: [meal("Lunch"), meal("Dinner")] })) };
+  explained.tiny = explainMenu(validateMenu({ plan, basketItems: items, profile, budget: weeklyBudget(profile) }), { plan, basketItems: items, profile });
 }, 120000);
 const text = e => e.points.map(p => p.text).join("\n");
 

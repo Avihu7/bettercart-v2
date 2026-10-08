@@ -303,7 +303,8 @@ const GENERIC_WORDS = new Set(["סלט", "ירקות", "ירק", "פירות", "
 export function mealNameMismatches(mealName, items, catalog) {
   const products = items.map(i => catalog.find(p => p.id === i.product_id)).filter(Boolean);
   const groups = products.map(p => p.group);
-  const tokens = products.flatMap(p => normalizeHebrew(p.name_he).split(" "));
+  // Quantities glued to a word count as separate: "10פיתות" is the word "פיתות" (as in dishWord)
+  const tokens = products.flatMap(p => normalizeHebrew(p.name_he).split(" ").map(t => t.replace(/^\d+/, "").replace(/\d.*$/, "")));
   const matchesItem = word => tokens.some(t => t.length >= 2 && t.startsWith(word.slice(0, 3)));
   let name = normalizeHebrew(mealName);
   const found = [];

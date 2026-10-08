@@ -53,6 +53,19 @@ const ALTERNATIVE_ORDER = ["variety", "budget", "protein", "balanced", "fresh"];
 
 export const PLAN_FAILED_MESSAGE = "לא הצלחנו לבנות תפריט מהמוצרים שבסל. הוסיפו לסל מוצרים לארוחות (חלבון, פחמימה וירקות) ונסו שוב.";
 
+// A week where a day misses breakfast, lunch or dinner is never saved or shown
+const MEAL_LABEL = { Breakfast: "ארוחת בוקר", Lunch: "ארוחת צהריים", Dinner: "ארוחת ערב" };
+const MEAL_NEEDS = { Breakfast: "לחם, ביצים, יוגורט או דגני בוקר", Lunch: "חלבון, פחמימה וירקות", Dinner: "חלבון, פחמימה וירקות" };
+export class IncompleteMenuError extends Error {
+  constructor(missingTypes) {
+    super(`לא הצלחנו לבנות תפריט שלם: אין ${missingTypes.map(t => MEAL_LABEL[t]).join(" ו")} בכל הימים. ` +
+      `הוסיפו לסל מוצרים ל${missingTypes.map(t => `${MEAL_LABEL[t]} (${MEAL_NEEDS[t]})`).join(" ול")} ונסו שוב.`);
+    this.name = "IncompleteMenuError";
+    this.missing = missingTypes;
+  }
+}
+const missingSlots = r => r.quality.checks.find(c => c.id === "meal_slots")?.data?.missing || [];
+
 /** Hebrew notes for a day that misses a target, with its real numbers. */
 function targetWarnings(report, { calories, protein, fat }) {
   const notes = [];
@@ -160,12 +173,18 @@ export async function generateNutritionPlan({ list, profile, budget = null, prev
   const ranked = results
     .map(r => Object.assign(r, { quality: validateMenu({ plan: { ...r.done.plan, estimated_weekly_cost: r.done.budgetReport.estimated_cost }, basketItems: list.items, profile, budget }) }));
   if (!ranked.length) throw new Error(PLAN_FAILED_MESSAGE);
+  // Only complete weeks (breakfast, lunch and dinner every day) can be the menu
+  const complete7 = ranked.filter(r => !missingSlots(r).length);
+  if (!complete7.length) {
+    const types = [...new Set(ranked.flatMap(missingSlots).map(m => m.split("/")[1]))].filter(t => MEAL_LABEL[t]);
+    throw new IncompleteMenuError(types.length ? types : ["Breakfast"]);
+  }
   // quality first, then variety; cost decides only above 85% of the budget (below it the
   // headroom is better spent on variety than on saving more), and last as a tie-break
   const costOver = r => (budget > 0 ? Math.max(0, r.done.budgetReport.estimated_cost - budget * 0.85) : 0);
   const rank = r => [r.quality.level, r.quality.failed.length, -r.quality.stats.diversity, Math.round(costOver(r)), r.quality.limited.length, r.done.budgetReport.estimated_cost];
   const better = (x, y) => { const [a, b] = [rank(x), rank(y)]; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] < b[i]; return false; };
-  const best = ranked.reduce((b, r) => (better(r, b) ? r : b));
+  const best = complete7.reduce((b, r) => (better(r, b) ? r : b));
   // Asked for a different menu: one more week, planned away from the best week's
   // meals. Planned from the best week — never from the menu on screen — so the
   // list of alternatives is the same on every click and the clicks walk through it.

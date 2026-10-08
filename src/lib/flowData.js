@@ -26,6 +26,12 @@ export function isPlanOutdated(plan, basket) {
     (meal.items || []).some(i => i.food_name && !names.has(normalizeHebrew(i.food_name)))));
 }
 
+/** "Day/MealType" of every day missing its breakfast, lunch or dinner. */
+export function planMissingMeals(plan) {
+  return (plan?.days || []).flatMap(d => ["Breakfast", "Lunch", "Dinner"]
+    .filter(t => !(d.meals || []).some(m => m.meal_type === t && m.items?.length)).map(t => `${d.day_name}/${t}`));
+}
+
 export function useFlowData(user, { listId } = {}) {
   const email = user?.email;
   const lists = useQuery({
@@ -53,7 +59,9 @@ export function useFlowData(user, { listId } = {}) {
   // A plan that uses products the user removed/replaced in step 2 afterwards is
   // not used anywhere (steps 3–4, results, print) until it is rebuilt
   const planOutdated = isPlanOutdated(latestPlan, planBasket);
-  const plan = planOutdated ? null : latestPlan;
+  // A saved menu missing a meal (built before that was refused) is never shown or used
+  const planIncomplete = !!latestPlan?.days?.length && planMissingMeals(latestPlan).length > 0;
+  const plan = planOutdated || planIncomplete ? null : latestPlan;
   const finalList = plan ? allLists.find(l => isFinalList(l) && l.nutrition_plan_id === plan.id) || null : null;
 
   return {
@@ -66,6 +74,7 @@ export function useFlowData(user, { listId } = {}) {
     finalList,
     // The basket changed after the latest plan was built — steps 3–4 must be rebuilt
     planOutdated,
+    planIncomplete,
     isLoading: lists.isLoading || plans.isLoading,
     // Steps completed so far (for the step indicator)
     completed: {

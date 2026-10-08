@@ -6,6 +6,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { buildSmartAdditions } from "@/lib/smartBasketEngine";
 import { ITEMS as I } from "../fixtures/baskets";
+import { classifyProduct } from "@/lib/mealPlanRules";
+import STATE from "../fixtures/qaRound5State.json";
 
 const API = process.env.BETTERCART_API || (import.meta.env.MODE === "integration" ? "http://localhost:3001" : null);
 const search = async q => (await (await fetch(`${API}/api/products/search?q=${encodeURIComponent(q)}&limit=10`)).json()).results || [];
@@ -33,6 +35,13 @@ describe.runIf(!!API)("catalog API", () => {
     expect((await search("קרם קוקוס")).length).toBeGreaterThan(0);
     expect((await search("קורנפלקס")).length).toBeGreaterThan(0);
   });
+
+  it("QA round 5: a receipt whose only breakfast base is bread gets eggs / yogurt / cereal from the real catalog", async () => {
+    const basket = STATE.basket.filter(i => i.from_receipt);
+    const added = await buildSmartAdditions({ basket, profile: STATE.profile, budgetLeft: 250, hasReceipt: true });
+    const groups = added.map(i => classifyProduct(i.name, i.category));
+    expect(groups.some(g => ["eggs", "yogurt", "cereal"].includes(g)), added.map(i => i.name).join(", ")).toBe(true);
+  }, 30000);
 
   it("builds deterministic smart additions with no vegan leaks", async () => {
     const profile = { dietary_preferences: ["טבעוני"], allergies: [], disliked_foods: [] };

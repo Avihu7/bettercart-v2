@@ -9,7 +9,7 @@
  *   hard filters: diet, allergies, disliked foods, supplements, duplicates
  *        ↓
  *   phase 2 — weekly needs: protein variety, bread, grains, fats, vegetables,
- *             fruit, breakfast dairy; within each need the user's favorite
+ *             fruit, a second breakfast base (eggs / yogurt / cereal), breakfast dairy; within each need the user's favorite
  *             foods first (profile.favorite_foods), then the best candidateScore
  *   phase 3 — a few optional personal picks (variety / strong history / healthy)
  *        ↓
@@ -49,6 +49,10 @@ export const BASKET_NEEDS = [
     reason: "הוספנו ירק כדי שבסל יהיו מספיק ירקות לשבוע." },
   { key: "fruit", roles: ["fruit"], count: 2,
     reason: "הוספנו פרי כדי להשלים את הסל לשבוע." },
+  // Breakfast needs a second base beside bread: with bread alone, one product the
+  // menu cannot use leaves the week without breakfasts. Trimmable on a tight budget.
+  { key: "breakfast", groups: ["eggs", "yogurt", "cereal"], count: 1,
+    reason: "הוספנו מוצר לארוחת הבוקר, כדי שיהיו בתפריט ארוחות בוקר מגוונות." },
   { key: "dairy", roles: ["dairy"], count: 1,
     reason: "הוספנו מוצר חלבי לארוחות הבוקר." },
 ];
@@ -129,6 +133,7 @@ export function nutritionalFit(needKey, per100, group = null) {
   switch (needKey) {
     case "protein":
     case "dairy":
+    case "breakfast":
       // chicken breast ≈19 g/100 kcal → 1; lentils ≈8 → 0.5; energy-dense foods lose a little
       return clamp01(proteinPer100kcal / 15) * (per100.kcal > 300 ? 0.8 : 1);
     case "bread":
