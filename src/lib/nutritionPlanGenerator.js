@@ -10,11 +10,15 @@
  *            the weekly budget (src/lib/mealPlanBudget.js), validated (src/lib/validateMenu.js)
  *          → the best week by quality level, failed checks, cost
  *
- * The same basket, profile and budget always give the same menu.
+ * The same basket, profile and budget always give the same menu. "בנייה מחדש"
+ * passes the current menu as `previous`: the next deterministic alternative is
+ * returned instead — the valid weeks in a fixed order (best, variety first,
+ * budget first, protein first, then one planned to avoid the previous menu's
+ * meals), without near-copies of each other, the one after the current menu.
  */
 
 import {
-  buildProductCatalog, validatePlan, forceRepair, recomputeTotals,
+  buildProductCatalog, validatePlan, forceRepair, recomputeTotals, classifyProduct,
 } from '@/lib/mealPlanRules';
 import { buildDensities, applyDensities, finalizeDays, closeCalories } from '@/lib/mealPlanCalories';
 import { planWeek } from '@/lib/weeklyPlanner';
@@ -24,6 +28,27 @@ import { fitPlanToBudget, planCost } from '@/lib/mealPlanBudget';
 import { profileConflict, isSupplement, isDisliked } from '@/lib/basketAlternatives';
 import { isPlainWater } from '@/lib/receiptClassifier';
 
+
+// What each breakfast / lunch / dinner is built around: main protein + carb (by name)
+const PROTEIN_GROUPS = new Set(["meat", "fish", "legumes", "eggs", "dairy_protein", "yogurt"]);
+const CARB_GROUPS = new Set(["grain", "starch_veg", "bread", "cereal"]);
+const mealCore = m => {
+  const first = groups => m.items.find(i => groups.has(classifyProduct(i.food_name)))?.food_name || "-";
+  return `${first(PROTEIN_GROUPS)}|${first(CARB_GROUPS)}`;
+};
+const slotCores = days => days.flatMap(d => ["Breakfast", "Lunch", "Dinner"].map(t => {
+  const m = d.meals.find(x => x.meal_type === t);
+  return `${d.day_name}/${t}/${m ? mealCore(m) : "-"}`;
+}));
+// Two weeks are meaningfully different when at least a quarter of their meals are built differently
+const MIN_DIFFERENT_SHARE = 0.25;
+export function menuDifference(daysA, daysB) {
+  const a = slotCores(daysA || []), b = new Set(slotCores(daysB || []));
+  return a.length ? a.filter(s => !b.has(s)).length / a.length : 1;
+}
+const sameMenu = (x, y) => menuDifference(x, y) < MIN_DIFFERENT_SHARE;
+// Order the alternatives are offered in, after the best week
+const ALTERNATIVE_ORDER = ["variety", "budget", "protein", "balanced", "fresh"];
 
 export const PLAN_FAILED_MESSAGE = "לא הצלחנו לבנות תפריט מהמוצרים שבסל. הוסיפו לסל מוצרים לארוחות (חלבון, פחמימה וירקות) ונסו שוב.";
 
@@ -49,7 +74,7 @@ function targetWarnings(report, { calories, protein, fat }) {
  * Returns { days, weekly_calories, estimated_weekly_cost, budget, validation }.
  * (async for the callers; nothing here waits on a service)
  */
-export async function generateNutritionPlan({ list, profile, budget = null }) {
+export async function generateNutritionPlan({ list, profile, budget = null, previous = null }) {
   const target = profile?.daily_calories || 2000;
   // Only foods this user eats — every step below (templates, balancing sides,
   // budget swaps) picks from this catalog. Plain water adds nothing to a meal:
@@ -122,6 +147,12 @@ export async function generateNutritionPlan({ list, profile, budget = null }) {
   // judged after balancing, when protein and cost are final. Deterministic.
   const quiet = { info() {}, warn() {} };
   const attempts = PLANNER_VARIANTS.map(v => ({ name: v.name, planned: planWeek({ catalog, densities, profile, budget, weights: v.weights }) }));
+  // Asked for a different menu: one more week, planned away from the current menu's meals
+  if (previous?.days?.length) {
+    const avoid = new Map();
+    for (const d of previous.days) for (const m of d.meals) if (m.meal_type !== "Snacks") avoid.set(mealCore(m), (avoid.get(mealCore(m)) || 0) + 1);
+    attempts.push({ name: "fresh", planned: planWeek({ catalog, densities, profile, budget, weights: { previous: 4 }, avoid }) });
+  }
   const results = [];
   for (const a of attempts) {
     // let the page repaint between variants (each takes a few hundred ms)
@@ -137,7 +168,27 @@ export async function generateNutritionPlan({ list, profile, budget = null }) {
   const costOver = r => (budget > 0 ? Math.max(0, r.done.budgetReport.estimated_cost - budget * 0.85) : 0);
   const rank = r => [r.quality.level, r.quality.failed.length, -r.quality.stats.diversity, Math.round(costOver(r)), r.quality.limited.length, r.done.budgetReport.estimated_cost];
   const better = (x, y) => { const [a, b] = [rank(x), rank(y)]; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] < b[i]; return false; };
-  const chosen = ranked.reduce((best, r) => (better(r, best) ? r : best));
+  const best = ranked.reduce((b, r) => (better(r, b) ? r : b));
+  // The deterministic alternatives: the best week, then the others in a fixed order —
+  // never a worse kind of menu (no safety / realism failure, no nutrition or budget
+  // miss the best week does not have), never a near-copy of one already listed
+  const acceptable = r => r.quality.level < 4 && r.quality.level <= Math.max(best.quality.level, 2);
+  const alternatives = [best];
+  for (const name of ALTERNATIVE_ORDER) {
+    const r = ranked.find(x => x.name === name);
+    if (r && r !== best && acceptable(r) && !alternatives.some(a => sameMenu(a.done.plan.days, r.done.plan.days))) alternatives.push(r);
+  }
+  let index = 0;
+  if (previous?.days?.length) {
+    const current = alternatives.findIndex(a => sameMenu(a.done.plan.days, previous.days));
+    index = current < 0 ? 0 : (current + 1) % alternatives.length;
+  }
+  const chosen = alternatives[index];
+  const alternative = {
+    index, of: alternatives.length, name: chosen.name,
+    // nothing meaningfully different from the current menu exists with this basket
+    exhausted: !!previous?.days?.length && sameMenu(chosen.done.plan.days, previous.days),
+  };
   const { plan, budgetReport, problems, initialProblems, balanced, calories } = chosen.done;
   if (budgetReport.swaps.length) console.info(`[nutrition plan] budget: ₪${budgetReport.cost_before} → ₪${budgetReport.estimated_cost} (budget ₪${budget})`);
   if (!budgetReport.fits) console.warn(`[nutrition plan] menu costs ₪${budgetReport.estimated_cost}, ₪${budgetReport.over_by} over the weekly budget`);
@@ -148,6 +199,7 @@ export async function generateNutritionPlan({ list, profile, budget = null }) {
     // the final list's own cost (purchase quantities × prices), not the sum of portions
     estimated_weekly_cost: budgetReport.estimated_cost,
     budget: budgetReport,
+    alternative,
     validation: {
       planner: { chosen: chosen.name, ...chosen.done.stats, variants: ranked.map(r => ({ name: r.name, level: r.quality.level, failed: r.quality.failed, cost: r.done.budgetReport.estimated_cost })) },
       initial_issues: initialProblems.length,

@@ -15,7 +15,8 @@
  *   nutrition  calories ±5%, protein ≥90%, fat 75–115% (carbs ±25%: reported, not graded)
  *   budget     menu cost = final list cost, cost ≤ budget
  *   variety    lunch protein ≤3, no protein over half the main meals, protein
- *              sources, breakfast styles, carb / vegetable / fruit rotation —
+ *              sources, breakfast styles, carb / vegetable / fruit rotation,
+ *              the same meal moved between meal types, one food all week —
  *              each judged against what the basket offers: a repeat the basket
  *              cannot avoid is "limited" (level 2), not a planner failure
  *   coverage   the basket has a main-meal protein, a carb and vegetables
@@ -24,6 +25,7 @@ import { buildProductCatalog, validatePlan, classifyProduct } from "@/lib/mealPl
 import { buildFinalShoppingList } from "@/lib/shoppingOptimizer";
 import { profileConflict, isSupplement, isDisliked } from "@/lib/basketAlternatives";
 import { isNonFoodName } from "@/lib/nonFood";
+import { PRODUCT_USE_MAX } from "@/lib/mealScoring";
 
 const MAIN_PROTEIN = new Set(["meat", "fish", "legumes", "eggs", "dairy_protein", "yogurt"]);
 const CARB_SIDE = new Set(["grain", "starch_veg", "bread"]);
@@ -204,6 +206,32 @@ export function validateMenu({ plan, basketItems, profile, budget = null }) {
   const combos = Math.max(1, offer.mainProteins.length) * Math.max(1, offer.carbs.length);
   add("meal_repeat", "variety", repeated.length === 0 || combos < 5, "אותה ארוחה (אותו חלבון ואותה פחמימה) לא יותר מ-3 פעמים בשבוע",
     { repeated, distinct: sigUse.size, of: mains.length, combos }, repeated.length > 0 && combos < 5);
+
+  // The same meal moved between breakfast, lunch and dinner is no variety: the
+  // same core (main protein + carb) served under more than one meal type more
+  // than 4 times a week, or twice in one day
+  const allMains = days.flatMap(d => d.meals.filter(m => m.meal_type !== "Snacks").map(m => ({ ...m, day: d.day_name })));
+  const coreOf = m => mainProtein(m) && sig(m);
+  const coreUse = count(allMains.map(coreOf));
+  const coreTypes = new Map();
+  for (const m of allMains) if (coreOf(m)) coreTypes.set(coreOf(m), (coreTypes.get(coreOf(m)) || new Set()).add(m.meal_type));
+  const crossMeal = [...coreUse].filter(([k, n]) => coreTypes.get(k).size > 1 && n > 4).map(([meal, n]) => ({ meal, times: n, mealTypes: [...coreTypes.get(meal)] }));
+  const sameDayCore = days.flatMap(d => [...count(allMains.filter(m => m.day === d.day_name).map(coreOf))].filter(([, n]) => n > 1).map(([meal]) => ({ day: d.day_name, meal })));
+  const coreAlternatives = offer.mainProteins.length >= 3 && offer.carbs.length >= 2;
+  const crossBad = crossMeal.length > 0 || sameDayCore.length > 0;
+  add("cross_meal_repeat", "variety", !crossBad || !coreAlternatives,
+    "אותה ארוחה לא חוזרת בבוקר, בצהריים ובערב", { crossMeal, sameDayCore }, crossBad && !coreAlternatives);
+
+  // One core food (a meal's protein or its carb) in more than half of the 21 main meals
+  const foodUse = count(allMains.flatMap(m => [...new Set(m.items.filter(i => MAIN_PROTEIN.has(classifyProduct(i.food_name)) || CARB_SIDE.has(classifyProduct(i.food_name))).map(i => i.food_name))]));
+  const overused = [...foodUse].filter(([, n]) => n > PRODUCT_USE_MAX).map(([product, n]) => ({
+    product, meals: n, of: allMains.length,
+    // other foods of its kind in the basket (another carb for bread, another protein for cheese)
+    alternatives: (CARB_SIDE.has(classifyProduct(product)) ? offer.carbs : offer.mainProteins).filter(x => x !== product).length,
+  }));
+  const overusedAvoidable = overused.filter(o => o.alternatives >= 3);
+  add("product_repeat", "variety", overusedAvoidable.length === 0,
+    `אף מוצר לא מופיע ביותר מ-${PRODUCT_USE_MAX} מתוך הארוחות העיקריות בשבוע`, { overused }, overused.length > 0 && overusedAvoidable.length === 0);
 
   // Diversity score 0..1 (for comparing weeks): distinct main meals, breakfasts,
   // proteins, carbs and produce, each against what the basket allows

@@ -9,7 +9,8 @@
  *   hard filters: diet, allergies, disliked foods, supplements, duplicates
  *        ↓
  *   phase 2 — weekly needs: protein variety, bread, grains, fats, vegetables,
- *             fruit, breakfast dairy; within each need the best candidateScore
+ *             fruit, breakfast dairy; within each need the user's favorite
+ *             foods first (profile.favorite_foods), then the best candidateScore
  *   phase 3 — a few optional personal picks (variety / strong history / healthy)
  *        ↓
  *   (the page then runs missingStaples → missingProtein, and the budget trim)
@@ -19,7 +20,7 @@
  */
 import {
   CANDIDATES, candidateGroup, violatesProfile, mentions, searchCandidate, catalogItem,
-  itemGroup, itemFamily, itemPer100g, profileConflict, isSupplement, isDisliked,
+  itemGroup, itemFamily, itemPer100g, profileConflict, isSupplement, isDisliked, isFavorite,
 } from "@/lib/basketAlternatives";
 import { normalizeHebrew } from "@/lib/mealPlanRules";
 import { parseQuantityGrams } from "@/lib/mealPlanCalories";
@@ -62,6 +63,7 @@ const OPTIONAL_ROLES = ["vegetable", "fruit", "dairy"];
 const STRONG_HISTORY = 0.65;
 
 const REASON_HISTORY = "המוצר נרכש אצלך בתדירות גבוהה, בעל ציון בריאות טוב ומתאים לסל השבועי.";
+const REASON_FAVORITE = "הוספנו את המוצר כי הוא ברשימת המזונות האהובים שלך, והוא משלים את מה שחסר בסל.";
 const REASON_OPTIONAL = "המוצר מוסיף מגוון תזונתי לסל ונמצא במסגרת התקציב.";
 
 const clamp01 = n => Math.max(0, Math.min(1, n));
@@ -175,8 +177,12 @@ export function scoreCandidate({ nutrition, health, history, price, variety }) {
     WEIGHTS.price * price + WEIGHTS.variety * variety);
 }
 
-/** Pool entries for one need, scored and sorted (best first). Pure. */
-export function rankCandidates(needKey, entries, basket, groupOf = defaultGroup) {
+/**
+ * Pool entries for one need, scored and sorted (best first). Pure.
+ * The user's favorite foods come first: the user said they want them (the
+ * budget is applied before ranking, so a favorite never breaks it).
+ */
+export function rankCandidates(needKey, entries, basket, groupOf = defaultGroup, favorites = []) {
   const prices = priceScores(entries);
   return entries
     .map((e, i) => {
@@ -187,10 +193,10 @@ export function rankCandidates(needKey, entries, basket, groupOf = defaultGroup)
         price: prices[i],
         variety: varietyScore(needKey, e.item, basket, groupOf, e.group),
       };
-      return { ...e, parts, score: scoreCandidate(parts) };
+      return { ...e, parts, score: scoreCandidate(parts), favorite: isFavorite(e.item.name, favorites) };
     })
     // ties: higher health, then cheaper, then name — fully deterministic
-    .sort((a, b) => b.score - a.score || b.parts.health - a.parts.health ||
+    .sort((a, b) => Number(b.favorite) - Number(a.favorite) || b.score - a.score || b.parts.health - a.parts.health ||
       (a.pricePer100 || Infinity) - (b.pricePer100 || Infinity) || a.item.name.localeCompare(b.item.name, "he"));
 }
 
@@ -229,7 +235,7 @@ export function isDuplicate(item, basket) {
  * ones. pool: [{ item, group, per100, pricePer100, history?, source }].
  * Returns the added basket items (with reason and source flags).
  */
-export function selectCandidates(pool, basket, { budgetLeft = Infinity, hasReceipt = true } = {}) {
+export function selectCandidates(pool, basket, { budgetLeft = Infinity, hasReceipt = true, favorites = [] } = {}) {
   const current = [...basket];
   const added = [];
   // The group each pool product was searched as (e.g. "חלבון סויה" → legumes)
@@ -270,12 +276,12 @@ export function selectCandidates(pool, basket, { budgetLeft = Infinity, hasRecei
       // Budget-aware: the best option that still fits the budget left; when
       // none fits, a staple (never trimmed later) takes the cheapest one
       const fitting = options.filter(e => (e.item.estimated_price || 0) <= left);
-      const best = fitting.length ? rankCandidates(need.key, fitting, current, groupOf)[0]
+      const best = fitting.length ? rankCandidates(need.key, fitting, current, groupOf, favorites)[0]
         : need.staple ? rankCandidates(need.key, options, current, groupOf)
           .sort((x, y) => (x.item.estimated_price || 0) - (y.item.estimated_price || 0))[0]
-          : rankCandidates(need.key, options, current, groupOf)[0];
+          : rankCandidates(need.key, options, current, groupOf, favorites)[0];
       take(best, {
-        reason: best.history && best.history.history_score > 0.6 ? REASON_HISTORY : need.reason,
+        reason: best.favorite ? REASON_FAVORITE : best.history && best.history.history_score > 0.6 ? REASON_HISTORY : need.reason,
         from_engine: true,
         basket_need: need.key,
         ...(need.staple ? { added_staple: true } : {}),
@@ -357,5 +363,5 @@ export function passesHardFilters(item, profile) {
  */
 export async function buildSmartAdditions({ basket, historyItems = [], profile, budgetLeft, hasReceipt, search }) {
   const pool = [...historyPool(historyItems, profile), ...await catalogPool(profile, basket, search)];
-  return selectCandidates(pool, basket, { budgetLeft, hasReceipt });
+  return selectCandidates(pool, basket, { budgetLeft, hasReceipt, favorites: profile?.favorite_foods || [] });
 }

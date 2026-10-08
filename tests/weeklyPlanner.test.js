@@ -101,7 +101,7 @@ describe("weekly planner", () => {
     for (const g of ["meat", "fish", "eggs", "dairy_protein", "yogurt", "milk"]) expect(groups).not.toContain(g);
   });
 
-  it("has a protein-first and a budget-first variant", () => {
-    expect(PLANNER_VARIANTS.map(v => v.name)).toEqual(["balanced", "protein", "budget"]);
+  it("has a protein-first, a budget-first and a variety-first variant", () => {
+    expect(PLANNER_VARIANTS.map(v => v.name)).toEqual(["balanced", "protein", "budget", "variety"]);
   });
 });

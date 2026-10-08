@@ -18,9 +18,18 @@ const text = e => e.points.map(p => p.text).join("\n");
 
 describe("menu explanation", () => {
   it("level 1: a short summary, nothing to add", () => {
-    expect(explained.vegan.level).toBe(1);
-    expect(explained.vegan.points.map(p => p.area)).toEqual(["summary"]);
-    expect(explained.vegan.add).toEqual([]);
+    expect(explained.vegetarian.level).toBe(1);
+    expect(explained.vegetarian.points.map(p => p.area)).toEqual(["summary"]);
+    expect(explained.vegetarian.add).toEqual([]);
+  });
+
+  it("the same food all week, limited by a vegan basket: says so honestly, suggests vegan foods only", () => {
+    // tofu is the vegan basket's only breakfast protein: it fills most of the week's meals
+    const e = explained.vegan;
+    expect(e.level).toBe(2);
+    expect(text(e)).toMatch(/בסל יש מגוון מוגבל, ולכן התפריט חוזר על אותם מוצרים/);
+    expect(text(e)).toMatch(/טופו, טמפה, עדשים, חומוס/);
+    expect(text(e) + e.add.join(" ")).not.toMatch(/ביצים|יוגורט|טונה|עוף/);
   });
 
   it("level 2 limited by the basket: says why it repeats and what to add", () => {

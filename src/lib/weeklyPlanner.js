@@ -26,9 +26,9 @@ const EPS = 1e-9;
  * Plans the week. Returns { days, stats } — days in the plan shape the rest of
  * the pipeline uses: [{ day_name, meals: [{ meal_type, meal_name, items: [{ product_id, food_name, grams }] }] }].
  */
-export function planWeek({ catalog, densities, profile, budget = null, weights = {} }) {
+export function planWeek({ catalog, densities, profile, budget = null, weights = {}, avoid = null }) {
   const candidates = generateCandidates({ catalog, densities, profile });
-  const ctx = scoringContext({ catalog, densities, profile, budget, candidates, weights });
+  const ctx = scoringContext({ catalog, densities, profile, budget, candidates, weights, avoid });
   const staticScore = new Map(Object.values(candidates).flat().map(c => [c, scoreMeal(c, ctx).score]));
 
   // week[day][slot] — slot order = MEAL_TYPES

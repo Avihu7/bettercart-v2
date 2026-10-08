@@ -155,6 +155,27 @@ export function explainMenu(validation, { plan, basketItems, profile } = {}) {
       say("variety", "ארוחת הבוקר חוזרת על עצמה למרות שיש בסל חלופות — מגבלה של בניית התפריט.");
     }
   }
+  // The same foods moved between breakfast, lunch and dinner — honest about whether the basket allows better
+  const cross = check("cross_meal_repeat");
+  const repeatedFood = check("product_repeat");
+  const crossBad = cross && (bad("cross_meal_repeat") || limited("cross_meal_repeat"));
+  const foodBad = repeatedFood && (bad("product_repeat") || limited("product_repeat"));
+  if (crossBad || foodBad) {
+    const top = repeatedFood?.data.overused[0];
+    const what = top ? ` (${top.product} מופיע ב-${top.meals} מתוך ${top.of} הארוחות)` : "";
+    if (limited("cross_meal_repeat") || limited("product_repeat")) {
+      const diet = (profile?.dietary_preferences || []).join(" ");
+      const examples = /טבעוני|vegan/i.test(diet) ? "טופו, טמפה, עדשים, חומוס"
+        : /צמחוני|vegetarian/i.test(diet) ? "ביצים, יוגורט, קטניות" : "ביצים, יוגורט, טונה, קטניות";
+      say("variety", `בסל יש מגוון מוגבל, ולכן התפריט חוזר על אותם מוצרים בבוקר, בצהריים ובערב${what}. כדי לגוון — הוסיפו לסל ${examples} או עוד סוג פחמימה.`);
+      // (the generic protein suggestion names meat and fish — not for a vegetarian / vegan profile)
+      if (!/טבעוני|צמחוני|vegan|vegetarian/i.test(diet)) add.add(ADD.lunchProtein);
+      add.add(ADD.moreCarbs);
+    } else {
+      say("variety", `התפריט חוזר על אותם מוצרים בבוקר, בצהריים ובערב${what}, למרות שיש בסל חלופות — נסו "בנייה מחדש" לתפריט אחר.`);
+    }
+  }
+
   const rotation = (id, text, suggestion, emptyText) => {
     if (limited(id)) {
       const n = check(id).data.available;

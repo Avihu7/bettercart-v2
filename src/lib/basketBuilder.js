@@ -13,7 +13,8 @@
  */
 import { classifyProduct, normalizeHebrew } from "@/lib/mealPlanRules";
 import { parseQuantityGrams, plausiblePer100g } from "@/lib/mealPlanCalories";
-import { applyReceiptRules, foodName, isDiscountLine } from "@/lib/receiptClassifier";
+import { applyReceiptRules, foodName, isDiscountLine, categoryOf } from "@/lib/receiptClassifier";
+import { isNonFoodName } from "@/lib/nonFood";
 import { productHealthScore } from "@/lib/healthScore";
 import { pricingFields, isWeighedGroup } from "@/lib/pricing";
 import { buildSmartAdditions } from "@/lib/smartBasketEngine";
@@ -67,6 +68,56 @@ export function normalizeCategory(category) {
   const c = String(category || "").trim();
   if (SHOPPING_CATEGORIES.includes(c)) return c;
   return CATEGORY_ALIASES.find(([re]) => re.test(c))?.[1] || "other";
+}
+
+/**
+ * A food product the user added to the basket from the catalog search
+ * ("הוספת מוצר מזון"), as a basket item priced by its catalog pack.
+ * product: a /api/products/search result. Returns { item } or { error } (Hebrew)
+ * for a product the basket must not take: not food, a supplement, or one that
+ * breaks the profile's diet / allergies.
+ */
+export function userAddedItem(product, profile) {
+  const name = String(product?.original_product_name || "").trim();
+  if (!name || isNonFoodName(name)) return { error: "זה לא מוצר מזון" };
+  const category = categoryOf(name);
+  if (isSupplement({ name })) return { error: "תוסף תזונה — לא חלק מהתפריט" };
+  const conflict = profileConflict({ name, category }, profile);
+  if (conflict) return { error: conflict.text };
+  const group = classifyProduct(name, category);
+  const pack = Number(product.pack_grams);
+  const grams = pack >= 20 && pack <= 5000 ? pack : parseQuantityGrams(name, group) || (product.sold_by_weight ? 1000 : DEFAULT_PACK_GRAMS);
+  const price = Number(product.price) || 0;
+  const n = plausiblePer100g({ name_he: name, group }, product.calories_per_100g != null ? {
+    kcal: Number(product.calories_per_100g), protein: Number(product.protein_per_100g) || 0,
+    carbs: Number(product.carbs_per_100g) || 0, fat: Number(product.fat_per_100g) || 0,
+  } : null);
+  const f = grams / 100;
+  const per = v => (v == null ? null : Math.round(Number(v) * f * 10) / 10);
+  return {
+    item: {
+      name,
+      category: group === "avocado" ? "fat" : category,
+      quantity: grams >= 1000 && grams % 1000 === 0 ? `${grams / 1000} ק"ג` : `${Math.round(grams)} גרם`,
+      estimated_price: price,
+      ...(price > 0 ? pricingFields({ price, packGrams: grams, soldByWeight: !!product.sold_by_weight, grams }) : {}),
+      calories: n ? Math.round(n.kcal * f) : null,
+      protein: n ? per(n.protein) : null,
+      carbs: n ? per(n.carbs) : null,
+      fat: n ? per(n.fat) : null,
+      health_score: productHealthScore(name),
+      reason: "הוספת את המוצר לסל.",
+      user_added: true,
+      catalog_product_id: product.product_id != null ? String(product.product_id) : null,
+      catalog_chain: product.chain ?? null,
+      catalog_name: name,
+      catalog_price: price || null,
+      catalog_calories_per_100g: product.calories_per_100g ?? null,
+      catalog_protein_per_100g: product.protein_per_100g ?? null,
+      catalog_carbs_per_100g: product.carbs_per_100g ?? null,
+      catalog_fat_per_100g: product.fat_per_100g ?? null,
+    },
+  };
 }
 
 /**

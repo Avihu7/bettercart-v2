@@ -37,13 +37,16 @@ export const isDiscountLine = item => Number(item?.price) < 0;
 
 const STRONG_MATCH = new Set(["matched", "approved"]);
 /**
- * The name to treat a receipt item as: the user's chosen product, else the
- * receipt's reading — unless that reading names no food group (an OCR slip such
- * as "חפוח אדמה" or "פיתוח כוסמי") and the catalog matched it with confidence:
- * then the catalog product ("תפוח אדמה 1 ק"ג", "10פיתות כוסמין").
+ * The name to treat a receipt item as: the product the user chose — picked by
+ * hand, or the suggested match the user approved ("גרעיני דיריז מתוק" approved
+ * as "גרעיני תירס מתוק יכין") — else the receipt's reading, unless that reading
+ * names no food group (an OCR slip such as "חפוח אדמה" or "פיתוח כוסמי") and the
+ * catalog matched it with confidence: then the catalog product.
  */
+const userChoseMatch = item => !!item?.matched_product_name && !item.catalog_needs_review &&
+  (item.catalog_match_type === "manual" || item.catalog_match_status === "approved");
 export function foodName(item) {
-  const name = (item?.catalog_match_type === "manual" && item.matched_product_name) || item?.normalized_name || item?.original_name || "";
+  const name = (userChoseMatch(item) && item.matched_product_name) || item?.normalized_name || item?.original_name || "";
   if (classifyProduct(name) !== "other") return name;
   const matched = STRONG_MATCH.has(item?.catalog_match_status) && !item?.catalog_needs_review && item?.matched_product_name;
   return matched && classifyProduct(matched) !== "other" ? matched : name;

@@ -241,6 +241,19 @@ export function isDisliked(name, disliked = [], group = classifyProduct(name)) {
   });
 }
 
+/**
+ * Is this product one of the user's favorite foods? Every word of the favorite
+ * must appear in the name ("בשר טחון" → "בשר בקר טחון קפוא", "חזה עוף" →
+ * "חזה עוף טרי 1 ק\"ג", but not "חזה הודו").
+ */
+export function isFavorite(name, favorites = []) {
+  const words = normalizeHebrew(name).split(" ");
+  return (favorites || []).some(f => {
+    const terms = normalizeHebrew(f).split(" ").filter(w => w.length >= 2);
+    return terms.length > 0 && terms.every(t => words.some(w => w.startsWith(t) || (t.length >= 4 && w.startsWith(stem(t)))));
+  });
+}
+
 // Stem of a one-word label for fuzzy matching ("ביצים" → "ביצ" matches "ביצה", "בננה" → "בננות")
 const stem = w => {
   const t = w.replace(/(ימ|ות|ה)$/, "");
@@ -402,10 +415,12 @@ export async function findAlternatives(item, basketItems, profile, { max = 5, sa
       }
       // closest per-100g nutrition first; price only breaks near-ties
       option.score = (current ? nutritionDistance(current, o.per100) : 0) + pricePer100(o) / 1000;
+      option.favorite = isFavorite(o.product.original_product_name, profile?.favorite_foods);
       return option;
     })
-    // options that keep the protein goal reachable come first
-    .sort((a, b) => Number(b.keepsProteinGoal ?? true) - Number(a.keepsProteinGoal ?? true) || a.score - b.score)
+    // options that keep the protein goal reachable come first, then the user's favorite foods
+    .sort((a, b) => Number(b.keepsProteinGoal ?? true) - Number(a.keepsProteinGoal ?? true) ||
+      Number(b.favorite) - Number(a.favorite) || a.score - b.score)
     .slice(0, max);
 }
 
@@ -569,8 +584,11 @@ export function basketSufficiency(items, profile) {
  * profile's protein target (at most 3, the ones that raise the ceiling most).
  * Respects diet, allergies, disliked foods and products already in the basket.
  * Purchase history only breaks near-ties (within 1 g of protein ceiling):
- * a product the user buys regularly wins over an equally useful one.
+ * a product the user buys regularly wins over an equally useful one. A
+ * favorite food (profile.favorite_foods) wins when it raises the ceiling
+ * within FAVORITE_PROTEIN_SLACK g of the best option.
  */
+const FAVORITE_PROTEIN_SLACK = 5;
 async function missingProtein(basketItems, profile, history = []) {
   const target = profile?.protein_target;
   const kcal = profile?.daily_calories;
@@ -589,10 +607,14 @@ async function missingProtein(basketItems, profile, history = []) {
   const items = [...basketItems];
   const added = [];
   for (let n = 0; n < 3 && proteinCeiling(items, kcal) < target * 1.2; n++) {
+    const gains = new Map(options.filter(o => !added.includes(o)).map(o => [o, proteinCeiling([...items, o], kcal)]));
+    const top = Math.max(-Infinity, ...gains.values());
+    const now = proteinCeiling(items, kcal);
+    const favorites = [...gains.keys()].filter(o => isFavorite(o.name, profile?.favorite_foods) &&
+      gains.get(o) > now && gains.get(o) >= top - FAVORITE_PROTEIN_SLACK);
     let best = null;
-    for (const o of options) {
-      if (added.includes(o)) continue;
-      const gain = proteinCeiling([...items, o], kcal);
+    for (const o of favorites.length ? favorites : gains.keys()) {
+      const gain = gains.get(o);
       const h = historyScore(o);
       const better = !best ||
         (Math.abs(gain - best.gain) < 1 && h !== best.h ? h > best.h

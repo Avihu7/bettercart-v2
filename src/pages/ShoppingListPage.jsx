@@ -22,10 +22,11 @@ import FlowSteps from "@/components/FlowSteps";
 import { isBasketReady, isUnresolved, receiptItemName } from "@/lib/receiptReview";
 import { weeklyBudget as profileWeeklyBudget, basketBudget } from "@/lib/pricing";
 import { applyReceiptRules } from "@/lib/receiptClassifier";
-import { buildBasket, receiptToBasketItem, sameFood, basketTotals, basketLooksThin, REGULAR_MIN_SCORE } from "@/lib/basketBuilder";
+import { buildBasket, receiptToBasketItem, userAddedItem, sameFood, basketTotals, basketLooksThin, REGULAR_MIN_SCORE } from "@/lib/basketBuilder";
 import { weeklyCosts, budgetDrivers, priceFacts, changeBudgetImpact } from "@/lib/basketBudget";
 import BudgetImpactCard from "@/components/BudgetImpactCard";
-import { findAlternatives, buildReplacementItem, isDisliked, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement, proteinShortText } from "@/lib/basketAlternatives";
+import { findAlternatives, buildReplacementItem, isDisliked, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement, proteinShortText, itemFamily } from "@/lib/basketAlternatives";
+const PROTEIN_FAMILIES = new Set(["meat_protein", "fish_protein", "egg_protein", "plant_protein"]);
 
 const MIN_FOOD_ITEMS = 3;
 
@@ -97,6 +98,59 @@ function isHebrewReason(text) {
   return hebrew > 0 && hebrew >= latin;
 }
 
+// "הוספת מוצר מזון": search the Shufersal catalog and add a food product to the basket
+function AddFoodDialog({ open, onClose, onSelect, saving }) {
+  const [query, setQuery] = useState("");
+  const [term, setTerm] = useState("");
+  useEffect(() => { if (!open) { setQuery(""); setTerm(""); } }, [open]);
+  const { data: results = [], isFetching } = useQuery({
+    queryKey: ["addFoodSearch", term],
+    queryFn: async () => {
+      const res = await fetch(`/api/products/search?${new URLSearchParams({ q: term.trim(), limit: "20" })}`, { credentials: "include" });
+      if (!res.ok) return [];
+      const seen = new Set();
+      return ((await res.json()).results || [])
+        .filter(p => p.price > 0 && !seen.has(p.original_product_name) && seen.add(p.original_product_name))
+        .slice(0, 8);
+    },
+    enabled: open && term.trim().length >= 2,
+    staleTime: 5 * 60 * 1000,
+  });
+  return (
+    <Dialog open={open} onOpenChange={o => !o && !saving && onClose()}>
+      <DialogContent dir="rtl" className="w-[calc(100%-2rem)] max-w-md max-h-[85vh] overflow-y-auto rounded-xl p-5 text-right [&>button:last-child]:right-auto [&>button:last-child]:left-4">
+        <DialogHeader className="text-right sm:text-right space-y-1">
+          <DialogTitle className="font-heading">הוספת מוצר מזון</DialogTitle>
+          <DialogDescription>חפשו מוצר בקטלוג שופרסל (למשל שמן זית, טחינה, ביצים או טונה) והוסיפו אותו לסל.</DialogDescription>
+        </DialogHeader>
+        <form className="flex gap-2" onSubmit={e => { e.preventDefault(); setTerm(query); }}>
+          <input value={query} onChange={e => setQuery(e.target.value)} placeholder="שם המוצר" autoFocus
+            className="flex-1 h-9 rounded-md border border-input bg-transparent px-3 text-sm" />
+          <Button type="submit" variant="outline" size="sm" className="h-9 shrink-0">חיפוש</Button>
+        </form>
+        {isFetching && <p className="py-4 text-center text-sm text-muted-foreground"><Loader2 className="w-5 h-5 animate-spin inline ml-2" />מחפשים בקטלוג...</p>}
+        {!isFetching && term.trim().length >= 2 && results.length === 0 && (
+          <p className="py-4 text-center text-sm text-muted-foreground">לא נמצאו מוצרים. נסו מילת חיפוש אחרת.</p>
+        )}
+        <ul className="space-y-2">
+          {results.map(p => (
+            <li key={p.product_id}>
+              <button type="button" disabled={saving} onClick={() => onSelect(p)}
+                className="w-full text-right rounded-lg border p-3 hover:border-primary hover:bg-primary/5 transition-colors disabled:opacity-50 flex items-center gap-3">
+                <span className="flex-1 min-w-0 text-sm font-medium break-words">{p.original_product_name}</span>
+                <span className="shrink-0 text-left">
+                  <span className="block text-sm font-semibold">₪{Number(p.price).toFixed(2)}</span>
+                  <span className="text-xs text-primary font-medium">הוספה</span>
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ReplaceDialog({ item, basketItems, profile, onClose, onSelect, saving }) {
   const { data: options = [], isLoading, isError } = useQuery({
     queryKey: ["basketAlternatives", item?.name, basketItems.map(i => i.name).join("|"), profile?.id],
@@ -104,7 +158,46 @@ function ReplaceDialog({ item, basketItems, profile, onClose, onSelect, saving }
     enabled: !!item,
     staleTime: 5 * 60 * 1000,
   });
+  // A protein food can also be swapped for another kind of protein (seitan → chicken, beef → lentils)
+  const proteinItem = !!item && PROTEIN_FAMILIES.has(itemFamily(item));
+  const { data: otherProteins = [] } = useQuery({
+    queryKey: ["basketAlternativesBroad", item?.name, basketItems.map(i => i.name).join("|"), profile?.id],
+    queryFn: () => findAlternatives(item, basketItems, profile, { broad: true }),
+    enabled: proteinItem,
+    staleTime: 5 * 60 * 1000,
+  });
   const looksFor = item && familyLabel(item);
+  const renderOption = o => (
+    <li key={o.product.product_id}>
+      <button
+        type="button"
+        disabled={saving}
+        onClick={() => onSelect(o)}
+        className="w-full text-right rounded-lg border p-3 hover:border-primary hover:bg-primary/5 transition-colors disabled:opacity-50 flex items-center gap-3"
+      >
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm">{o.candidate.label}{o.favorite && <span className="text-[11px] text-primary font-normal"> · מהמזונות האהובים שלך</span>}</p>
+          <p className="text-xs text-muted-foreground truncate">{o.product.original_product_name}</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            ל-100 גרם: {Math.round(o.per100.kcal)} קלוריות · {Math.round(o.per100.protein)} ג׳ חלבון
+          </p>
+          {o.keepsProteinGoal === true && (
+            <p className="text-[11px] text-emerald-700 mt-0.5">שומר על יעד החלבון שלך</p>
+          )}
+          {o.keepsProteinGoal === false && (
+            <p className="text-[11px] text-amber-700 mt-0.5">
+              עם ההחלפה: {proteinShortText(o.proteinAfter, profile?.protein_target)}
+            </p>
+          )}
+        </div>
+        <div className="shrink-0 text-left">
+          <p className="text-sm font-semibold">₪{Number(o.product.price).toFixed(2)}</p>
+          <p className="text-[11px] text-muted-foreground">{o.grams >= 1000 && o.grams % 1000 === 0 ? `${o.grams / 1000} ק"ג` : `${Math.round(o.grams)} גרם`}</p>
+          <span className="text-xs text-primary font-medium">בחירה</span>
+        </div>
+      </button>
+    </li>
+  );
 
   return (
     <Dialog open={!!item} onOpenChange={open => !open && !saving && onClose()}>
@@ -127,44 +220,18 @@ function ReplaceDialog({ item, basketItems, profile, onClose, onSelect, saving }
           </div>
         )}
 
-        {!isLoading && (isError || options.length === 0) && (
+        {!isLoading && (isError || options.length === 0) && otherProteins.length === 0 && (
           <p className="py-6 text-center text-sm text-muted-foreground">לא מצאנו כרגע חלופה דומה מספיק למוצר הזה.</p>
         )}
 
         {!isLoading && options.length > 0 && (
-          <ul className="space-y-2">
-            {options.map(o => (
-              <li key={o.product.product_id}>
-                <button
-                  type="button"
-                  disabled={saving}
-                  onClick={() => onSelect(o)}
-                  className="w-full text-right rounded-lg border p-3 hover:border-primary hover:bg-primary/5 transition-colors disabled:opacity-50 flex items-center gap-3"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{o.candidate.label}</p>
-                    <p className="text-xs text-muted-foreground truncate">{o.product.original_product_name}</p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      ל-100 גרם: {Math.round(o.per100.kcal)} קלוריות · {Math.round(o.per100.protein)} ג׳ חלבון
-                    </p>
-                    {o.keepsProteinGoal === true && (
-                      <p className="text-[11px] text-emerald-700 mt-0.5">שומר על יעד החלבון שלך</p>
-                    )}
-                    {o.keepsProteinGoal === false && (
-                      <p className="text-[11px] text-amber-700 mt-0.5">
-                        עם ההחלפה: {proteinShortText(o.proteinAfter, profile?.protein_target)}
-                      </p>
-                    )}
-                  </div>
-                  <div className="shrink-0 text-left">
-                    <p className="text-sm font-semibold">₪{Number(o.product.price).toFixed(2)}</p>
-                    <p className="text-[11px] text-muted-foreground">{o.grams >= 1000 && o.grams % 1000 === 0 ? `${o.grams / 1000} ק"ג` : `${Math.round(o.grams)} גרם`}</p>
-                    <span className="text-xs text-primary font-medium">בחירה</span>
-                  </div>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <ul className="space-y-2">{options.map(renderOption)}</ul>
+        )}
+        {!isLoading && otherProteins.length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground pt-2">מקורות חלבון אחרים</p>
+            <ul className="space-y-2">{otherProteins.map(renderOption)}</ul>
+          </div>
         )}
         {saving && <p className="text-xs text-center text-muted-foreground">שומרים את הבחירה...</p>}
       </DialogContent>
@@ -262,6 +329,7 @@ export default function ShoppingListPage() {
 
   // Remove / replace a single basket item — the rest of the basket stays as is
   const [replacing, setReplacing] = useState(null); // index of the item being replaced
+  const [addingFood, setAddingFood] = useState(false); // "הוספת מוצר מזון" dialog
   const [removedSome, setRemovedSome] = useState(false);
   const saveItemsMutation = useMutation({
     mutationFn: ({ items, warnings, acceptedBudget }) => api.entities.ShoppingList.update(showList.id, {
@@ -303,6 +371,26 @@ export default function ShoppingListPage() {
   };
   const addFromReceipt = raw => {
     const item = { ...receiptToBasketItem(raw), reason: "הוספת מהקבלה שלך.", user_added: true };
+    requestChange({
+      items: [...showList.items, item],
+      title: `הוספת ${item.name}`,
+      impact: { added: item },
+      done: () => toast({ title: `${item.name} נוסף לסל`, description: "כדי שייכנס לתפריט, בנו את התפריט מחדש." }),
+    });
+  };
+
+  // "הוספת מוצר מזון": a catalog product the user picked (e.g. what the menu card says to add)
+  const addCatalogProduct = product => {
+    const { item, error } = userAddedItem(product, profile);
+    if (error) {
+      toast({ title: `${product.original_product_name} לא נוסף`, description: error, variant: "destructive" });
+      return;
+    }
+    if (showList.items.some(b => sameFood(b.name, item.name))) {
+      toast({ title: `${item.name} כבר בסל` });
+      return;
+    }
+    setAddingFood(false);
     requestChange({
       items: [...showList.items, item],
       title: `הוספת ${item.name}`,
@@ -561,11 +649,16 @@ export default function ShoppingListPage() {
 
           {/* Items Table */}
           <Card className="overflow-hidden">
-            <div className="p-4 border-b flex items-center justify-between">
-              <h2 className="font-heading font-semibold">המוצרים שנבחרו</h2>
-              <span className="text-xs text-muted-foreground">
-                {menuDays ? "העלות השבועית לכל מוצר — לפי הכמות שהתפריט צריך" : "המחיר לכל מוצר — העלות השבועית תחושב לפי התפריט"}
-              </span>
+            <div className="p-4 border-b flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <h2 className="font-heading font-semibold">המוצרים שנבחרו</h2>
+                <span className="text-xs text-muted-foreground">
+                  {menuDays ? "העלות השבועית לכל מוצר — לפי הכמות שהתפריט צריך" : "המחיר לכל מוצר — העלות השבועית תחושב לפי התפריט"}
+                </span>
+              </div>
+              <Button size="sm" variant="outline" className="min-h-9" disabled={saveItemsMutation.isPending} onClick={() => setAddingFood(true)}>
+                <Plus className="w-4 h-4 ml-1.5" /> הוספת מוצר מזון
+              </Button>
             </div>
             <ul className="divide-y">
               {showList.items?.map((item, i) => (
@@ -730,6 +823,12 @@ export default function ShoppingListPage() {
             </AlertDialogContent>
           </AlertDialog>
 
+          <AddFoodDialog
+            open={addingFood}
+            saving={saveItemsMutation.isPending}
+            onClose={() => setAddingFood(false)}
+            onSelect={addCatalogProduct}
+          />
           <ReplaceDialog
             item={replacing != null ? showList.items?.[replacing] : null}
             basketItems={showList.items || []}

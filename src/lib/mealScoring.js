@@ -15,6 +15,8 @@
  *   realism   how natural the meal pattern is
  *   favorite  contains one of the user's favorite foods
  *   expensive − per product in the basket's most expensive quarter (₪ per kcal)
+ *   previous  − how often the previous menu served this meal's core (main protein +
+ *             carb) — only when the user asks for a different menu (weight 0 otherwise)
  * Diet, allergies, dislikes, kosher and meal roles are not scored: candidates
  * that break them are never generated.
  *
@@ -33,6 +35,11 @@
  *                 main protein + carb, whatever the vegetables and whether lunch or
  *                 dinner: changing one vegetable, or moving the meal to dinner, is no variety
  *   breakfastRepeat  the same for breakfasts
+ *   crossMeal     Σ (uses − 1)² of each "core" (main protein + carb) served under more
+ *                 than one meal type — cheese on bread for breakfast, lunch and dinner
+ *                 is one meal moved around, not variety
+ *   sameDayCore   the same core twice in one day (e.g. breakfast and lunch)
+ *   productUse    each core food's uses beyond PRODUCT_USE_MAX of the 21 main meals
  *   unusedProduce  basket vegetables / fruit the week never uses
  *   cost          estimated weekly cost as a share of the budget: free up to 70%, mild
  *                 to 85%, steep beyond — the headroom goes to variety, not to saving more,
@@ -50,8 +57,12 @@ export const WEIGHTS = {
   // weeklyPenalty
   lunchRepeat: 6, proteinSpread: 0.35, dominance: 3, sameDay: 1.5, consecutive: 0.8,
   breakfast: 0.6, carbs: 0.25, produce: 0.3, identical: 2, budget: 40, proteinShort: 12, dayFit: 2,
-  mealRepeat: 2, breakfastRepeat: 0.8, unusedProduce: 0.6, cost: 8,
+  mealRepeat: 2, breakfastRepeat: 0.8, unusedProduce: 0.6, cost: 8, previous: 0,
+  crossMeal: 1, sameDayCore: 3, productUse: 2,
 };
+// A core food (a meal's main protein or its carb) in more than this many of the
+// 21 breakfasts, lunches and dinners is "the same food all week" (as in validateMenu)
+export const PRODUCT_USE_MAX = 12;
 // Cost after portion balancing and buying whole packs is above the raw portion cost
 const PURCHASE_OVERHEAD = 1.15;
 // Aim a little under the budget: the estimate is not the final purchase cost
@@ -66,6 +77,10 @@ const costPressure = share => Math.max(0, share - COST_FREE_SHARE) + 4 * Math.ma
 
 /** What a meal is, for variety: its pattern, main protein and carb — not its vegetables or meal slot. */
 export const signature = c => `${c.pattern}|${c.main?.id || "-"}|${c.carb?.id || "-"}`;
+// The meal's core, whatever its pattern or meal type: main protein + carb
+export const coreKey = c => `${c.main?.id || "-"}|${c.carb?.id || "-"}`;
+// The same by product name, to compare with a saved menu
+export const coreName = c => `${c.main?.name_he || "-"}|${c.carb?.name_he || "-"}`;
 // Protein that carb sides add while balancing fills the day to its calories
 const CARB_PROTEIN_PER_KCAL = 0.035;
 // Aim a little above the validator's 90% so a day does not end just under it
@@ -84,7 +99,7 @@ const PROTEIN_GROUPS = new Set(["meat", "fish", "eggs", "legumes", "dairy_protei
  * targets as shares of calories, typical ₪/kcal and ₪/g protein, the
  * expensive quarter of products.
  */
-export function scoringContext({ catalog, densities, profile, budget, candidates, weights = {} }) {
+export function scoringContext({ catalog, densities, profile, budget, candidates, weights = {}, avoid = null }) {
   const kcal = profile?.daily_calories || 2000;
   const perKcal = p => { const d = densities.get(p.id); return d?.pricePerGram && d.kcal > 0 ? d.pricePerGram * 100 / d.kcal : null; };
   const perProtein = p => { const d = densities.get(p.id); return d?.pricePerGram && d.protein > 0 ? d.pricePerGram * 100 / d.protein : null; };
@@ -99,6 +114,8 @@ export function scoringContext({ catalog, densities, profile, budget, candidates
     carbShare: profile?.carbs_target ? profile.carbs_target * 4 / kcal : null,
     budget: budget > 0 ? budget : null,
     favorites: (profile?.favorite_foods || []).filter(Boolean),
+    // core name ("main|carb") → times the previous menu served it
+    avoid: avoid || new Map(),
     // 7 lunches with each protein in at most 3 needs 3 lunch proteins — with fewer,
     // the rule cannot hold and is not penalized (as in validateMenu)
     // vegetables / fruit the candidates can use — the week should use them
@@ -130,10 +147,14 @@ export function scoreMeal(c, ctx) {
   parts.realism = PATTERN_REALISM[c.pattern] ?? 0.7;
   parts.favorite = c.items.some(i => ctx.favorites.some(f => i.product.name_he.includes(f))) ? 1 : 0;
   parts.expensive = -c.items.filter(i => (ctx.perKcal(i.product) || 0) > ctx.expensiveFrom).length;
+  if (ctx.avoid.size && c.mealType !== "Snacks") parts.previous = -(ctx.avoid.get(coreName(c)) || 0);
   const score = Object.entries(parts).reduce((s, [k, v]) => s + (ctx.W[k] || 0) * v, 0);
   return { score, parts };
 }
 
+// meal types a core was served under, as bits
+const MEAL_BIT = { Breakfast: 1, Lunch: 2, Dinner: 4 };
+const ONE_BIT = new Set([1, 2, 4]);
 const bump = (m, k, by = 1) => m.set(k, (m.get(k) || 0) + by);
 const sumSquares = m => [...m.values()].reduce((s, v) => s + v * v, 0);
 
@@ -144,9 +165,11 @@ const sumSquares = m => [...m.values()].reduce((s, v) => s + v * v, 0);
 export function weeklyPenalty(week, ctx) {
   const lunchMain = new Map(), mainUse = new Map(), breakfast = new Map(), carbs = new Map(), produce = new Map(), identical = new Map();
   const mealSig = new Map(), breakfastSig = new Map();
+  const core = new Map(), coreTypes = new Map(), coreFood = new Map();
+  let sameDayCore = 0;
   let sameDay = 0, consecutive = 0, mains = 0, cost = 0, kcal = 0, dayFit = 0, proteinShort = 0;
   week.forEach((day, di) => {
-    const mainsToday = new Map();
+    const mainsToday = new Map(), coresToday = new Map();
     let dk = 0, dp = 0, df = 0;
     for (const c of day) {
       if (!c) continue;
@@ -158,6 +181,15 @@ export function weeklyPenalty(week, ctx) {
       if (c.mealType === "Breakfast") bump(breakfastSig, signature(c));
       if (c.mealType === "Breakfast") bump(breakfast, c.style);
       if (c.main && c.mealType !== "Snacks") bump(mainsToday, c.main.id);
+      if (c.mealType !== "Snacks") {
+        if (c.main) {
+          const k = coreKey(c);
+          bump(core, k); bump(coresToday, k);
+          coreTypes.set(k, (coreTypes.get(k) || 0) | MEAL_BIT[c.mealType]);
+        }
+        if (c.main) bump(coreFood, c.main.id);
+        if (c.carb && c.carb.id !== c.main?.id) bump(coreFood, c.carb.id);
+      }
       if (c.mealType === "Lunch" || c.mealType === "Dinner") {
         mains++;
         if (c.main) bump(mainUse, c.main.id);
@@ -168,6 +200,7 @@ export function weeklyPenalty(week, ctx) {
       }
     }
     for (const n of mainsToday.values()) sameDay += Math.max(0, n - 1);
+    for (const n of coresToday.values()) sameDayCore += Math.max(0, n - 1);
     if (dk > 0) {
       const ratio = dp * 4 / dk;
       if (ctx.proteinShare) {
@@ -192,6 +225,9 @@ export function weeklyPenalty(week, ctx) {
     identical: [...identical.values()].reduce((s, n) => s + Math.max(0, n - 1), 0),
     mealRepeat: [...mealSig.values()].reduce((s, n) => s + (n - 1) ** 2, 0),
     breakfastRepeat: [...breakfastSig.values()].reduce((s, n) => s + (n - 1) ** 2, 0) / 2,
+    crossMeal: [...core].filter(([k]) => !ONE_BIT.has(coreTypes.get(k))).reduce((s, [, n]) => s + (n - 1) ** 2, 0) / 2,
+    sameDayCore,
+    productUse: [...coreFood.values()].reduce((s, n) => s + Math.max(0, n - PRODUCT_USE_MAX), 0),
     unusedProduce: ctx.produceOffered ? [...ctx.produceOffered].filter(p => !produce.has(p)).length : 0,
     cost: ctx.budget && kcal > 0 ? costPressure((cost / kcal) * ctx.kcal * 7 * PURCHASE_OVERHEAD / ctx.budget) : 0,
     // weekly cost estimate: the week's ₪ per kcal × the calories the week will have after balancing
@@ -216,4 +252,7 @@ export const PLANNER_VARIANTS = [
     ...Object.fromEntries(["proteinSpread", "lunchRepeat", "dominance", "sameDay", "consecutive", "identical", "carbs"].map(k => [k, WEIGHTS[k] * 0.2])) } },
   // budget first: the cheaper meal wins more often
   { name: "budget", weights: { budget: WEIGHTS.budget * 3, price: WEIGHTS.price * 2, proteinPrice: WEIGHTS.proteinPrice * 2, expensive: WEIGHTS.expensive * 2 } },
+  // variety first: repeats of any kind cost far more, every basket product should be used
+  { name: "variety", weights: Object.fromEntries(["mealRepeat", "breakfastRepeat", "crossMeal", "sameDayCore", "productUse", "proteinSpread",
+    "breakfast", "carbs", "produce", "identical", "unusedProduce", "consecutive"].map(k => [k, WEIGHTS[k] * 3])) },
 ];

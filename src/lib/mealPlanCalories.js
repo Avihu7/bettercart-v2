@@ -423,6 +423,12 @@ function moveCalories(entries, kcal, sideShare = SIDE_SHARE, floorOf = null) {
 
 // Carb sides added next to a meal's existing carb (kept to half a portion)
 const SIDE_ITEMS = new WeakSet();
+// product id → number of meals of the week it is in
+const mealUse = plan => {
+  const use = new Map();
+  for (const d of plan.days) for (const m of d.meals) for (const id of new Set(m.items.map(i => i.product_id))) use.set(id, (use.get(id) || 0) + 1);
+  return use;
+};
 const SIDE_SHARE = 0.5;
 
 /**
@@ -430,9 +436,10 @@ const SIDE_SHARE = 0.5;
  * to the day's meals: a meal without a carb gets a regular side, a meal that
  * has one carb gets a second, different carb as a half portion (e.g. bread next
  * to rice, fruit at breakfast). Bread/grains only at breakfast/lunch/dinner,
- * fruit at breakfast and snacks. Returns the calories added.
+ * fruit at breakfast and snacks. The side is the carb the week eats least
+ * (so the breakfast bread does not also become every lunch's side). Returns the calories added.
  */
-function addCarbSides(day, kcalNeeded, catalog, densities, usedCarbs, dayProductIds) {
+function addCarbSides(day, kcalNeeded, catalog, densities, usedCarbs, dayProductIds, weekUse = new Map()) {
   let added = 0;
   for (const mealType of ["Lunch", "Dinner", "Breakfast", "Snacks"]) {
     if (added >= kcalNeeded) break;
@@ -444,9 +451,10 @@ function addCarbSides(day, kcalNeeded, catalog, densities, usedCarbs, dayProduct
     const fits = p => p.meal_roles?.includes(mealType) &&
       (mealType === "Snacks" ? p.group === "fruit" : mealType === "Breakfast" || p.group !== "fruit") &&
       !inMeal.some(q => q.id === p.id) && !carbsInMeal.some(q => q.group === p.group);
-    // Prefer a carb this day already eats, then any carb the plan uses
+    // The carb the week uses least, then one this day already eats
     const options = usedCarbs.filter(fits)
-      .sort((a, b) => Number(dayProductIds.has(b.id)) - Number(dayProductIds.has(a.id)));
+      .sort((a, b) => (weekUse.get(a.id) || 0) - (weekUse.get(b.id) || 0) ||
+        Number(dayProductIds.has(b.id)) - Number(dayProductIds.has(a.id)));
     const p = options[0];
     if (!p) continue;
     const d = densities.get(p.id);
@@ -457,6 +465,7 @@ function addCarbSides(day, kcalNeeded, catalog, densities, usedCarbs, dayProduct
     setGrams(item, grams, d);
     if (isSide) SIDE_ITEMS.add(item);
     meal.items.push(item);
+    weekUse.set(p.id, (weekUse.get(p.id) || 0) + 1);
     if (meal.meal_name) meal.meal_name = `${meal.meal_name} ו${dishWord(p.name_he)}`;
     added += item.calories;
   }
@@ -637,7 +646,7 @@ export function finalizeDays(plan, catalog, densities, { calories: kcalTarget, p
       // At most two rounds: a carb for meals without one, then a half-portion side
       for (let round = 0; round < 2 && gap > kcalTarget * 0.03; round++) {
         const dayIds = new Set(day.meals.flatMap(m => m.items.map(i => i.product_id)));
-        if (!addCarbSides(day, gap, catalog, densities, usedCarbs, dayIds)) break;
+        if (!addCarbSides(day, gap, catalog, densities, usedCarbs, dayIds, mealUse(plan))) break;
         gap = kcalTarget - kcal();
         if (gap > 0) gap -= moveCalories(entries(CARB_GROUPS), gap);
       }
@@ -789,7 +798,7 @@ export function closeCalories(plan, catalog, densities, { calories: target, prot
         }
         if (target - kcal() > target * CLOSURE_AIM) {
           const dayIds = new Set(day.meals.flatMap(m => m.items.map(i => i.product_id)));
-          moved += addCarbSides(day, target - kcal(), catalog, densities, usedCarbs, dayIds);
+          moved += addCarbSides(day, target - kcal(), catalog, densities, usedCarbs, dayIds, mealUse(plan));
         }
         if (fatTarget && target - kcal() > target * CLOSURE_AIM && sumOf(day, "fat") < fatTarget) {
           moved += moveCalories(entries(FAT_GROUPS), Math.min(target - kcal(), (fatTarget - sumOf(day, "fat")) * 9));

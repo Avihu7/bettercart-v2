@@ -43,6 +43,12 @@ const MEAL_LABELS = {
   Snacks: "חטיפים",
 };
 
+// What each alternative menu ("בנייה מחדש") puts first (src/lib/nutritionPlanGenerator.js)
+const ALTERNATIVE_LABELS = {
+  variety: "עם דגש על מגוון", budget: "עם דגש על חיסכון", protein: "עם דגש על חלבון",
+  balanced: "מאוזן", fresh: "שונה ככל האפשר מהתפריט הקודם",
+};
+
 // Daily total vs target: within ±10% counts as on target
 function targetStatus(total, target) {
   if (!target || !total) return null;
@@ -64,13 +70,16 @@ export default function NutritionPlanPage() {
   const { profile, basket: sourceList, plan: latestPlan, planBasket, planOutdated, finalList, completed, isLoading: flowLoading } = useFlowData(user, { listId });
 
   const generateMutation = useMutation({
-    mutationFn: async () => {
+    // previous: the menu on screen when the user asks for a different one ("בנייה מחדש")
+    mutationFn: async ({ previous = null } = {}) => {
       const list = sourceList;
       if (!list?.items?.length) return;
 
       // The menu is fitted to the weekly budget (or a higher amount the user
       // accepted for this basket) before it is saved
-      const result = await generateNutritionPlan({ list, profile, budget: basketBudget(profile, list) });
+      const result = await generateNutritionPlan({ list, profile, budget: basketBudget(profile, list), previous });
+      // Nothing meaningfully different from the current menu: keep it, and say why
+      if (result.alternative?.exhausted) return { exhausted: true };
 
       // Before / after, food against food: what all the user's receipts show they spend
       // on the food the menu replaces vs. the menu's purchase cost (src/lib/receiptClassifier.js)
@@ -111,7 +120,7 @@ export default function NutritionPlanPage() {
         budget: result.budget || {},
       });
 
-      return plan;
+      return { plan, alternative: result.alternative };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["nutritionPlans"] });
@@ -170,7 +179,7 @@ export default function NutritionPlanPage() {
         <div className="flex gap-2">
           <Button
             variant="outline"
-            onClick={() => generateMutation.mutate()}
+            onClick={() => generateMutation.mutate({ previous: showPlan && !planOutdated && showPlan.shopping_list_id === sourceList?.id ? showPlan : null })}
             disabled={generateMutation.isPending || !sourceList?.items?.length}
           >
             {generateMutation.isPending ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Sparkles className="w-4 h-4 ml-2" />}
@@ -178,6 +187,18 @@ export default function NutritionPlanPage() {
           </Button>
         </div>
       </div>
+
+      {!generateMutation.isPending && generateMutation.data?.exhausted && (
+        <Card className="p-4 border-amber-200 bg-amber-50/60 text-sm text-amber-900">
+          אין תפריט אחר ששונה באמת מהתפריט הנוכחי ועומד באותם יעדים — בסל אין מספיק מוצרים שונים.
+          כדי לקבל תפריט אחר, הוסיפו לסל עוד מקור חלבון (ביצים, טונה, קטניות, עוף) או עוד סוג פחמימה.
+        </Card>
+      )}
+      {!generateMutation.isPending && generateMutation.data?.alternative?.index > 0 && (
+        <p className="text-xs text-muted-foreground">
+          תפריט חלופי {generateMutation.data.alternative.index + 1} מתוך {generateMutation.data.alternative.of} — {ALTERNATIVE_LABELS[generateMutation.data.alternative.name] || "תפריט אחר"}.
+        </p>
+      )}
 
       {generateMutation.isPending && (
         <Card className="p-10 text-center">

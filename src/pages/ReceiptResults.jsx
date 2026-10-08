@@ -13,11 +13,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import {
   Store, Calendar, Check, X, Pencil, Trash2,
   ShoppingCart, Lightbulb, ChevronLeft, TrendingUp,
-  Loader2, Zap, AlertTriangle, Search
+  Loader2, Zap, AlertTriangle, Search, Scissors
 } from "lucide-react";
 import {
   isUnresolved, isExcluded, needsMatching, matchPatch, manualMatchPatch,
-  approvePatch, nonFoodPatch, ignorePatch, reviewReason,
+  approvePatch, nonFoodPatch, ignorePatch, reviewReason, splitLine, receiptItemName,
 } from "@/lib/receiptReview";
 import { formatCurrency } from "@/lib/calculations";
 import { format } from "date-fns";
@@ -103,12 +103,14 @@ const categoryColors = {
   other: "bg-gray-50 text-gray-700",
 };
 
-// "שינוי התאמה": a few Shufersal catalog candidates for the receipt text, searchable
-function ChangeMatchDialog({ item, onClose, onSelect, saving }) {
-  const initial = item ? (item.normalized_name || item.original_name || "") : "";
+// "שינוי התאמה": a few Shufersal catalog candidates for the receipt text, searchable.
+// With split: pick the second product of a line the reading merged from two, and its price.
+function ChangeMatchDialog({ item, onClose, onSelect, saving, split = false }) {
+  const initial = item && !split ? (item.normalized_name || item.original_name || "") : "";
   const [query, setQuery] = useState(initial);
   const [term, setTerm] = useState(initial);
-  useEffect(() => { setQuery(initial); setTerm(initial); }, [initial]);
+  const [price, setPrice] = useState("");
+  useEffect(() => { setQuery(initial); setTerm(initial); setPrice(""); }, [initial, item]);
   const { data: results = [], isLoading } = useQuery({
     queryKey: ["catalogSearch", term],
     queryFn: async () => {
@@ -126,12 +128,20 @@ function ChangeMatchDialog({ item, onClose, onSelect, saving }) {
     <Dialog open={!!item} onOpenChange={open => !open && !saving && onClose()}>
       <DialogContent dir="rtl" className="w-[calc(100%-2rem)] max-w-md max-h-[85vh] overflow-y-auto rounded-xl p-5 text-right [&>button:last-child]:right-auto [&>button:last-child]:left-4">
         <DialogHeader className="text-right sm:text-right space-y-1">
-          <DialogTitle className="font-heading">שינוי התאמה</DialogTitle>
+          <DialogTitle className="font-heading">{split ? "פיצול לשני מוצרים" : "שינוי התאמה"}</DialogTitle>
           <DialogDescription>
             מהקבלה: <span className="font-medium text-foreground">{item?.original_name}</span>
-            <span className="block text-xs mt-1">בחרו את המוצר הנכון מקטלוג שופרסל.</span>
+            <span className="block text-xs mt-1">{split
+              ? "אם בשורה הזו נקראו שני מוצרים יחד — חפשו את המוצר השני והזינו את המחיר שלו. הוא יתווסף כשורה נפרדת, והמחיר יורד מהשורה המקורית."
+              : "בחרו את המוצר הנכון מקטלוג שופרסל."}</span>
           </DialogDescription>
         </DialogHeader>
+        {split && (
+          <label className="flex items-center gap-2 text-sm">
+            מחיר המוצר השני (₪)
+            <Input type="number" min="0" step="0.01" value={price} onChange={e => setPrice(e.target.value)} className="h-9 w-28" placeholder={item?.price > 0 ? `עד ${item.price}` : "0"} />
+          </label>
+        )}
         <form className="flex gap-2" onSubmit={e => { e.preventDefault(); setTerm(query); }}>
           <Input value={query} onChange={e => setQuery(e.target.value)} placeholder="חיפוש בקטלוג" className="h-9" />
           <Button type="submit" variant="outline" size="sm" className="h-9 shrink-0"><Search className="w-4 h-4" /></Button>
@@ -141,7 +151,7 @@ function ChangeMatchDialog({ item, onClose, onSelect, saving }) {
         <ul className="space-y-2">
           {results.map(p => (
             <li key={p.product_id}>
-              <button type="button" disabled={saving} onClick={() => onSelect(p)}
+              <button type="button" disabled={saving} onClick={() => onSelect(p, Number(price) || 0)}
                 className="w-full text-right rounded-lg border p-3 hover:border-primary hover:bg-primary/5 transition-colors disabled:opacity-50 flex items-center gap-3">
                 <span className="flex-1 min-w-0 text-sm font-medium break-words">{p.original_product_name}</span>
                 <span className="shrink-0 text-left">
@@ -167,6 +177,7 @@ export default function ReceiptResults() {
   const [editingId, setEditingId] = useState(null);
   const [editData, setEditData] = useState({});
   const [rematching, setRematching] = useState(null); // item in "שינוי התאמה"
+  const [splitting, setSplitting] = useState(null); // item in "פיצול לשני מוצרים"
 
   const { data: receipt, isFetched: receiptFetched } = useQuery({
     queryKey: ["receipt", receiptId, user?.email],
@@ -255,6 +266,19 @@ export default function ReceiptResults() {
   });
   const decide = (item, data) => reviewMutation.mutate({ id: item.id, data });
 
+  // A line the reading merged from two products → two lines
+  const splitMutation = useMutation({
+    mutationFn: async ({ item, product, price }) => {
+      const { update, create } = splitLine(item, product, price);
+      await api.entities.ReceiptItem.create(create);
+      await api.entities.ReceiptItem.update(item.id, update);
+    },
+    onSuccess: () => {
+      setSplitting(null);
+      queryClient.invalidateQueries({ queryKey: ["receiptItems"] });
+    },
+  });
+
   const startEdit = (item) => {
     setEditingId(item.id);
     setEditData({
@@ -341,6 +365,10 @@ export default function ReceiptResults() {
                     <Search className="w-4 h-4 ml-1" /> שינוי התאמה
                   </Button>
                   <Button size="sm" variant="outline" className="min-h-9" disabled={reviewMutation.isPending}
+                    onClick={() => setSplitting(item)}>
+                    <Scissors className="w-4 h-4 ml-1" /> פיצול לשני מוצרים
+                  </Button>
+                  <Button size="sm" variant="outline" className="min-h-9" disabled={reviewMutation.isPending}
                     onClick={() => decide(item, nonFoodPatch())}>
                     לא מזון
                   </Button>
@@ -360,6 +388,13 @@ export default function ReceiptResults() {
         saving={reviewMutation.isPending}
         onClose={() => setRematching(null)}
         onSelect={product => decide(rematching, manualMatchPatch(product, rematching))}
+      />
+      <ChangeMatchDialog
+        split
+        item={splitting}
+        saving={splitMutation.isPending}
+        onClose={() => setSplitting(null)}
+        onSelect={(product, price) => splitMutation.mutate({ item: splitting, product, price })}
       />
 
       {/* Receipt Summary */}
@@ -449,8 +484,8 @@ export default function ReceiptResults() {
                 <TableRow key={item.id}>
                   <TableCell>
                     <div>
-                      <p className="font-medium text-sm">{item.normalized_name || item.original_name}</p>
-                      {item.original_name && item.normalized_name && item.original_name !== item.normalized_name && (
+                      <p className="font-medium text-sm">{receiptItemName(item)}</p>
+                      {item.original_name && item.original_name !== receiptItemName(item) && (
                         <p className="text-xs text-muted-foreground/60">{item.original_name}</p>
                       )}
                       <p className="text-xs text-muted-foreground">{item.quantity}</p>
@@ -526,6 +561,12 @@ export default function ReceiptResults() {
                       <div className="flex gap-1">
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => startEdit(item)}>
                           <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="שינוי התאמה" onClick={() => setRematching(item)}>
+                          <Search className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-7 w-7" title="פיצול לשני מוצרים" onClick={() => setSplitting(item)}>
+                          <Scissors className="w-3.5 h-3.5" />
                         </Button>
                         <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => deleteMutation.mutate(item.id)}>
                           <Trash2 className="w-3.5 h-3.5 text-destructive" />

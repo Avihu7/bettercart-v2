@@ -12,7 +12,7 @@
  *   ignored           the user chose to leave it out of the flow
  * Only matched/approved food items may be used to build the smart basket.
  */
-import { applyReceiptRules, spendClass } from "@/lib/receiptClassifier";
+import { applyReceiptRules, spendClass, foodName } from "@/lib/receiptClassifier";
 import { isNonFoodName } from "@/lib/nonFood";
 
 // Common household / personal-care products that are never food
@@ -187,11 +187,32 @@ export function manualMatchPatch(product, item = null) {
 }
 
 /**
- * The name to use for a receipt item: the product the user picked when they
- * corrected the match by hand, otherwise the receipt's reading of it.
+ * The name to show for a receipt item — the same rule the basket uses
+ * (foodName): the product the user picked or approved, else the receipt's reading.
  */
-export const receiptItemName = i =>
-  (i.catalog_match_type === "manual" && i.matched_product_name) || i.normalized_name || i.original_name;
+export const receiptItemName = i => foodName(i);
+
+/**
+ * Splits a receipt line the reading merged from two products ("צמד פטריח מגורב
+ * 6 גרם 250 5% קוטג" = mushrooms + cottage): the second product, picked from the
+ * catalog, becomes a new line on the same receipt with its share of the price;
+ * the original line keeps the rest. The receipt text stays in original_name.
+ * Returns { update: patch for the original line, create: the new line }.
+ */
+export function splitLine(item, product, secondPrice) {
+  const total = Number(item.price) || 0;
+  const price = Math.min(Math.max(Number(secondPrice) || 0, 0), Math.max(total, 0));
+  return {
+    update: { price: Math.round((total - price) * 100) / 100 },
+    create: {
+      receipt_id: item.receipt_id,
+      original_name: item.original_name,
+      quantity: "",
+      price,
+      ...manualMatchPatch(product, { normalized_name: "" }),
+    },
+  };
+}
 
 /** Patches for the other review actions. */
 export const approvePatch = () => ({ catalog_match_status: "approved", catalog_needs_review: false });

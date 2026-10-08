@@ -10,10 +10,16 @@ import { weeklyBudget } from "@/lib/pricing";
 import { BASKETS, BASE_PROFILE, ITEMS as I } from "./fixtures/baskets";
 
 // Quality levels of the old fixed-template planner (menuComposer.js, removed) on 2026-10-07 — the baseline.
-export const BASELINE = { rich: 3, limited: 2, vegan: 1, vegetarian: 2, kosher: 3, allergies: 2, expensive: 3, tiny: 4, real: 3 };
+// 2026-10-08 (QA): the validator now also checks variety across meal types (the same
+// meal moved between breakfast / lunch / dinner, one food in most of the week's meals).
+// Under that stricter yardstick the vegan basket is level 2 — tofu, its only breakfast
+// protein, fills 18 of 21 meals (reported as limited by the basket).
+export const BASELINE = { rich: 3, limited: 2, vegan: 2, vegetarian: 2, kosher: 3, allergies: 2, expensive: 3, tiny: 4, real: 3 };
 // Levels of the weekly planner (candidates → scoring → greedy + local search) — locked in.
 // kosher/real/expensive: fat and budget (see the explanations); limited/tiny: the basket.
-export const CURRENT = { rich: 1, limited: 2, vegan: 1, vegetarian: 1, kosher: 3, allergies: 1, expensive: 3, tiny: 4, real: 3 };
+// vegan / allergies: level 2 since the cross-meal variety checks (2026-10-08) — real repeats:
+// tofu in most meals; eggs or bread at every meal type once fish and nuts are excluded.
+export const CURRENT = { rich: 1, limited: 2, vegan: 2, vegetarian: 1, kosher: 3, allergies: 2, expensive: 3, tiny: 4, real: 3 };
 
 describe("validator checks", () => {
   const basket = [I.chicken, I.cottage, I.rice, I.bread, I.tomato, I.cucumber, I.banana, I.oil];
