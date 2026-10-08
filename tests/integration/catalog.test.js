@@ -8,6 +8,12 @@ import { buildSmartAdditions } from "@/lib/smartBasketEngine";
 import { ITEMS as I } from "../fixtures/baskets";
 import { classifyProduct } from "@/lib/mealPlanRules";
 import STATE from "../fixtures/qaRound5State.json";
+import { buildBasketAlternatives, basketDifference } from "@/lib/basketBuilder";
+import { basketSufficiency } from "@/lib/basketAlternatives";
+import { generateNutritionPlan } from "@/lib/nutritionPlanGenerator";
+import { validateMenu } from "@/lib/validateMenu";
+import { planMissingMeals } from "@/lib/flowData";
+import { weeklyBudget, basketBudget } from "@/lib/pricing";
 
 const API = process.env.BETTERCART_API || (import.meta.env.MODE === "integration" ? "http://localhost:3001" : null);
 const search = async q => (await (await fetch(`${API}/api/products/search?q=${encodeURIComponent(q)}&limit=10`)).json()).results || [];
@@ -42,6 +48,29 @@ describe.runIf(!!API)("catalog API", () => {
     const groups = added.map(i => classifyProduct(i.name, i.category));
     expect(groups.some(g => ["eggs", "yogurt", "cereal"].includes(g)), added.map(i => i.name).join(", ")).toBe(true);
   }, 30000);
+
+  it("basket alternatives (real catalog): each a different basket that meets every goal and makes a complete menu", async () => {
+    const receiptItems = STATE.basket.filter(i => i.from_receipt).map((i, k) => ({
+      id: `r${k}`, original_name: i.name, normalized_name: i.name, category: i.category, is_food: true, is_approved_for_menu: true,
+      quantity: i.quantity, price: i.estimated_price, matched_product_name: i.name, catalog_match_status: "matched",
+    }));
+    const args = { receiptItems, history: [], profile: STATE.profile, weeklyBudget: weeklyBudget(STATE.profile) };
+    let r = await buildBasketAlternatives(args);
+    const n = r.alternative.of;
+    expect(n).toBeGreaterThanOrEqual(2);
+    for (let k = 0; k < n; k++) {
+      expect(r.alternative.index).toBe(k);
+      expect(r.total).toBeLessThanOrEqual(args.weeklyBudget);
+      expect(basketSufficiency(r.items, STATE.profile).issues).toEqual([]);
+      const list = { items: r.items }, budget = basketBudget(STATE.profile, list);
+      const plan = await generateNutritionPlan({ list, profile: STATE.profile, budget });
+      expect(planMissingMeals(plan)).toEqual([]);
+      expect(validateMenu({ plan, basketItems: r.items, profile: STATE.profile, budget }).level, `basket ${k + 1}`).toBeLessThanOrEqual(2);
+      const next = await buildBasketAlternatives({ ...args, previous: r.items });
+      if (k < n - 1) expect(basketDifference(r.items, next.items)).toBeGreaterThanOrEqual(0.4);
+      r = next;
+    }
+  }, 120000);
 
   it("builds deterministic smart additions with no vegan leaks", async () => {
     const profile = { dietary_preferences: ["טבעוני"], allergies: [], disliked_foods: [] };

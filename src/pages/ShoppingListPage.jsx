@@ -24,7 +24,7 @@ import FlowSteps from "@/components/FlowSteps";
 import { isBasketReady, isUnresolved, receiptItemName } from "@/lib/receiptReview";
 import { weeklyBudget as profileWeeklyBudget, basketBudget } from "@/lib/pricing";
 import { applyReceiptRules } from "@/lib/receiptClassifier";
-import { buildBasket, sameBasketItems, receiptToBasketItem, userAddedItem, correctedReceiptItems, sameFood, basketTotals, basketLooksThin, REGULAR_MIN_SCORE } from "@/lib/basketBuilder";
+import { buildBasketAlternatives, BASKET_EXHAUSTED_MESSAGE, sameBasketItems, receiptToBasketItem, userAddedItem, correctedReceiptItems, sameFood, basketTotals, basketLooksThin, REGULAR_MIN_SCORE } from "@/lib/basketBuilder";
 import { weeklyCosts, budgetDrivers, priceFacts, changeBudgetImpact } from "@/lib/basketBudget";
 import BudgetImpactCard from "@/components/BudgetImpactCard";
 import { findAlternatives, buildReplacementItem, isDisliked, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement, proteinShortText, itemFamily } from "@/lib/basketAlternatives";
@@ -298,12 +298,15 @@ export default function ShoppingListPage() {
       // whatever the shopping frequency (which only splits the budget)
       const daysPerPurchase = 7;
       const weeklyBudget = profileWeeklyBudget(profile);
-      // The basket algorithm lives in src/lib/basketBuilder.js (deterministic, no AI)
-      const { items: finalItems, total: runningTotal } = await buildBasket({
+      // The basket algorithm lives in src/lib/basketBuilder.js (deterministic, no AI).
+      // "בחירה מחדש" on a basket of this receipt: the next alternative basket after it
+      const sameReceipt = showList && (showList.receipt_id || "") === (effectiveReceiptId || "");
+      const { items: finalItems, total: runningTotal, alternative } = await buildBasketAlternatives({
         receiptItems, history: await fetchPurchaseHistory(), profile, weeklyBudget,
+        previous: sameReceipt ? showList.items : null,
       });
-      // The same receipt and profile give the same basket: nothing new to save
-      if (showList && (showList.receipt_id || "") === (effectiveReceiptId || "") && sameBasketItems(showList.items, finalItems)) {
+      // No other basket meets every goal: nothing new to save
+      if (sameReceipt && (alternative.exhausted || sameBasketItems(showList.items, finalItems))) {
         return { unchanged: true };
       }
 
@@ -318,7 +321,7 @@ export default function ShoppingListPage() {
         complementary_added: finalItems.some(i => !i.from_receipt),
       });
 
-      return list;
+      return { list, alternative };
       } finally {
         building.current = false;
       }
@@ -629,10 +632,19 @@ export default function ShoppingListPage() {
 
       {!generateMutation.isPending && generateMutation.data?.unchanged && (
         <Card className="p-4 border-sky-200 bg-sky-50/60 text-sm text-sky-900">
-          בנינו את הסל מחדש וקיבלנו את אותם מוצרים — אלה עדיין המוצרים המתאימים ביותר לקבלה ולפרופיל שלך, ולכן הסל לא נשמר שוב.
-          אפשר להחליף, להסיר או להוסיף מוצרים ידנית.
+          {BASKET_EXHAUSTED_MESSAGE}
         </Card>
       )}
+      {!generateMutation.isPending && generateMutation.data?.alternative?.of > 1 && (() => {
+        const { index, of, wrapped } = generateMutation.data.alternative;
+        return (
+          <p className="text-xs text-muted-foreground">
+            {wrapped ? `חזרנו לסל הראשון — הצגנו את כל ${of} הסלים שעומדים בכל היעדים`
+              : index === 0 ? `הסל המומלץ (1 מתוך ${of}) — "בחירה מחדש" מציגה סל חלופי שעומד באותם יעדים`
+              : `סל חלופי ${index + 1} מתוך ${of} — עומד באותם יעדים: תקציב, תזונה, העדפות וארוחות לכל השבוע`}
+          </p>
+        );
+      })()}
 
       {generateMutation.isPending && (
         <Card className="p-10 text-center">

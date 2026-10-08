@@ -186,8 +186,10 @@ export function scoreCandidate({ nutrition, health, history, price, variety }) {
  * Pool entries for one need, scored and sorted (best first). Pure.
  * The user's favorite foods come first: the user said they want them (the
  * budget is applied before ranking, so a favorite never breaks it).
+ * avoid(item): products an alternative basket should not repeat — taken only
+ * when nothing else fits the need (same scoring otherwise; buildBasketAlternatives).
  */
-export function rankCandidates(needKey, entries, basket, groupOf = defaultGroup, favorites = []) {
+export function rankCandidates(needKey, entries, basket, groupOf = defaultGroup, favorites = [], { avoid = null } = {}) {
   const prices = priceScores(entries);
   return entries
     .map((e, i) => {
@@ -198,10 +200,11 @@ export function rankCandidates(needKey, entries, basket, groupOf = defaultGroup,
         price: prices[i],
         variety: varietyScore(needKey, e.item, basket, groupOf, e.group),
       };
-      return { ...e, parts, score: scoreCandidate(parts), favorite: isFavorite(e.item.name, favorites) };
+      return { ...e, parts, score: scoreCandidate(parts), favorite: isFavorite(e.item.name, favorites), avoided: !!avoid?.(e.item) };
     })
     // ties: higher health, then cheaper, then name — fully deterministic
-    .sort((a, b) => Number(b.favorite) - Number(a.favorite) || b.score - a.score || b.parts.health - a.parts.health ||
+    // (a product to avoid only when nothing else fits)
+    .sort((a, b) => Number(a.avoided) - Number(b.avoided) || Number(b.favorite) - Number(a.favorite) || b.score - a.score || b.parts.health - a.parts.health ||
       (a.pricePer100 || Infinity) - (b.pricePer100 || Infinity) || a.item.name.localeCompare(b.item.name, "he"));
 }
 
@@ -240,7 +243,8 @@ export function isDuplicate(item, basket) {
  * ones. pool: [{ item, group, per100, pricePer100, history?, source }].
  * Returns the added basket items (with reason and source flags).
  */
-export function selectCandidates(pool, basket, { budgetLeft = Infinity, hasReceipt = true, favorites = [] } = {}) {
+export function selectCandidates(pool, basket, { budgetLeft = Infinity, hasReceipt = true, favorites = [], avoid = null } = {}) {
+  const rankOpts = { avoid };
   const current = [...basket];
   const added = [];
   // The group each pool product was searched as (e.g. "חלבון סויה" → legumes)
@@ -281,10 +285,10 @@ export function selectCandidates(pool, basket, { budgetLeft = Infinity, hasRecei
       // Budget-aware: the best option that still fits the budget left; when
       // none fits, a staple (never trimmed later) takes the cheapest one
       const fitting = options.filter(e => (e.item.estimated_price || 0) <= left);
-      const best = fitting.length ? rankCandidates(need.key, fitting, current, groupOf, favorites)[0]
-        : need.staple ? rankCandidates(need.key, options, current, groupOf)
-          .sort((x, y) => (x.item.estimated_price || 0) - (y.item.estimated_price || 0))[0]
-          : rankCandidates(need.key, options, current, groupOf, favorites)[0];
+      const best = fitting.length ? rankCandidates(need.key, fitting, current, groupOf, favorites, rankOpts)[0]
+        : need.staple ? rankCandidates(need.key, options, current, groupOf, [], rankOpts)
+          .sort((x, y) => Number(x.avoided) - Number(y.avoided) || (x.item.estimated_price || 0) - (y.item.estimated_price || 0))[0]
+          : rankCandidates(need.key, options, current, groupOf, favorites, rankOpts)[0];
       take(best, {
         reason: best.favorite ? REASON_FAVORITE : best.history && best.history.history_score > 0.6 ? REASON_HISTORY : need.reason,
         from_engine: true,
@@ -304,7 +308,7 @@ export function selectCandidates(pool, basket, { budgetLeft = Infinity, hasRecei
   // (re-ranked after every pick, so a second product of the same kind loses its variety bonus)
   for (let optional = 0; optional < MAX_OPTIONAL && added.length < maxAdd; optional++) {
     const best = BASKET_NEEDS
-      .flatMap(need => rankCandidates(need.key, available().filter(e => fitsNeed(need, e.item, e.group)), current, groupOf)
+      .flatMap(need => rankCandidates(need.key, available().filter(e => fitsNeed(need, e.item, e.group)), current, groupOf, [], rankOpts)
         .map(e => ({ ...e, needKey: need.key, needMet: needHave(need, current, groupOf) >= need.count })))
       .filter(e => (e.item.estimated_price || 0) <= left)
       .filter(e => e.score >= OPTIONAL_MIN_SCORE && (e.parts.history >= STRONG_HISTORY ||
@@ -366,7 +370,7 @@ export function passesHardFilters(item, profile) {
  * Returns the added items (the page appends them, then runs missingStaples
  * and the budget trim).
  */
-export async function buildSmartAdditions({ basket, historyItems = [], profile, budgetLeft, hasReceipt, search }) {
+export async function buildSmartAdditions({ basket, historyItems = [], profile, budgetLeft, hasReceipt, search, avoid }) {
   const pool = [...historyPool(historyItems, profile), ...await catalogPool(profile, basket, search)];
-  return selectCandidates(pool, basket, { budgetLeft, hasReceipt, favorites: profile?.favorite_foods || [] });
+  return selectCandidates(pool, basket, { budgetLeft, hasReceipt, favorites: profile?.favorite_foods || [], avoid });
 }

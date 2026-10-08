@@ -11,14 +11,15 @@
  *
  * No network here: purchase history and catalog lookups are passed in.
  */
-import { classifyProduct, normalizeHebrew } from "@/lib/mealPlanRules";
-import { parseQuantityGrams, plausiblePer100g } from "@/lib/mealPlanCalories";
+import { classifyProduct, normalizeHebrew, buildProductCatalog } from "@/lib/mealPlanRules";
+import { parseQuantityGrams, plausiblePer100g, buildDensities } from "@/lib/mealPlanCalories";
+import { generateCandidates } from "@/lib/menuCandidates";
 import { applyReceiptRules, foodName, isDiscountLine, categoryOf, spendClass } from "@/lib/receiptClassifier";
 import { isNonFoodName } from "@/lib/nonFood";
 import { productHealthScore } from "@/lib/healthScore";
 import { pricingFields, isWeighedGroup } from "@/lib/pricing";
 import { buildSmartAdditions } from "@/lib/smartBasketEngine";
-import { missingStaples, isDisliked, profileConflict, isSupplement, itemRole } from "@/lib/basketAlternatives";
+import { missingStaples, isDisliked, profileConflict, isSupplement, itemRole, isFavorite, basketSufficiency } from "@/lib/basketAlternatives";
 import { requireProfile } from "@/lib/profileGuard";
 
 // Pack size assumed when a receipt line has no readable quantity
@@ -255,6 +256,7 @@ const MAX_REGULARS = 5;
 export async function buildBasket({
   receiptItems, history = [], profile, weeklyBudget,
   additions = buildSmartAdditions, staples = missingStaples,
+  avoid = null, // products an alternative basket should not repeat (buildBasketAlternatives)
 }) {
   // Never a basket without the user's goals and preferences (src/lib/profileGuard.js)
   requireProfile(profile);
@@ -313,6 +315,7 @@ export async function buildBasket({
     profile,
     budgetLeft: weeklyBudget - anchorCost,
     hasReceipt: receiptBasket.length > 0,
+    ...(avoid ? { avoid } : {}),
   });
   let items = [...anchor, ...added];
   // Safety net (and protein completion): bread/grains/fat if still missing,
@@ -332,4 +335,94 @@ export async function buildBasket({
     items = items.filter((_, idx) => idx !== maxIdx);
   }
   return { items, total };
+}
+
+// ─── Basket alternatives ("בחירה מחדש") ──────────────────────────────────────
+
+// The receipt and the strong regulars are what the user buys: every alternative
+// keeps them. What changes is the smart part — the engine's additions.
+const smartPart = items => (items || []).filter(i => !i.from_receipt && !i.from_history).map(i => normalizeHebrew(i.name));
+
+/** Share of the smart part (additions) that differs between two baskets, 0..1 (Jaccard distance). */
+export function basketDifference(a, b) {
+  const x = new Set(smartPart(a)), y = new Set(smartPart(b));
+  const union = new Set([...x, ...y]);
+  if (!union.size) return 0;
+  return 1 - [...x].filter(n => y.has(n)).length / union.size;
+}
+// At least 40% of the additions must differ to count as another basket
+export const MIN_BASKET_DIFFERENCE = 0.4;
+const sameBasketChoice = (a, b) => basketDifference(a, b) < MIN_BASKET_DIFFERENCE;
+
+/** Can this basket feed a whole week: at least one breakfast, lunch and dinner the planner can build? */
+export function supportsWeeklyMenu(items, profile) {
+  const eatable = items.filter(i => !profileConflict(i, profile) && !isSupplement(i) && !isDisliked(i.name, profile?.disliked_foods || []));
+  const catalog = buildProductCatalog(eatable);
+  const candidates = generateCandidates({ catalog, densities: buildDensities(catalog, { days: [] }), profile });
+  return ["Breakfast", "Lunch", "Dinner"].every(t => candidates[t].length > 0);
+}
+
+export const BASKET_EXHAUSTED_MESSAGE = "לא נמצא סל חלופי שונה מספיק שעומד בכל היעדים. אפשר להחליף או להוסיף מוצרים ידנית.";
+
+// The best basket and up to 4 alternatives
+const MAX_BASKET_ALTERNATIVES = 5;
+
+/**
+ * An alternative is offered only when it is as good as the best basket on every
+ * goal — not a trade-off: within the budget (or no dearer than the best when even
+ * the best is over it), no nutrition gap the best does not have (protein target,
+ * bread, carbs, fat), the same favorite foods, and breakfast, lunch and dinner the
+ * planner can build. Diet, allergies and dislikes are hard filters for every basket.
+ */
+function meetsEveryGoal(r, best, { profile, weeklyBudget }) {
+  if (!(r.total <= weeklyBudget || r.total <= best.total)) return false;
+  const gaps = new Set(basketSufficiency(best.items, profile).issues.map(i => i.key));
+  if (basketSufficiency(r.items, profile).issues.some(i => !gaps.has(i.key))) return false;
+  const favorites = profile?.favorite_foods || [];
+  const favs = items => favorites.filter(f => items.some(i => isFavorite(i.name, [f])));
+  if (favs(best.items).some(f => !favs(r.items).includes(f))) return false;
+  return supportsWeeklyMenu(r.items, profile);
+}
+
+/**
+ * The deterministic basket alternatives, and the one to show next.
+ * Every basket is built by the same engine and scoring — the best one first;
+ * each next one avoids the products the ones before it added (taken only when
+ * nothing else fits a need; the user's favorite foods are never avoided). An
+ * alternative is kept when it meets every goal as well as the best basket
+ * (meetsEveryGoal) and differs from every basket already listed.
+ * previous: the basket on screen (same receipt) — the next alternative after it
+ * is returned; none differs → exhausted (nothing to save).
+ * Returns { items, total, alternative: { index, of, exhausted, wrapped } }.
+ */
+export async function buildBasketAlternatives({ previous = null, ...args }) {
+  const favorites = args.profile?.favorite_foods || [];
+  const best = await buildBasket(args);
+  const alternatives = [best];
+  for (let k = 1; k < MAX_BASKET_ALTERNATIVES; k++) {
+    // away from what the baskets listed so far added
+    const offered = new Set(alternatives.flatMap(a => smartPart(a.items)));
+    const avoid = item => offered.has(normalizeHebrew(item.name)) && !isFavorite(item.name, favorites);
+    const r = await buildBasket({ ...args, avoid });
+    if (!meetsEveryGoal(r, best, args)) continue;
+    if (alternatives.some(a => sameBasketChoice(a.items, r.items))) continue;
+    alternatives.push(r);
+  }
+  let index = 0, exhausted = false;
+  if (previous?.length) {
+    const distance = alternatives.map(a => basketDifference(previous, a.items));
+    const closest = distance.indexOf(Math.min(...distance));
+    const current = distance[closest] < MIN_BASKET_DIFFERENCE ? closest : -1;
+    const order = alternatives.map((_, k) => (current + 1 + k) % alternatives.length);
+    const next = order.find(k => !sameBasketChoice(previous, alternatives[k].items));
+    if (next == null) { index = Math.max(current, 0); exhausted = true; } else index = next;
+  }
+  const chosen = alternatives[index];
+  return {
+    items: chosen.items, total: chosen.total,
+    alternative: {
+      index, of: alternatives.length, exhausted,
+      wrapped: !!previous?.length && !exhausted && index === 0 && alternatives.length > 1,
+    },
+  };
 }
