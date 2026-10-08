@@ -13,7 +13,7 @@
  */
 import { classifyProduct, normalizeHebrew } from "@/lib/mealPlanRules";
 import { parseQuantityGrams, plausiblePer100g } from "@/lib/mealPlanCalories";
-import { applyReceiptRules, foodName, isDiscountLine, categoryOf } from "@/lib/receiptClassifier";
+import { applyReceiptRules, foodName, isDiscountLine, categoryOf, spendClass } from "@/lib/receiptClassifier";
 import { isNonFoodName } from "@/lib/nonFood";
 import { productHealthScore } from "@/lib/healthScore";
 import { pricingFields, isWeighedGroup } from "@/lib/pricing";
@@ -180,6 +180,24 @@ export function receiptToBasketItem(raw) {
   };
 }
 
+/**
+ * Basket items whose receipt line was corrected after the basket was built (a
+ * new match or an approved suggestion — e.g. "גרעיני דיריז מתוק" approved as
+ * corn): the saved basket still has the old name and values. receiptItems: the
+ * receipt's current lines. Returns [{ index, from, item }] — item: the basket
+ * item rebuilt from the corrected line (its reason and flags kept).
+ */
+export function correctedReceiptItems(basketItems, receiptItems) {
+  const byId = new Map((receiptItems || []).map(r => [r.id, r]));
+  return (basketItems || []).flatMap((b, index) => {
+    const line = b.from_receipt && b.receipt_item_id != null ? byId.get(b.receipt_item_id) : null;
+    if (!line) return [];
+    const fresh = receiptToBasketItem(line);
+    if (fresh.name === b.name) return [];
+    return [{ index, from: b.name, item: { ...b, ...fresh, reason: b.reason, from_receipt: true } }];
+  });
+}
+
 // ─── Basket helpers ──────────────────────────────────────────────────────────
 
 export const sameFood = (a, b) => {
@@ -240,10 +258,15 @@ export async function buildBasket({
   }
   // Purchase history: only products that fit this user at all, above neutral.
   // A single receipt is not a pattern — history needs at least 2 (confidence 0.4).
+  // Each product is known by the same name as a receipt line (foodName: the
+  // product the user picked or approved — never an old receipt's misreading).
   const fitting = history
     .filter(h => h.confidence >= 0.4 && h.history_score > 0.5)
-    // menu suitability by the rules (or the user's edit), as for receipt items
-    .filter(h => !h.latest_item || (applyReceiptRules(h.latest_item).is_approved_for_menu && !isDiscountLine(h.latest_item)))
+    .map(h => (h.latest_item ? { ...h, name: foodName(h.latest_item) } : h))
+    // menu food by the rules (or the user's edit), as for receipt lines: not
+    // non-food, water, spices or discount lines (src/lib/receiptReview.js isBasketReady)
+    .filter(h => !h.latest_item || (applyReceiptRules(h.latest_item).is_approved_for_menu &&
+      !isDiscountLine(h.latest_item) && spendClass(h.latest_item) === "food_plannable"))
     .filter(h => !profileConflict({ name: h.name, category: h.latest_item?.category }, profile))
     .filter(h => !isSupplement({ name: h.name }) && !isDisliked(h.name, disliked));
   const historyCandidates = fitting.slice(0, HISTORY_TOP);

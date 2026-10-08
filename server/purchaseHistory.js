@@ -71,7 +71,9 @@ export function computePurchaseHistory(rows, itemCodeById = new Map(), now = new
   // Product identity: catalog item_code first, then the matched catalog name, then the receipt name.
   // A name seen with a catalog code anywhere is attached to that code.
   const codeOf = r => (r.matched_product_id != null ? itemCodeById.get(String(r.matched_product_id)) : null) || null;
-  const displayName = r => (r.catalog_match_type === 'manual' && r.matched_product_name) || r.normalized_name || r.original_name || r.matched_product_name;
+  // The product the user picked or approved, as on the client (src/lib/receiptClassifier.js foodName)
+  const userChose = r => !!r.matched_product_name && (r.catalog_match_type === 'manual' || r.catalog_match_status === 'approved');
+  const displayName = r => (userChose(r) && r.matched_product_name) || r.normalized_name || r.original_name || r.matched_product_name;
   const codeByName = new Map();
   for (const r of rows) {
     const code = codeOf(r);

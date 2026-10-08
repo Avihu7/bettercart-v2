@@ -174,6 +174,27 @@ export async function basketBudgetPicture({ basketItems, planDays, profile, budg
   };
 }
 
+/**
+ * What the budget card says about one expensive product's replacements:
+ *   same_family  a cheaper product of the same kind exists (the options are shown)
+ *   broad_only   none of the same kind, but a cheaper food of another kind in the
+ *                same role (chicken → eggs / legumes) — shown right away, not hidden
+ *   none         nothing cheaper that keeps the nutrition, of any kind
+ * Returns { kind, text } (text: Hebrew, null for same_family).
+ */
+export function replacementNote(driver) {
+  const protein = PROTEIN_GROUPS.has(itemGroup(driver.item));
+  if (driver.options?.length) return { kind: "same_family", text: null };
+  if (driver.broadOptions?.length) {
+    return { kind: "broad_only", text: protein
+      ? "לא מצאנו חלופה זולה יותר מאותה משפחה ששומרת על ערכי החלבון. יש חלופות זולות יותר ממקור חלבון אחר:"
+      : "לא מצאנו חלופה זולה יותר מאותו סוג. יש חלופות זולות יותר מסוג מזון אחר באותו תפקיד:" };
+  }
+  return { kind: "none", text: protein
+    ? `לא מצאנו חלופה זולה יותר ששומרת על ערכי החלבון — לא מאותה משפחה ולא ממקור חלבון אחר (דגים, ביצים, קטניות): לגרם חלבון, ${driver.item.name} כבר מהזולים בקטלוג. להחלפה מסיבה אחרת — כפתור "החלפה" ליד המוצר בסל.`
+    : "לא מצאנו בקטלוג חלופה זולה יותר שמתאימה לתזונה שלך." };
+}
+
 /** Why a product weighs on the budget, in Hebrew (its share, its unit price, the amount needed). */
 function whyExpensive(d) {
   const reasons = [];

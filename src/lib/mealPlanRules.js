@@ -12,6 +12,8 @@ export const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner", "Snacks"];
 // Order matters: the first matching group wins (e.g. "קפה" before "חלב" so
 // "קפה עם חלב" style names classify as coffee; "חמאת בוטנים" before dairy).
 const GROUPS = [
+  // Spices are food, but never a menu item: "פלפל שחור טחון" is not the vegetable "פלפל"
+  { group: "other",     terms: ["פלפל שחור", "פלפל לבן", "פלפל חריף טחון", "פפריקה", "כמון", "כורכום", "תבלין", "קינמון", "אורגנו", "זעתר", "ראס אל חנות"] },
   // Plant drinks before nuts/legumes/milk: "חלב שקדים" is a drink, not almonds or dairy
   { group: "plant_milk", terms: ["חלב שקדים", "משקה שקדים", "חלב סויה", "משקה סויה", "חלב שיבולת", "משקה שיבולת", "חלב אורז", "משקה אורז", "חלב קוקוס", "משקה קוקוס"] },
   { group: "coffee",    terms: ["קפה", "נס קפה", "אספרסו"] },

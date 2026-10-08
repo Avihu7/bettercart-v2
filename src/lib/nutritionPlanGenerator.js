@@ -13,7 +13,7 @@
  * The same basket, profile and budget always give the same menu. "בנייה מחדש"
  * passes the current menu as `previous`: the next deterministic alternative is
  * returned instead — the valid weeks in a fixed order (best, variety first,
- * budget first, protein first, then one planned to avoid the previous menu's
+ * budget first, protein first, then one planned away from the best week's
  * meals), without near-copies of each other, the one after the current menu.
  */
 
@@ -147,12 +147,6 @@ export async function generateNutritionPlan({ list, profile, budget = null, prev
   // judged after balancing, when protein and cost are final. Deterministic.
   const quiet = { info() {}, warn() {} };
   const attempts = PLANNER_VARIANTS.map(v => ({ name: v.name, planned: planWeek({ catalog, densities, profile, budget, weights: v.weights }) }));
-  // Asked for a different menu: one more week, planned away from the current menu's meals
-  if (previous?.days?.length) {
-    const avoid = new Map();
-    for (const d of previous.days) for (const m of d.meals) if (m.meal_type !== "Snacks") avoid.set(mealCore(m), (avoid.get(mealCore(m)) || 0) + 1);
-    attempts.push({ name: "fresh", planned: planWeek({ catalog, densities, profile, budget, weights: { previous: 4 }, avoid }) });
-  }
   const results = [];
   for (const a of attempts) {
     // let the page repaint between variants (each takes a few hundred ms)
@@ -169,6 +163,16 @@ export async function generateNutritionPlan({ list, profile, budget = null, prev
   const rank = r => [r.quality.level, r.quality.failed.length, -r.quality.stats.diversity, Math.round(costOver(r)), r.quality.limited.length, r.done.budgetReport.estimated_cost];
   const better = (x, y) => { const [a, b] = [rank(x), rank(y)]; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return a[i] < b[i]; return false; };
   const best = ranked.reduce((b, r) => (better(r, b) ? r : b));
+  // Asked for a different menu: one more week, planned away from the best week's
+  // meals. Planned from the best week — never from the menu on screen — so the
+  // list of alternatives is the same on every click and the clicks walk through it.
+  if (previous?.days?.length) {
+    const avoid = new Map();
+    for (const d of best.done.plan.days) for (const m of d.meals) if (m.meal_type !== "Snacks") avoid.set(mealCore(m), (avoid.get(mealCore(m)) || 0) + 1);
+    await new Promise(resolve => setTimeout(resolve, 0));
+    const done = complete(planWeek({ catalog, densities, profile, budget, weights: { previous: 4 }, avoid }), quiet);
+    if (done) ranked.push(Object.assign({ name: "fresh", done }, { quality: validateMenu({ plan: { ...done.plan, estimated_weekly_cost: done.budgetReport.estimated_cost }, basketItems: list.items, profile, budget }) }));
+  }
   // The deterministic alternatives: the best week, then the others in a fixed order —
   // never a worse kind of menu (no safety / realism failure, no nutrition or budget
   // miss the best week does not have), never a near-copy of one already listed
@@ -178,16 +182,25 @@ export async function generateNutritionPlan({ list, profile, budget = null, prev
     const r = ranked.find(x => x.name === name);
     if (r && r !== best && acceptable(r) && !alternatives.some(a => sameMenu(a.done.plan.days, r.done.plan.days))) alternatives.push(r);
   }
-  let index = 0;
+  // The menu on screen is the alternative closest to it (when close enough); the
+  // next one is the first after it, in order and wrapping around, that really
+  // differs from it. None → exhausted: the basket has nothing else to offer.
+  let index = 0, exhausted = false;
   if (previous?.days?.length) {
-    const current = alternatives.findIndex(a => sameMenu(a.done.plan.days, previous.days));
-    index = current < 0 ? 0 : (current + 1) % alternatives.length;
+    const distance = alternatives.map(a => menuDifference(previous.days, a.done.plan.days));
+    const closest = distance.indexOf(Math.min(...distance));
+    const current = distance[closest] < MIN_DIFFERENT_SHARE ? closest : -1;
+    const order = alternatives.map((_, k) => (current + 1 + k) % alternatives.length);
+    const next = order.find(k => !sameMenu(previous.days, alternatives[k].done.plan.days));
+    if (next == null) { index = Math.max(current, 0); exhausted = true; } else index = next;
   }
   const chosen = alternatives[index];
   const alternative = {
     index, of: alternatives.length, name: chosen.name,
     // nothing meaningfully different from the current menu exists with this basket
-    exhausted: !!previous?.days?.length && sameMenu(chosen.done.plan.days, previous.days),
+    exhausted,
+    // back at the first menu after showing every alternative
+    wrapped: !!previous?.days?.length && !exhausted && index === 0 && alternatives.length > 1,
   };
   const { plan, budgetReport, problems, initialProblems, balanced, calories } = chosen.done;
   if (budgetReport.swaps.length) console.info(`[nutrition plan] budget: ₪${budgetReport.cost_before} → ₪${budgetReport.estimated_cost} (budget ₪${budget})`);

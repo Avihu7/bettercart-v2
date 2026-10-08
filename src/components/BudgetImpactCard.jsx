@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, CheckCircle2, Loader2, TrendingDown, Repeat2, X, Sparkles } from "lucide-react";
-import { basketBudgetPicture } from "@/lib/basketBudget";
+import { basketBudgetPicture, replacementNote } from "@/lib/basketBudget";
 
 const shekel = n => `₪${(Math.round(n * 10) / 10).toLocaleString("he-IL")}`;
 const grams = g => (g >= 1000 ? `${Math.round(g / 100) / 10} ק"ג` : `${Math.round(g)} גרם`);
@@ -121,7 +121,9 @@ export default function BudgetImpactCard({ basketItems, planDays, profile, budge
           <p className="text-sm font-medium">{over ? "המוצרים שמגדילים את העלות הכי הרבה:" : "המוצרים היקרים ביותר בסל:"}</p>
           {pic.drivers.map(d => {
             const safe = visible(d.index, d.options);
-            const broad = showBroad ? visible(d.index, d.broadOptions) : [];
+            const note = replacementNote(d);
+            // no cheaper product of the same kind → the cheaper ones of another kind are shown right away
+            const broad = showBroad || note.kind === "broad_only" ? visible(d.index, d.broadOptions) : [];
             return (
               <div key={d.index} className="rounded-lg border bg-background p-3 space-y-2">
                 <div>
@@ -131,6 +133,7 @@ export default function BudgetImpactCard({ basketItems, planDays, profile, budge
                   </p>
                   <p className="text-xs text-muted-foreground mt-0.5">למה זה משמעותי: {d.reasons.join(" · ")}</p>
                 </div>
+                {note.kind === "broad_only" && broad.length > 0 && <p className="text-xs text-muted-foreground">{note.text}</p>}
                 {safe.length > 0 || broad.length > 0 ? (
                   <ul className="space-y-1.5">
                     {safe.map(o => (
@@ -144,9 +147,7 @@ export default function BudgetImpactCard({ basketItems, planDays, profile, budge
                   </ul>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    {showBroad || !d.broadOptions.length
-                      ? "לא מצאנו בקטלוג חלופה זולה יותר שמתאימה לתזונה שלך."
-                      : "אין חלופה זולה יותר מאותו סוג. יש חלופות מסוג מזון אחר — ראו למטה."}
+                    {note.kind === "none" ? note.text : "החלופות שהוצגו הוסתרו."}
                   </p>
                 )}
               </div>

@@ -194,11 +194,18 @@ export default function NutritionPlanPage() {
           כדי לקבל תפריט אחר, הוסיפו לסל עוד מקור חלבון (ביצים, טונה, קטניות, עוף) או עוד סוג פחמימה.
         </Card>
       )}
-      {!generateMutation.isPending && generateMutation.data?.alternative?.index > 0 && (
-        <p className="text-xs text-muted-foreground">
-          תפריט חלופי {generateMutation.data.alternative.index + 1} מתוך {generateMutation.data.alternative.of} — {ALTERNATIVE_LABELS[generateMutation.data.alternative.name] || "תפריט אחר"}.
-        </p>
-      )}
+      {!generateMutation.isPending && generateMutation.data?.alternative && (() => {
+        const { index, of, name, wrapped } = generateMutation.data.alternative;
+        return (
+          <p className="text-xs text-muted-foreground">
+            {wrapped
+              ? `חזרנו לתפריט הראשון — עברת על כל ${of} התפריטים השונים שאפשר לבנות מהסל הזה.`
+              : index > 0
+                ? `תפריט חלופי ${index + 1} מתוך ${of} — ${ALTERNATIVE_LABELS[name] || "תפריט אחר"}.`
+                : of > 1 ? `התפריט המומלץ (1 מתוך ${of}). "בנייה מחדש" תציג תפריט חלופי.` : null}
+          </p>
+        );
+      })()}
 
       {generateMutation.isPending && (
         <Card className="p-10 text-center">

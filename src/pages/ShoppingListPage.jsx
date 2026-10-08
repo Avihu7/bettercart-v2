@@ -22,7 +22,7 @@ import FlowSteps from "@/components/FlowSteps";
 import { isBasketReady, isUnresolved, receiptItemName } from "@/lib/receiptReview";
 import { weeklyBudget as profileWeeklyBudget, basketBudget } from "@/lib/pricing";
 import { applyReceiptRules } from "@/lib/receiptClassifier";
-import { buildBasket, receiptToBasketItem, userAddedItem, sameFood, basketTotals, basketLooksThin, REGULAR_MIN_SCORE } from "@/lib/basketBuilder";
+import { buildBasket, receiptToBasketItem, userAddedItem, correctedReceiptItems, sameFood, basketTotals, basketLooksThin, REGULAR_MIN_SCORE } from "@/lib/basketBuilder";
 import { weeklyCosts, budgetDrivers, priceFacts, changeBudgetImpact } from "@/lib/basketBudget";
 import BudgetImpactCard from "@/components/BudgetImpactCard";
 import { findAlternatives, buildReplacementItem, isDisliked, familyLabel, missingStaples, basketSufficiency, profileConflict, isSupplement, proteinShortText, itemFamily } from "@/lib/basketAlternatives";
@@ -354,11 +354,24 @@ export default function ShoppingListPage() {
       .filter(i => ["matched", "approved"].includes(i.catalog_match_status))
       .filter(i => {
         const name = receiptItemName(i);
+        // (a line corrected after the basket was built is in the basket under its old name)
+        if (showList.items.some(b => b.receipt_item_id === i.id)) return false;
         if (showList.items.some(b => sameFood(b.name, name)) || seen.some(n => sameFood(n, name))) return false;
         seen.push(name);
         return true;
       });
   })() : [];
+  // Receipt lines corrected after this basket was built: the basket still shows the old reading
+  const corrected = showList?.items ? correctedReceiptItems(showList.items, foodReceiptItems) : [];
+  const applyCorrections = () => {
+    const byIndex = new Map(corrected.map(c => [c.index, c.item]));
+    requestChange({
+      items: showList.items.map((it, i) => byIndex.get(i) || it),
+      item: corrected.map(c => c.from).join(", "),
+      title: "עדכון הסל לפי התיקונים בקבלה",
+      done: () => toast({ title: "הסל עודכן לפי התיקונים בקבלה", description: "כדי שהתפריט ישתמש בשמות המתוקנים, בנו אותו מחדש." }),
+    });
+  };
   const conflictOf = i => profileConflict({ name: receiptItemName(i), category: i.category }, profile);
   const leftOutReason = i => {
     const name = receiptItemName(i);
@@ -761,6 +774,20 @@ export default function ShoppingListPage() {
               <Button size="sm" variant="outline" onClick={() => completeMutation.mutate()} disabled={completeMutation.isPending}>
                 {completeMutation.isPending ? <Loader2 className="w-4 h-4 ml-2 animate-spin" /> : <Sparkles className="w-4 h-4 ml-2" />}
                 השלמת הסל
+              </Button>
+            </Card>
+          )}
+
+          {corrected.length > 0 && (
+            <Card className="p-4 border-amber-300 bg-amber-50/60 space-y-2">
+              <p className="font-medium text-sm flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" /> תיקנת מוצרים בקבלה אחרי שהסל נבנה
+              </p>
+              <ul className="text-sm text-muted-foreground list-disc pr-5 space-y-0.5">
+                {corrected.map(c => <li key={c.index}>{c.from} ← {c.item.name}</li>)}
+              </ul>
+              <Button size="sm" variant="outline" disabled={saveItemsMutation.isPending} onClick={applyCorrections}>
+                עדכון הסל לפי התיקונים
               </Button>
             </Card>
           )}
