@@ -177,6 +177,19 @@ describe("7. the basket's cost and the week's menu / list cost are labelled, not
   });
 });
 
+describe("the budget card shows the five key numbers as boxes, details below", () => {
+  it("supermarket budget, reserve, food budget, the week's cost and the status, each with its number", () => {
+    const pic = budgetPicture({ profile: PROFILE, spending: spendingOf(ONE), plannedFoodCost: 380 });
+    const html = renderToString(<BudgetSummaryCard pic={pic} />).replace(/<!-- -->/g, "");
+    for (const [label, value] of [["תקציב הסופר השבועי", "₪420.00"], ["שמור למוצרים שאינם מזון", "− ₪65.00"], ["תקציב המזון לשבוע", "₪355.00"],
+      ["עלות המזון לשבוע לפי התפריט", "₪380.00"], ["מעל תקציב המזון", "₪25.00"]]) {
+      expect(html, label).toMatch(new RegExp(`${label}</p><p[^>]*>${value.replace(/[.₪]/g, m => "\\" + m)}</p>`));
+    }
+    // the receipt history comes after the numbers
+    expect(html.indexOf("היסטוריית הקבלות")).toBeGreaterThan(html.indexOf("מעל תקציב המזון"));
+  });
+});
+
 describe("the final list page (step 4): the list cost against the food budget, receipts as history", () => {
   it("a plan dearer than the receipt history but within the food budget is shown as within budget, with no \"worse than receipts\" note", async () => {
     const { default: Page } = await import("@/pages/FinalShoppingList.jsx");
