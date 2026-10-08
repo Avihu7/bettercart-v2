@@ -38,7 +38,8 @@ describe("receipt item → basket item", () => {
 describe("buildBasket", () => {
   const noAdditions = async () => [];
   const noStaples = async () => [];
-  const profile = { disliked_foods: ["עגבניות"], allergies: [], dietary_preferences: [] };
+  // a completed profile (a basket is never built without one — tests/profileGuard.test.jsx)
+  const profile = { disliked_foods: ["עגבניות"], allergies: [], dietary_preferences: [], daily_calories: 2200, protein_target: 140, onboarding_complete: true };
 
   it("keeps receipt food, drops disliked items and duplicates", async () => {
     const { items } = await buildBasket({

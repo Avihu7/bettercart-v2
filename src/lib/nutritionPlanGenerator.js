@@ -27,6 +27,7 @@ import { validateMenu } from '@/lib/validateMenu';
 import { fitPlanToBudget, planCost } from '@/lib/mealPlanBudget';
 import { profileConflict, isSupplement, isDisliked } from '@/lib/basketAlternatives';
 import { isPlainWater } from '@/lib/receiptClassifier';
+import { requireProfile } from '@/lib/profileGuard';
 
 
 // What each breakfast / lunch / dinner is built around: main protein + carb (by name)
@@ -75,6 +76,8 @@ function targetWarnings(report, { calories, protein, fat }) {
  * (async for the callers; nothing here waits on a service)
  */
 export async function generateNutritionPlan({ list, profile, budget = null, previous = null }) {
+  // Never a menu without the user's nutrition goals and preferences (src/lib/profileGuard.js)
+  requireProfile(profile);
   const target = profile?.daily_calories || 2000;
   // Only foods this user eats — every step below (templates, balancing sides,
   // budget swaps) picks from this catalog. Plain water adds nothing to a meal:

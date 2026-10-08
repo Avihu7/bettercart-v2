@@ -58,6 +58,8 @@ export function useFlowData(user, { listId } = {}) {
 
   return {
     profile: profiles.data?.[0] || null,
+    // the profile query answered (a missing profile is then really missing)
+    profileFetched: profiles.isFetched,
     basket,
     plan,
     planBasket,

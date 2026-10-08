@@ -19,6 +19,7 @@ import { productHealthScore } from "@/lib/healthScore";
 import { pricingFields, isWeighedGroup } from "@/lib/pricing";
 import { buildSmartAdditions } from "@/lib/smartBasketEngine";
 import { missingStaples, isDisliked, profileConflict, isSupplement, itemRole } from "@/lib/basketAlternatives";
+import { requireProfile } from "@/lib/profileGuard";
 
 // Pack size assumed when a receipt line has no readable quantity
 const DEFAULT_PACK_GRAMS = 500;
@@ -246,6 +247,8 @@ export async function buildBasket({
   receiptItems, history = [], profile, weeklyBudget,
   additions = buildSmartAdditions, staples = missingStaples,
 }) {
+  // Never a basket without the user's goals and preferences (src/lib/profileGuard.js)
+  requireProfile(profile);
   const disliked = profile?.disliked_foods || [];
   // The receipt is the basis of the basket: its recognized, menu-fit food
   // items (not disliked) go in as they are; the engine only adds around them

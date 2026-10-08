@@ -28,6 +28,8 @@ import { validateMenu } from "@/lib/validateMenu";
 import { explainMenu } from "@/lib/explainMenu";
 import { basketBudgetPicture } from "@/lib/basketBudget";
 import { receiptSpending, spendingComparison } from "@/lib/receiptClassifier";
+import { profileReady } from "@/lib/profileGuard";
+import ProfileRequiredNotice from "@/components/ProfileRequiredNotice";
 
 const mealIcons = {
   Breakfast: Sun,
@@ -67,7 +69,7 @@ export default function NutritionPlanPage() {
   const listId = urlParams.get("list_id");
 
   // Basket (step 2) this plan is built from, latest plan, and its final list (step 4)
-  const { profile, basket: sourceList, plan: latestPlan, planBasket, planOutdated, finalList, completed, isLoading: flowLoading } = useFlowData(user, { listId });
+  const { profile, profileFetched, basket: sourceList, plan: latestPlan, planBasket, planOutdated, finalList, completed, isLoading: flowLoading } = useFlowData(user, { listId });
 
   const generateMutation = useMutation({
     // previous: the menu on screen when the user asks for a different one ("בנייה מחדש")
@@ -159,7 +161,7 @@ export default function NutritionPlanPage() {
   const autoBuilt = useRef(false);
   useEffect(() => {
     const flag = urlParams.get("build") === "1" || urlParams.get("rebuild") === "1";
-    if (autoBuilt.current || !flag || flowLoading || !sourceList?.items?.length || !profile || generateMutation.isPending) return;
+    if (autoBuilt.current || !flag || flowLoading || !sourceList?.items?.length || !profileReady(profile) || generateMutation.isPending) return;
     autoBuilt.current = true;
     window.history.replaceState(null, "", window.location.pathname + (listId ? `?list_id=${listId}` : ""));
     if (planOutdated || !latestPlan || latestPlan.shopping_list_id !== sourceList.id) generateMutation.mutate();
@@ -167,6 +169,15 @@ export default function NutritionPlanPage() {
   const planDays = sortDays(showPlan?.days);
   const dailyTarget = showPlan?.daily_calories || profile?.daily_calories;
   const proteinTarget = profile?.protein_target;
+
+  // No menu without a completed profile (src/lib/profileGuard.js)
+  if (profileFetched && !profileReady(profile)) return (
+    <div className="space-y-6">
+      <FlowSteps current={3} completed={completed} />
+      <h1 className="font-heading text-2xl font-bold">תפריט תזונה שבועי</h1>
+      <ProfileRequiredNotice />
+    </div>
+  );
 
   return (
     <div className="space-y-6">

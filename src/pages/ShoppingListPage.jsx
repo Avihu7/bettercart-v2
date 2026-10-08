@@ -18,6 +18,8 @@ import {
 import { toast } from "@/components/ui/use-toast";
 import StatCard from "@/components/dashboard/StatCard";
 import { useFlowData, FLOW_QUERY_KEY } from "@/lib/flowData";
+import { profileReady } from "@/lib/profileGuard";
+import ProfileRequiredNotice from "@/components/ProfileRequiredNotice";
 import FlowSteps from "@/components/FlowSteps";
 import { isBasketReady, isUnresolved, receiptItemName } from "@/lib/receiptReview";
 import { weeklyBudget as profileWeeklyBudget, basketBudget } from "@/lib/pricing";
@@ -246,7 +248,7 @@ export default function ShoppingListPage() {
   const urlParams = new URLSearchParams(window.location.search);
   const receiptId = urlParams.get("receipt_id");
 
-  const { data: profiles } = useQuery({
+  const { data: profiles, isFetched: profileFetched } = useQuery({
     queryKey: ["userProfile", user?.email],
     queryFn: () => api.entities.UserProfile.filter({ created_by: user.email }),
     initialData: [],
@@ -281,6 +283,8 @@ export default function ShoppingListPage() {
   const pendingReview = foodReceiptItems.filter(isUnresolved).length;
 
   const profile = profiles?.[0];
+  // No basket without a completed profile (src/lib/profileGuard.js)
+  const needsProfile = profileFetched && !profileReady(profile);
 
   const generateMutation = useMutation({
     mutationFn: async () => {
@@ -321,7 +325,7 @@ export default function ShoppingListPage() {
   const autoBuilt = useRef(false);
   useEffect(() => {
     if (autoBuilt.current || urlParams.get("build") !== "1") return;
-    if (flowLoading || itemsLoading || !profile || generateMutation.isPending) return;
+    if (flowLoading || itemsLoading || !profileReady(profile) || generateMutation.isPending) return;
     autoBuilt.current = true;
     window.history.replaceState(null, "", window.location.pathname + (receiptId ? `?receipt_id=${receiptId}` : ""));
     if (!showList || (effectiveReceiptId && showList.receipt_id !== effectiveReceiptId)) generateMutation.mutate();
@@ -518,6 +522,14 @@ export default function ShoppingListPage() {
   const catalogMatchCount = receiptItems.filter(
     i => ["matched", "approved"].includes(i.catalog_match_status) && !i.catalog_needs_review
   ).length;
+
+  if (needsProfile) return (
+    <div className="space-y-6">
+      <FlowSteps current={2} completed={completed} />
+      <h1 className="font-heading text-2xl font-bold">סל מוצרים חכם</h1>
+      <ProfileRequiredNotice />
+    </div>
+  );
 
   return (
     <div className="space-y-6">

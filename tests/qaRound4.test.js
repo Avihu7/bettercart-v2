@@ -29,7 +29,8 @@ describe("canned fish is a protein, not cooking oil", () => {
   });
 });
 
-describe.each([["an omnivore with chicken / meat favorites", OMNIVORE], ["no profile", undefined]])("the menu for %s", (_, profile) => {
+// (a menu without a profile is refused — tests/profileGuard.test.jsx)
+describe.each([["an omnivore with chicken / meat favorites", OMNIVORE]])("the menu for %s", (_, profile) => {
   let menu;
   beforeAll(async () => { menu = await plan(profile); }, 120000);
 
