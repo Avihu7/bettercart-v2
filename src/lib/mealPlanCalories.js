@@ -9,7 +9,7 @@
  * snack, and finally nudged toward the protein target (see balanceProtein).
  */
 
-import { portionCap, dishWord, mealNameMismatches, nameFromItems } from '@/lib/mealPlanRules';
+import { portionCap, dishWord, mealNameMismatches, nameFromItems, breakfastAllows } from '@/lib/mealPlanRules';
 
 // Plausible kcal/100g "as eaten" per food group; values outside are treated as bad data.
 const KCAL_RANGE = {
@@ -528,7 +528,8 @@ function densifyProtein(day, proteinNeeded, catalog, densities) {
       const better = dense.find(p => ratio(p) > ratio(low.p) * 1.4 && p.meal_roles?.includes(meal.meal_type) &&
         !(p.kosher === "meat" && inMeal.some(e => e.p.kosher === "dairy")) &&
         !(p.kosher === "dairy" && inMeal.some(e => e.p.kosher === "meat")) &&
-        !(["meat", "fish"].includes(p.group) && inMeal.some(e => ["meat", "fish"].includes(e.p.group) && e.p.id !== p.id)));
+        !(["meat", "fish"].includes(p.group) && inMeal.some(e => ["meat", "fish"].includes(e.p.group) && e.p.id !== p.id)) &&
+        breakfastAllows(meal.meal_type, inMeal.map(e => e.p), p));
       if (!better) continue;
       const dLow = densities.get(low.p.id);
       const dHigh = densities.get(better.id);
@@ -573,7 +574,7 @@ function addProteinSides(day, proteinNeeded, catalog, densities, kcalBudget = In
       o.meal_roles?.includes(mealType) && !inMeal.some(q => q.id === o.id) &&
       !(o.kosher === "meat" && inMeal.some(q => q.kosher === "dairy")) &&
       !(o.kosher === "dairy" && inMeal.some(q => q.kosher === "meat")) &&
-      !(dairyPlate && PLATE_PROTEIN.has(o.group)));
+      !(dairyPlate && PLATE_PROTEIN.has(o.group)) && breakfastAllows(mealType, inMeal, o));
     if (!p) continue;
     const d = densities.get(p.id);
     const grams = roundGrams(Math.min((portionCap(p) || 150) * 0.8, (kcalBudget - kcalAdded) * 100 / d.kcal,

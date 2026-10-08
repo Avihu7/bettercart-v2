@@ -91,6 +91,14 @@ const MAIN_PROTEIN = new Set(["meat", "fish", "eggs", "dairy_protein", "legumes"
 // (10 g of sardines is not a serving)
 const PLATE_PROTEIN = new Set(["meat", "fish", "legumes"]);
 const PLATE_PROTEIN_MIN = { meat: 60, fish: 60, legumes: 50 };
+// A sandwich-size portion on bread at breakfast (tuna / meat / hummus on bread) — still never a token amount
+const BREAKFAST_SANDWICH_MIN = 40;
+/** Smallest realistic portion of a plate protein in this meal (null: no minimum for this food). */
+function minPortion(p, meal, groups) {
+  const min = PLATE_PROTEIN_MIN[p.group];
+  if (!min) return null;
+  return meal.meal_type === "Breakfast" && groups.includes("bread") ? Math.min(min, BREAKFAST_SANDWICH_MIN) : min;
+}
 const MAIN_BASE = new Set(["bread", "grain", "starch_veg", "vegetable", "cereal"]);
 const DRINKS = new Set(["coffee", "tea", "milk", "plant_milk"]);
 // Milk and plant milks belong in coffee/tea or with cereal/oats, not beside other food
@@ -247,6 +255,20 @@ export function canonicalizePlan(plan, catalog) {
 }
 
 /** Checks one meal against the meal-role rules. Returns a list of Hebrew-free reason codes. */
+/**
+ * Can a protein food be added to this meal and keep the breakfast rules (checkMeal)?
+ * At breakfast: at most two protein foods, and no meat / fish beside oats, cereal or
+ * yogurt. Other meals: always (their rules are kept by the steps that add food).
+ */
+export function breakfastAllows(mealType, inMeal, product) {
+  if (mealType !== "Breakfast" || inMeal.some(p => p.id === product.id)) return true;
+  const groups = inMeal.map(p => p.group);
+  if ((product.group === "meat" || product.group === "fish") && groups.some(g => g === "cereal" || g === "yogurt")) return false;
+  if ((product.group === "cereal" || product.group === "yogurt") && groups.some(g => g === "meat" || g === "fish")) return false;
+  const proteins = new Set(inMeal.filter(p => MAIN_PROTEIN.has(p.group)).map(p => p.id));
+  return !MAIN_PROTEIN.has(product.group) || proteins.size < 2;
+}
+
 export function checkMeal(meal, catalog) {
   const issues = [];
   const products = meal.items.map(i => catalog.find(p => p.id === i.product_id)).filter(Boolean);
@@ -271,7 +293,7 @@ export function checkMeal(meal, catalog) {
     const p = catalog.find(c => c.id === item.product_id);
     const cap = p && portionCap(p);
     if (cap && Number(item.grams) > cap) issues.push(`unrealistic portion: ${item.grams}g ${p.name_he} (max ${cap}g)`);
-    const min = p && PLATE_PROTEIN_MIN[p.group];
+    const min = p && minPortion(p, meal, groups);
     if (min && Number(item.grams) < min) issues.push(`unrealistic portion: ${item.grams}g ${p.name_he} (min ${min}g)`);
   }
   if (meal.meal_type === "Snacks") {
@@ -287,6 +309,15 @@ export function checkMeal(meal, catalog) {
     }
     if (meal.meal_type === "Breakfast" && !groups.some(g => !DRINKS.has(g) && g !== "oil")) {
       issues.push("breakfast without food");
+    }
+    if (meal.meal_type === "Breakfast") {
+      // Tuna on bread is a breakfast; tuna on oatmeal, cereal or yogurt is not
+      if (groups.some(g => g === "meat" || g === "fish") && groups.some(g => g === "cereal" || g === "yogurt")) {
+        issues.push("meat or fish at an oats / cereal / yogurt breakfast");
+      }
+      // cheese and an egg, yes; cheese, cottage and tuna on one breakfast is protein piled up for the numbers
+      const proteinFoods = new Set(products.filter(p => MAIN_PROTEIN.has(p.group)).map(p => p.id)).size;
+      if (proteinFoods > 2) issues.push(`more than two protein foods at breakfast (${proteinFoods})`);
     }
   }
   return issues;

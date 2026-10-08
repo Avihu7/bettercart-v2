@@ -53,6 +53,9 @@ const ALTERNATIVE_ORDER = ["variety", "budget", "protein", "balanced", "fresh"];
 
 export const PLAN_FAILED_MESSAGE = "לא הצלחנו לבנות תפריט מהמוצרים שבסל. הוסיפו לסל מוצרים לארוחות (חלבון, פחמימה וירקות) ונסו שוב.";
 
+// Only one realistic menu meets every goal with this basket — said up front and on "בנייה מחדש"
+export const ONLY_MENU_MESSAGE = "לא נמצא תפריט חלופי שונה מספיק שעומד בכל היעדים עם הסל הנוכחי — זה התפריט היחיד שאפשר לבנות ממנו בלי ארוחות לא מציאותיות.";
+
 // A week where a day misses breakfast, lunch or dinner is never saved or shown
 const MEAL_LABEL = { Breakfast: "ארוחת בוקר", Lunch: "ארוחת צהריים", Dinner: "ארוחת ערב" };
 const MEAL_NEEDS = { Breakfast: "לחם, ביצים, יוגורט או דגני בוקר", Lunch: "חלבון, פחמימה וירקות", Dinner: "חלבון, פחמימה וירקות" };

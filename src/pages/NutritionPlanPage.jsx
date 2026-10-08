@@ -16,7 +16,7 @@ const ShekelIcon = ({ className }) => (
   <span className={`${className} flex items-center justify-center font-bold`} style={{ fontSize: '0.9rem' }}>₪</span>
 );
 import { formatCurrency } from "@/lib/calculations";
-import { generateNutritionPlan } from "@/lib/nutritionPlanGenerator";
+import { generateNutritionPlan, ONLY_MENU_MESSAGE } from "@/lib/nutritionPlanGenerator";
 import { sortDays, dayLabel } from "@/lib/weekDays";
 import { useFlowData, FLOW_QUERY_KEY } from "@/lib/flowData";
 import FlowSteps from "@/components/FlowSteps";
@@ -201,7 +201,7 @@ export default function NutritionPlanPage() {
 
       {!generateMutation.isPending && generateMutation.data?.exhausted && (
         <Card className="p-4 border-amber-200 bg-amber-50/60 text-sm text-amber-900">
-          אין תפריט אחר ששונה באמת מהתפריט הנוכחי ועומד באותם יעדים — בסל אין מספיק מוצרים שונים.
+          {ONLY_MENU_MESSAGE}
           כדי לקבל תפריט אחר, הוסיפו לסל עוד מקור חלבון (ביצים, טונה, קטניות, עוף) או עוד סוג פחמימה.
         </Card>
       )}
@@ -213,7 +213,7 @@ export default function NutritionPlanPage() {
               ? `חזרנו לתפריט הראשון — עברת על כל ${of} התפריטים השונים שאפשר לבנות מהסל הזה.`
               : index > 0
                 ? `תפריט חלופי ${index + 1} מתוך ${of} — ${ALTERNATIVE_LABELS[name] || "תפריט אחר"}.`
-                : of > 1 ? `התפריט המומלץ (1 מתוך ${of}). "בנייה מחדש" תציג תפריט חלופי.` : null}
+                : of > 1 ? `התפריט המומלץ (1 מתוך ${of}). "בנייה מחדש" תציג תפריט חלופי.` : ONLY_MENU_MESSAGE}
           </p>
         );
       })()}
