@@ -114,7 +114,8 @@ export default function NutritionPlanPage() {
         status: "draft",
         days: result.days,
         before_after,
-        budget: result.budget || {},
+        // (with how many valid menus the basket allows — the quality card suggests "בנייה מחדש" only when > 1)
+        budget: { ...(result.budget || {}), menu_alternatives: result.alternative?.of ?? null },
       });
 
       return { plan, alternative: result.alternative };
@@ -134,11 +135,15 @@ export default function NutritionPlanPage() {
   const changedItems = [...new Set(userWarnings.map(w => w.item).filter(Boolean))];
   // Days the menu could not bring to every target with the basket as it is
   const shortDays = (showPlan?.days || []).filter(d => d.target_warnings?.length);
+  // How many valid menus this basket allows: from the last build / rebuild ("no other menu" → 1),
+  // else as saved with the menu; unknown for older menus (then rebuild is not promised)
+  const menuAlternatives = generateMutation.data?.exhausted ? 1
+    : generateMutation.data?.alternative?.of ?? showPlan?.budget?.menu_alternatives ?? null;
   // Menu quality: one validation of the whole week (src/lib/validateMenu.js) and its explanation
   const planItems = (planBasket || sourceList)?.items;
   const quality = showPlan?.days?.length && planItems?.length && profile
     ? explainMenu(validateMenu({ plan: showPlan, basketItems: planItems, profile, budget: basketBudget(profile, planBasket || sourceList, reserve) }),
-      { plan: showPlan, basketItems: planItems, profile, budgetLabel: foodBudgetLabel(budgetPicture({ profile, spending, basket: planBasket || sourceList })) })
+      { plan: showPlan, basketItems: planItems, profile, budgetLabel: foodBudgetLabel(budgetPicture({ profile, spending, basket: planBasket || sourceList })), menuAlternatives })
     : null;
   // The week's budget picture: supermarket budget, household reserve, food budget, the menu's cost
   const budgetPic = showPlan?.days?.length && profile

@@ -43,7 +43,7 @@ const ADD = {
   fat: "שמן זית, טחינה או אגוזים",
 };
 
-export function explainMenu(validation, { plan, basketItems, profile, budgetLabel = null } = {}) {
+export function explainMenu(validation, { plan, basketItems, profile, budgetLabel = null, menuAlternatives = null } = {}) {
   const { level, checks, offer, stats } = validation;
   const check = id => checks.find(c => c.id === id);
   const bad = id => { const c = check(id); return c && !c.ok; };
@@ -123,6 +123,13 @@ export function explainMenu(validation, { plan, basketItems, profile, budgetLabe
   }
 
   // ── variety
+  // Alternatives in the basket do not mean another valid week: "בנייה מחדש" is suggested only
+  // when the planner found more than one valid menu (menuAlternatives; unknown → no promise)
+  const rebuildHelps = menuAlternatives > 1;
+  const proteinLimits = bad("protein") || limited("protein_sources") || limited("lunch_protein_repeat") || limited("protein_dominance");
+  const noOtherWeek = proteinLimits
+    ? "הסל הנוכחי מגביל את הגיוון בגלל מחסור במקורות חלבון ריאליים. כדי לקבל תפריט מגוון יותר, אפשר לבחור סל חלופי או להוסיף לסל עוד מקורות חלבון מתאימים."
+    : "לא נמצאה חלופה שבועית ריאלית נוספת מהסל הנוכחי. כדי לקבל תפריט מגוון יותר, אפשר לבחור סל חלופי או להוסיף לסל עוד מקורות חלבון, פחמימה או ירקות מתאימים.";
   const lunchRepeat = check("lunch_protein_repeat");
   if (lunchRepeat && lunchRepeat.data.overLunch.length) {
     const { product, lunches } = lunchRepeat.data.overLunch[0];
@@ -130,7 +137,9 @@ export function explainMenu(validation, { plan, basketItems, profile, budgetLabe
       say("variety", `${product} מופיע ב-${lunches} ארוחות צהריים, כי זה מקור החלבון היחיד לצהריים בסל.`);
       add.add(ADD.lunchProtein);
     } else {
-      say("variety", `${product} מופיע ב-${lunches} ארוחות צהריים, למרות שיש בסל חלופות — מגבלה של בניית התפריט.`);
+      say("variety", rebuildHelps
+        ? `${product} מופיע ב-${lunches} ארוחות צהריים, למרות שיש בסל חלופות — אפשר לנסות "בנייה מחדש" לתפריט מגוון יותר.`
+        : `${product} מופיע ב-${lunches} ארוחות צהריים. ${noOtherWeek}`);
     }
   }
   const dominance = check("protein_dominance");
@@ -154,7 +163,9 @@ export function explainMenu(validation, { plan, basketItems, profile, budgetLabe
       if (!offer.has.yogurt) add.add(ADD.yogurt);
       if (!offer.has.cereal) add.add(ADD.cereal);
     } else {
-      say("variety", "ארוחת הבוקר חוזרת על עצמה למרות שיש בסל חלופות — מגבלה של בניית התפריט.");
+      say("variety", rebuildHelps
+        ? "ארוחת הבוקר חוזרת על עצמה למרות שיש בסל חלופות — אפשר לנסות \"בנייה מחדש\" לתפריט מגוון יותר."
+        : `ארוחת הבוקר חוזרת על עצמה. ${noOtherWeek}`);
     }
   }
   // The same foods moved between breakfast, lunch and dinner — honest about whether the basket allows better
@@ -174,7 +185,9 @@ export function explainMenu(validation, { plan, basketItems, profile, budgetLabe
       if (!/טבעוני|צמחוני|vegan|vegetarian/i.test(diet)) add.add(ADD.lunchProtein);
       add.add(ADD.moreCarbs);
     } else {
-      say("variety", `התפריט חוזר על אותם מוצרים בבוקר, בצהריים ובערב${what}, למרות שיש בסל חלופות — נסו "בנייה מחדש" לתפריט אחר.`);
+      say("variety", rebuildHelps
+        ? `התפריט חוזר על אותם מוצרים בבוקר, בצהריים ובערב${what}. יש חלופות בסל — אפשר לנסות "בנייה מחדש" לתפריט מגוון יותר.`
+        : `התפריט חוזר על חלק מהמוצרים${what} כי לא נמצאה חלופה שבועית ריאלית נוספת מהסל הנוכחי. ${proteinLimits ? "הסל הנוכחי מגביל את הגיוון בגלל מחסור במקורות חלבון ריאליים. " : ""}כדי לקבל תפריט מגוון יותר, אפשר לבחור סל חלופי או להוסיף לסל עוד מקורות חלבון, פחמימה או ירקות מתאימים.`);
     }
   }
 

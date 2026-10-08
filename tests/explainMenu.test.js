@@ -58,8 +58,11 @@ describe("menu explanation", () => {
       meal("Snacks", [I.banana, 150]),
     ] })) };
     const profile = { ...BASKETS.rich.profile, daily_calories: null, protein_target: null, fat_target: null, carbs_target: null };
-    const e = explainMenu(validateMenu({ plan, basketItems: basket, profile }), { plan, basketItems: basket, profile });
-    expect(text(e)).toMatch(/מופיע ב-7 ארוחות צהריים, למרות שיש בסל חלופות/);
+    const v = validateMenu({ plan, basketItems: basket, profile });
+    // the planner found other valid weeks: rebuild is worth suggesting
+    expect(text(explainMenu(v, { plan, basketItems: basket, profile, menuAlternatives: 3 }))).toMatch(/מופיע ב-7 ארוחות צהריים, למרות שיש בסל חלופות — אפשר לנסות "בנייה מחדש"/);
+    // only one valid week: alternatives in the basket, but no rebuild promise (tests/qaRound8.test.js)
+    expect(text(explainMenu(v, { plan, basketItems: basket, profile, menuAlternatives: 1 }))).not.toMatch(/בנייה מחדש/);
   });
 
   it("level 3 over budget: amount, the protein trade-off, and the way to the basket", () => {

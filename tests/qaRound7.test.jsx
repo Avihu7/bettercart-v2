@@ -73,6 +73,15 @@ describe("the menu page is honest about the menu it shows", () => {
     expect(html).not.toContain("לא נמצא תפריט שעומד בכל היעדים עם הסל הנוכחי");
   });
 
+  it("QA round 8: a saved menu with one valid alternative — the quality card does not promise a rebuild", async () => {
+    // the QA menu repeats tuna (lunch_protein_repeat, cross_meal_repeat) with alternatives in the basket
+    const html = await render({ ...STATE.plan, budget: { ...STATE.plan.budget, menu_alternatives: 1 } });
+    expect(html).toContain("לא נמצאה חלופה שבועית ריאלית נוספת מהסל הנוכחי");
+    expect(html).not.toMatch(/אפשר לנסות (&quot;|")בנייה מחדש/);
+    const several = await render({ ...STATE.plan, budget: { ...STATE.plan.budget, menu_alternatives: 3 } });
+    expect(several).toMatch(/אפשר לנסות (&quot;|")בנייה מחדש/);
+  });
+
   it("the \"no other menu\" message never says the goals are met when the menu misses one", () => {
     expect(ONLY_MENU_MESSAGE).toMatch(/עומד בכל היעדים/);
     expect(NO_ACCEPTABLE_MENU_MESSAGE).toMatch(/לא הצלחנו לבנות מהסל הנוכחי תפריט שעומד בכל היעדים/);
