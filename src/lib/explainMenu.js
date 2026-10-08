@@ -43,7 +43,7 @@ const ADD = {
   fat: "שמן זית, טחינה או אגוזים",
 };
 
-export function explainMenu(validation, { plan, basketItems, profile } = {}) {
+export function explainMenu(validation, { plan, basketItems, profile, budgetLabel = null } = {}) {
   const { level, checks, offer, stats } = validation;
   const check = id => checks.find(c => c.id === id);
   const bad = id => { const c = check(id); return c && !c.ok; };
@@ -81,7 +81,9 @@ export function explainMenu(validation, { plan, basketItems, profile } = {}) {
   if (within && !within.ok) {
     budgetAction = true;
     const { cost, budget, over } = within.data;
-    let text = `העלות השבועית ${shekel(cost)} — ${shekel(over)} מעל התקציב השבועי (${shekel(budget)}).`;
+    // over which budget: the food budget, and what it is made of (src/lib/budgetModel.js foodBudgetLabel)
+    let text = `עלות המזון לשבוע ${shekel(cost)} — ${shekel(over)} מעל תקציב המזון השבועי (${shekel(budget)}).`;
+    if (budgetLabel) text += ` ${budgetLabel}.`;
     const swaps = plan?.budget?.swaps?.length || 0;
     if (swaps) text += ` כדי להתקרב לתקציב כבר הוחלפו ${swaps} מנות במוצרים זולים יותר מהסל.`;
     // Is protein what makes it expensive? (the share of the week's cost in protein foods)

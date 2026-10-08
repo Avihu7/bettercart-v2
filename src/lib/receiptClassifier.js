@@ -193,6 +193,11 @@ export function receiptInsights(items) {
  * Discount lines belong to the line above them (see receiptSpending).
  */
 export function spendClass(raw) {
+  // "Ignore" leaves a line out of the flow; it is not a household product. An ignored
+  // food line is food outside the menu, never part of the household reserve (budgetModel)
+  if (raw?.catalog_match_status === "ignored") {
+    return applyReceiptRules({ ...raw, catalog_match_status: null }).is_food ? "food_non_plannable" : "non_food";
+  }
   const item = applyReceiptRules(raw);
   if (!item.is_food) return "non_food";
   const name = foodName(raw);
@@ -233,30 +238,3 @@ export function receiptSpending(receipts, items, { purchasesPerMonth = 4 } = {})
   return { receipts: rows, count: rows.length, perReceipt, perMonth };
 }
 
-/**
- * "Before / after" for the menu, food against food:
- *   before = the user's monthly spending on food the menu replaces (food_plannable,
- *            from all receipts × purchases per month); without receipts, the
- *            stated monthly budget
- *   after  = the menu's weekly purchase cost × 30/7
- * Food outside the menu and non-food items are reported beside it, never
- * counted as savings. Returns the before_after fields saved with the plan.
- */
-export function spendingComparison({ spending, monthlyBudget, weeklyMenuCost }) {
-  const after = Math.round((Number(weeklyMenuCost) || 0) * 30 / 7);
-  const fromReceipts = spending?.count > 0 && spending.perMonth.food_plannable > 0;
-  const before = fromReceipts ? spending.perMonth.food_plannable : Math.round(Number(monthlyBudget) || after);
-  const savings = Math.max(0, before - after);
-  return {
-    previous_monthly_spending: before,
-    estimated_new_monthly_spending: after,
-    monthly_savings: savings,
-    yearly_savings: savings * 12,
-    comparison_basis: fromReceipts ? "receipts_food" : "budget",
-    receipts_counted: spending?.count || 0,
-    // the rest of what the receipts show, per month — not part of the comparison
-    monthly_food_non_plannable: fromReceipts ? spending.perMonth.food_non_plannable : null,
-    monthly_non_food: fromReceipts ? spending.perMonth.non_food : null,
-    monthly_receipts_total: fromReceipts ? spending.perMonth.total : null,
-  };
-}

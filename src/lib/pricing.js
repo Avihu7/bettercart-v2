@@ -113,8 +113,8 @@ const PACKED_NAME = /טונה|שימורי|קופסה|קפוא|מארז|\d+\s*(?
 export const isWeighedGroup = (group, name = "") => WEIGHED_GROUPS.has(group) && !PACKED_NAME.test(name);
 
 /**
- * The weekly food budget from the profile: the monthly budget over 30 days,
- * or the per-visit budget × visits per week.
+ * The weekly supermarket budget from the profile (everything bought, not only
+ * food): the monthly budget over 30 days, or the per-visit budget × visits per week.
  */
 export function weeklyBudget(profile) {
   return Math.round(profile?.monthly_budget
@@ -122,7 +122,11 @@ export function weeklyBudget(profile) {
     : (profile?.budget_per_purchase || 500) * Math.max(1, (profile?.purchases_per_month || 4) / 4.3));
 }
 
-/** The budget a basket is held to: the weekly budget, or a higher amount the user accepted. */
-export function basketBudget(profile, basket) {
-  return Math.max(weeklyBudget(profile), Number(basket?.accepted_budget) || 0);
+/**
+ * The food budget a basket and its menu are held to: the weekly supermarket budget
+ * minus the household / non-food reserve from receipt history (src/lib/budgetModel.js),
+ * or a higher amount the user accepted for this basket.
+ */
+export function basketBudget(profile, basket, reserve = 0) {
+  return Math.max(Math.max(0, weeklyBudget(profile) - (Number(reserve) || 0)), Number(basket?.accepted_budget) || 0);
 }

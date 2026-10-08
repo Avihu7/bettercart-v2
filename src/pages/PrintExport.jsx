@@ -4,6 +4,7 @@ import { useFlowData } from "@/lib/flowData";
 import { weeklyUsageLabel } from "@/lib/shoppingOptimizer";
 import { formatCurrency } from "@/lib/calculations";
 import { sortDays, dayLabel } from "@/lib/weekDays";
+import { budgetPicture, historyNote } from "@/lib/budgetModel";
 
 const CATEGORY_LABELS = {
   protein: "חלבון", carb: "פחמימה", fat: "שומן",
@@ -30,8 +31,10 @@ export default function PrintExport() {
   const mode = urlParams.get("mode") || "both"; // "shopping" | "nutrition" | "both"
 
   // Prints the final list (step 4) — never the preliminary step-2 basket
-  const { profile, plan, finalList: list } = useFlowData(user);
+  const { profile, spending, plan, planBasket, finalList: list } = useFlowData(user);
   const ba = plan?.before_after;
+  // the week's budget (src/lib/budgetModel.js) — the same numbers as the app's pages
+  const pic = profile && plan ? budgetPicture({ profile, spending, basket: planBasket, plannedFoodCost: list?.total_estimated_cost ?? plan.estimated_weekly_cost }) : null;
 
   return (
     <div className="print-page" dir="rtl">
@@ -237,29 +240,30 @@ export default function PrintExport() {
       )}
 
       {/* Before / After */}
-      {ba && (
+      {pic && pic.planned_food_cost != null && (
         <div className="page-break-div" style={{ marginBottom: 24 }}>
-          <div className="section-title">לפני ואחרי</div>
+          <div className="section-title">תקציב השבוע</div>
           <div className="before-after">
             <div className="ba-box before">
-              <div className="label">הוצאה חודשית לפני</div>
-              <div className="value" style={{ color: '#dc2626' }}>{formatCurrency(ba.previous_monthly_spending)}</div>
-              <div className="label" style={{ marginTop: 8 }}>ציון בריאות לפני</div>
-              <div className="value" style={{ color: '#dc2626', fontSize: 14 }}>{ba.previous_health_score}/100</div>
+              <div className="label">תקציב הסופר השבועי</div>
+              <div className="value">{formatCurrency(pic.weekly_total_budget)}</div>
+              <div className="label" style={{ marginTop: 8 }}>שמור למוצרים שאינם מזון</div>
+              <div className="value" style={{ fontSize: 14 }}>{formatCurrency(pic.household_reserve)}</div>
             </div>
             <div className="ba-box saving">
-              <div className="label">חיסכון חודשי</div>
-              <div className="value" style={{ color: '#059669' }}>{formatCurrency(ba.monthly_savings)}</div>
-              <div className="label" style={{ marginTop: 8 }}>חיסכון שנתי</div>
-              <div className="value" style={{ color: '#059669', fontSize: 14 }}>{formatCurrency(ba.yearly_savings)}</div>
+              <div className="label">תקציב המזון לשבוע</div>
+              <div className="value">{formatCurrency(pic.available_food_budget)}</div>
             </div>
             <div className="ba-box after">
-              <div className="label">הוצאה חודשית אחרי</div>
-              <div className="value" style={{ color: '#16a34a' }}>{formatCurrency(ba.estimated_new_monthly_spending)}</div>
-              <div className="label" style={{ marginTop: 8 }}>ציון בריאות אחרי</div>
-              <div className="value" style={{ color: '#16a34a', fontSize: 14 }}>{ba.new_health_score}/100</div>
+              <div className="label">עלות המזון לשבוע לפי התפריט</div>
+              <div className="value" style={{ color: pic.status === "within" ? '#16a34a' : '#dc2626' }}>{formatCurrency(pic.planned_food_cost)}</div>
+              <div className="label" style={{ marginTop: 8 }}>
+                {pic.status === "within" ? `בתוך התקציב — נשארו ${formatCurrency(pic.left)}` : pic.status === "over" ? `${formatCurrency(pic.over_by)} מעל תקציב המזון` : "אין תקציב למזון"}
+              </div>
             </div>
           </div>
+          <div className="label" style={{ marginTop: 8 }}>הקבלות הן היסטוריה בלבד ולא יעד התקציב. {historyNote(pic.history)}</div>
+          {ba && <div className="label" style={{ marginTop: 4 }}>ציון בריאות: {ba.previous_health_score}/100 לפני · {ba.new_health_score}/100 אחרי</div>}
         </div>
       )}
 

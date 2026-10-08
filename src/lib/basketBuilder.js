@@ -264,7 +264,9 @@ export async function buildBasket({
   // The receipt is the basis of the basket: its recognized, menu-fit food
   // items (not disliked) go in as they are; the engine only adds around them
   const receiptBasket = [];
-  for (const item of receiptItems.map(receiptToBasketItem)) {
+  // Household / non-food lines are never food: not the basket, the menu or its cost (budgetModel
+  // reserves for them); lines the user chose to ignore stay out too
+  for (const item of receiptItems.filter(r => spendClass(r) !== "non_food" && r.catalog_match_status !== "ignored").map(receiptToBasketItem)) {
     if (isDisliked(item.name, disliked)) continue;
     if (profileConflict(item, profile) || isSupplement(item)) continue;
     if (receiptBasket.some(b => sameFood(b.name, item.name))) continue;

@@ -8,7 +8,8 @@ import { buildFinalShoppingList, weeklyUsageLabel } from "@/lib/shoppingOptimize
 import { formatCurrency } from "@/lib/calculations";
 import FlowSteps from "@/components/FlowSteps";
 import StatCard from "@/components/dashboard/StatCard";
-import BudgetNotice from "@/components/BudgetNotice";
+import BudgetSummaryCard from "@/components/BudgetSummaryCard";
+import { budgetPicture } from "@/lib/budgetModel";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +30,7 @@ export default function FinalShoppingList() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { plan, planOutdated, planIncomplete, planBasket, finalList, completed, isLoading } = useFlowData(user);
+  const { profile, spending, plan, planOutdated, planIncomplete, planBasket, finalList, completed, isLoading } = useFlowData(user);
 
   const buildMutation = useMutation({
     mutationFn: async () => {
@@ -122,16 +123,15 @@ export default function FinalShoppingList() {
             <StatCard title="מוצרים לקנייה" value={finalList.items?.length || 0} icon={ShoppingCart} color="blue" />
           </div>
 
-          {/* The same check the menu passed: this list is that menu's purchase cost */}
-          <BudgetNotice
-            budget={plan?.budget?.weekly_budget > 0 ? {
-              ...plan.budget,
-              estimated_cost: finalList.total_estimated_cost,
-              fits: finalList.total_estimated_cost <= plan.budget.weekly_budget,
-              over_by: Math.max(0, Math.round((finalList.total_estimated_cost - plan.budget.weekly_budget) * 10) / 10),
-            } : null}
-            onBasket={() => navigate("/shopping-list#budget")}
-          />
+          {/* This list is the menu's purchase cost, against the food budget (src/lib/budgetModel.js) */}
+          {profile && (
+            <BudgetSummaryCard
+              pic={budgetPicture({ profile, spending, basket: planBasket, plannedFoodCost: finalList.total_estimated_cost })}
+              costLabel="עלות רשימת הקניות לשבוע"
+              basketCost={planBasket?.total_estimated_cost ?? null}
+              onBasket={() => navigate("/shopping-list#budget")}
+            />
+          )}
 
           <Card className="overflow-hidden">
             <div className="p-4 border-b flex items-center justify-between">

@@ -10,6 +10,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/localAPI";
 import { normalizeHebrew } from "@/lib/mealPlanRules";
+import { receiptSpending } from "@/lib/receiptClassifier";
+import { householdReserve } from "@/lib/budgetModel";
 
 export const FLOW_QUERY_KEY = "flow";
 
@@ -44,6 +46,17 @@ export function useFlowData(user, { listId } = {}) {
     queryFn: () => api.entities.NutritionPlan.filter({ created_by: email }, "-created_date", 5),
     enabled: !!email,
   });
+  // Receipt history: habits and the household / non-food reserve (src/lib/budgetModel.js)
+  const receipts = useQuery({
+    queryKey: [FLOW_QUERY_KEY, "receipts", email],
+    queryFn: () => api.entities.Receipt.filter({ created_by: email }),
+    enabled: !!email,
+  });
+  const receiptItems = useQuery({
+    queryKey: [FLOW_QUERY_KEY, "receiptItems", email],
+    queryFn: () => api.entities.ReceiptItem.filter({ created_by: email }),
+    enabled: !!email,
+  });
   const profiles = useQuery({
     queryKey: [FLOW_QUERY_KEY, "profile", email],
     queryFn: () => api.entities.UserProfile.filter({ created_by: email }),
@@ -64,8 +77,16 @@ export function useFlowData(user, { listId } = {}) {
   const plan = planOutdated || planIncomplete ? null : latestPlan;
   const finalList = plan ? allLists.find(l => isFinalList(l) && l.nutrition_plan_id === plan.id) || null : null;
 
+  const profile = profiles.data?.[0] || null;
+  const spending = receipts.data && receiptItems.data
+    ? receiptSpending(receipts.data, receiptItems.data, { purchasesPerMonth: profile?.purchases_per_month || 4 })
+    : null;
+
   return {
-    profile: profiles.data?.[0] || null,
+    profile,
+    // receipt spending (history) and the weekly household reserve taken from the budget
+    spending,
+    reserve: householdReserve(spending, profile),
     // the profile query answered (a missing profile is then really missing)
     profileFetched: profiles.isFetched,
     basket,

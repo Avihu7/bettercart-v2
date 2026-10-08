@@ -3,7 +3,7 @@
  * (the vegan-account audit).
  */
 import { describe, it, expect } from "vitest";
-import { receiptLines, spendClass, receiptSpending, spendingComparison, foodName, isDiscountLine, isPlainWater } from "@/lib/receiptClassifier";
+import { receiptLines, spendClass, receiptSpending, foodName, isDiscountLine, isPlainWater } from "@/lib/receiptClassifier";
 import { isBasketReady } from "@/lib/receiptReview";
 import { parseQuantityGrams } from "@/lib/mealPlanCalories";
 import { isLiquid } from "@/lib/basketBudget";
@@ -63,16 +63,7 @@ describe("spending by class across receipts", () => {
     expect(s.perReceipt.food_plannable).toBe(23);
     expect(s.perMonth.food_plannable).toBe(92);
   });
-  it("compares food with food — never the budget or non-food — when receipts exist", () => {
-    const c = spendingComparison({ spending: s, monthlyBudget: 1700, weeklyMenuCost: 15 });
-    expect(c).toMatchObject({ comparison_basis: "receipts_food", previous_monthly_spending: 92, estimated_new_monthly_spending: 64, monthly_savings: 28 });
-    expect(c.monthly_non_food).toBe(Math.round(17.5 * 4));
-    const none = spendingComparison({ spending: receiptSpending([], []), monthlyBudget: 1700, weeklyMenuCost: 200 });
-    expect(none).toMatchObject({ comparison_basis: "budget", previous_monthly_spending: 1700 });
-  });
-  it("reports no savings when the menu costs more than the receipts' food", () => {
-    expect(spendingComparison({ spending: s, monthlyBudget: 1700, weeklyMenuCost: 100 }).monthly_savings).toBe(0);
-  });
+  // (the plan is compared with the user's budget, receipts are history only — tests/budgetModel.test.js)
 });
 
 describe("units", () => {

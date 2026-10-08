@@ -65,7 +65,7 @@ describe("menu explanation", () => {
   it("level 3 over budget: amount, the protein trade-off, and the way to the basket", () => {
     const e = explained.real;
     expect(e.level).toBe(3);
-    expect(text(e)).toMatch(/מעל התקציב השבועי/);
+    expect(text(e)).toMatch(/מעל תקציב המזון השבועי/);
     expect(text(e)).toMatch(/יעד החלבון שלך \(175 ג׳ ביום\) יקר ביחס לתקציב/);
     expect(e.budgetAction).toBe(true);
   });

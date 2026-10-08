@@ -27,7 +27,8 @@ import MenuQualityCard from "@/components/MenuQualityCard";
 import { validateMenu } from "@/lib/validateMenu";
 import { explainMenu } from "@/lib/explainMenu";
 import { basketBudgetPicture } from "@/lib/basketBudget";
-import { receiptSpending, spendingComparison } from "@/lib/receiptClassifier";
+import { budgetPicture, budgetComparison, foodBudgetLabel } from "@/lib/budgetModel";
+import BudgetSummaryCard from "@/components/BudgetSummaryCard";
 import { profileReady } from "@/lib/profileGuard";
 import ProfileRequiredNotice from "@/components/ProfileRequiredNotice";
 
@@ -69,7 +70,7 @@ export default function NutritionPlanPage() {
   const listId = urlParams.get("list_id");
 
   // Basket (step 2) this plan is built from, latest plan, and its final list (step 4)
-  const { profile, profileFetched, basket: sourceList, plan: latestPlan, planBasket, planOutdated, planIncomplete, finalList, completed, isLoading: flowLoading } = useFlowData(user, { listId });
+  const { profile, profileFetched, spending, reserve, basket: sourceList, plan: latestPlan, planBasket, planOutdated, planIncomplete, finalList, completed, isLoading: flowLoading } = useFlowData(user, { listId });
 
   const generateMutation = useMutation({
     // previous: the menu on screen when the user asks for a different one ("בנייה מחדש")
@@ -79,21 +80,15 @@ export default function NutritionPlanPage() {
 
       // The menu is fitted to the weekly budget (or a higher amount the user
       // accepted for this basket) before it is saved
-      const result = await generateNutritionPlan({ list, profile, budget: basketBudget(profile, list), previous });
+      const result = await generateNutritionPlan({ list, profile, budget: basketBudget(profile, list, reserve), previous });
       // Nothing meaningfully different from the current menu: keep it, and say why
       if (result.alternative?.exhausted) return { exhausted: true };
 
-      // Before / after, food against food: what all the user's receipts show they spend
-      // on the food the menu replaces vs. the menu's purchase cost (src/lib/receiptClassifier.js)
-      const [receipts, receiptItems] = await Promise.all([
-        api.entities.Receipt.filter({ created_by: user.email }),
-        api.entities.ReceiptItem.filter({ created_by: user.email }),
-      ]);
-      const spending = receiptSpending(receipts, receiptItems, { purchasesPerMonth: profile?.purchases_per_month || 4 });
-      const comparison = spendingComparison({
-        spending, monthlyBudget: profile?.monthly_budget,
-        weeklyMenuCost: result.estimated_weekly_cost ?? list.total_estimated_cost ?? 0,
-      });
+      // Before / after: the plan against the user's budget (src/lib/budgetModel.js) —
+      // receipt spending is saved beside it as history, never as the baseline
+      const comparison = budgetComparison(budgetPicture({
+        profile, spending, basket: list, plannedFoodCost: result.estimated_weekly_cost ?? list.total_estimated_cost ?? 0,
+      }));
       const previousHealthScore = profile?.health_score || 50;
       // New health score: based on avg health_score of shopping list items (scale 0-10 → 0-100)
       const itemHealthScores = list.items?.filter(i => i.health_score != null).map(i => i.health_score) || [];
@@ -142,8 +137,12 @@ export default function NutritionPlanPage() {
   // Menu quality: one validation of the whole week (src/lib/validateMenu.js) and its explanation
   const planItems = (planBasket || sourceList)?.items;
   const quality = showPlan?.days?.length && planItems?.length && profile
-    ? explainMenu(validateMenu({ plan: showPlan, basketItems: planItems, profile, budget: basketBudget(profile, planBasket || sourceList) }),
-      { plan: showPlan, basketItems: planItems, profile })
+    ? explainMenu(validateMenu({ plan: showPlan, basketItems: planItems, profile, budget: basketBudget(profile, planBasket || sourceList, reserve) }),
+      { plan: showPlan, basketItems: planItems, profile, budgetLabel: foodBudgetLabel(budgetPicture({ profile, spending, basket: planBasket || sourceList })) })
+    : null;
+  // The week's budget picture: supermarket budget, household reserve, food budget, the menu's cost
+  const budgetPic = showPlan?.days?.length && profile
+    ? budgetPicture({ profile, spending, basket: planBasket || sourceList, plannedFoodCost: showPlan.estimated_weekly_cost })
     : null;
   // A menu that misses a goal (level 3) is shown as the closest one, never as acceptable;
   // a saved menu that breaks a rule (level 4) is not shown at all
@@ -152,7 +151,7 @@ export default function NutritionPlanPage() {
   // Over budget: the basket's recommended cheaper swaps (the same calculation as the basket's budget card)
   const { data: savings } = useQuery({
     queryKey: ["menuSavings", showPlan?.id, planItems?.map(i => i.name).join("|")],
-    queryFn: () => basketBudgetPicture({ basketItems: planItems, planDays: showPlan.days, profile, budget: basketBudget(profile, planBasket || sourceList) }),
+    queryFn: () => basketBudgetPicture({ basketItems: planItems, planDays: showPlan.days, profile, budget: basketBudget(profile, planBasket || sourceList, reserve) }),
     enabled: !!quality?.budgetAction,
     staleTime: 5 * 60 * 1000,
   });
@@ -336,11 +335,14 @@ export default function NutritionPlanPage() {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="יעד יומי" value={`${Number(dailyTarget || 0).toLocaleString()} קלוריות`} icon={Flame} color="orange" />
             <StatCard title="קלוריות שבועיות" value={showPlan.weekly_calories?.toLocaleString()} icon={Flame} color="red" />
-            <StatCard title="עלות שבועית" value={formatCurrency(showPlan.estimated_weekly_cost)} icon={ShekelIcon} color="green" />
+            <StatCard title="עלות המזון לשבוע" value={formatCurrency(showPlan.estimated_weekly_cost)} icon={ShekelIcon} color="green" />
             <StatCard title="ימים מתוכננים" value={showPlan.days?.length || 0} icon={UtensilsCrossed} color="blue" />
           </div>
 
           <MenuQualityCard explanation={quality} savings={savings} onBasket={budget => navigate(budget ? "/shopping-list#budget" : "/shopping-list")} />
+
+          <BudgetSummaryCard pic={budgetPic} basketCost={(planBasket || sourceList)?.total_estimated_cost ?? null}
+            onBasket={() => navigate("/shopping-list#budget")} />
 
           {/* Day Tabs */}
           <Tabs key={showPlan.id} defaultValue={planDays[0]?.day_name} dir="rtl" className="w-full">

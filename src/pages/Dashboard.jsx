@@ -325,17 +325,17 @@ export default function Dashboard() {
         </Card>
       )}
 
-      {/* Savings Alert */}
-      {savings?.monthly_savings > 0 && (
+      {/* Room left in the food budget (src/lib/budgetModel.js budgetComparison) */}
+      {savings?.comparison_basis === "budget" && savings.monthly_left > 0 && (
         <Card className="p-5 bg-accent border-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
               <TrendingDown className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <p className="font-heading font-semibold">החיסכון החודשי המשוער שלכם</p>
+              <p className="font-heading font-semibold">התפריט בתוך תקציב המזון שלכם</p>
               <p className="text-sm text-muted-foreground">
-                {formatCurrency(savings.monthly_savings)}/חודש · {formatCurrency(savings.yearly_savings)}/שנה
+                נשארים כ-{formatCurrency(savings.monthly_left)} בחודש מתקציב המזון ({formatCurrency(savings.monthly_food_budget)})
               </p>
             </div>
           </div>

@@ -53,7 +53,7 @@ function OptionRow({ index, o, broad, saving, onReplace, onDismiss }) {
  * reject — and says whether the budget can be reached with such swaps.
  * All numbers come from src/lib/basketBudget.js (deterministic).
  */
-export default function BudgetImpactCard({ basketItems, planDays, profile, budget, onReplace, onReplaceMany, saving, menuOutdated }) {
+export default function BudgetImpactCard({ basketItems, planDays, profile, budget, budgetLabel, onReplace, onReplaceMany, saving, menuOutdated }) {
   const [dismissed, setDismissed] = useState(() => new Set());
   const [showBroad, setShowBroad] = useState(false);
   const { data: pic, isLoading } = useQuery({
@@ -88,7 +88,7 @@ export default function BudgetImpactCard({ basketItems, planDays, profile, budge
         </h2>
         <p className="text-sm mt-1">
           {fromMenu ? "עלות השבוע לפי התפריט" : "עלות המוצרים בסל"}: <strong>{shekel(pic.total)}</strong>
-          {budget > 0 && <> · תקציב שבועי {shekel(budget)}</>}
+          {budget > 0 && <> · תקציב מזון שבועי {shekel(budget)}</>}
           {over ? <> · <span className="text-amber-700 font-medium">חריגה של {shekel(pic.over)}</span></> : budget > 0 && <> · <span className="text-emerald-700">בתוך התקציב</span></>}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">
@@ -98,6 +98,7 @@ export default function BudgetImpactCard({ basketItems, planDays, profile, budge
               ? "הסל השתנה מאז שהתפריט נבנה — אלה מחירי המוצרים עצמם. אחרי בניית התפריט מחדש נראה את העלות לפי הכמויות בפועל."
               : "אלה מחירי המוצרים עצמם. אחרי בניית התפריט נראה את העלות לפי הכמויות שהתפריט צריך."}
         </p>
+        {budgetLabel && <p className="text-xs text-muted-foreground mt-0.5">{budgetLabel}.</p>}
       </div>
 
       {over && recommended.length > 0 && (

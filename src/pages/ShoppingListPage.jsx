@@ -22,7 +22,8 @@ import { profileReady } from "@/lib/profileGuard";
 import ProfileRequiredNotice from "@/components/ProfileRequiredNotice";
 import FlowSteps from "@/components/FlowSteps";
 import { isBasketReady, isUnresolved, receiptItemName } from "@/lib/receiptReview";
-import { weeklyBudget as profileWeeklyBudget, basketBudget } from "@/lib/pricing";
+import { basketBudget } from "@/lib/pricing";
+import { budgetPicture, foodBudgetLabel } from "@/lib/budgetModel";
 import { applyReceiptRules } from "@/lib/receiptClassifier";
 import { buildBasketAlternatives, BASKET_EXHAUSTED_MESSAGE, sameBasketItems, receiptToBasketItem, userAddedItem, correctedReceiptItems, sameFood, basketTotals, basketLooksThin, REGULAR_MIN_SCORE } from "@/lib/basketBuilder";
 import { weeklyCosts, budgetDrivers, priceFacts, changeBudgetImpact } from "@/lib/basketBudget";
@@ -297,7 +298,8 @@ export default function ShoppingListPage() {
       // BetterCart plans a full week: one weekly menu and one weekly basket,
       // whatever the shopping frequency (which only splits the budget)
       const daysPerPurchase = 7;
-      const weeklyBudget = profileWeeklyBudget(profile);
+      // the food budget: the supermarket budget minus the household reserve (src/lib/budgetModel.js)
+      const weeklyBudget = basketBudget(profile, null, reserve);
       // The basket algorithm lives in src/lib/basketBuilder.js (deterministic, no AI).
       // "בחירה מחדש" on a basket of this receipt: the next alternative basket after it
       const sameReceipt = showList && (showList.receipt_id || "") === (effectiveReceiptId || "");
@@ -333,7 +335,7 @@ export default function ShoppingListPage() {
   });
 
   // Baskets only — a final shopping list (step 4) is never shown here
-  const { basket: showList, plan, planBasket, planOutdated, completed, isLoading: flowLoading } = useFlowData(user);
+  const { basket: showList, plan, planBasket, planOutdated, completed, isLoading: flowLoading, spending, reserve } = useFlowData(user);
 
   // One click from the receipt: arriving with ?build=1 builds the basket right
   // away, unless a basket for this receipt already exists. Runs once; the flag
@@ -440,7 +442,7 @@ export default function ShoppingListPage() {
    */
   // What a change does to the week's cost (src/lib/basketBudget.js) — null when it stays within budget
   const budgetImpact = (items, { replaced, added } = {}) => changeBudgetImpact({
-    basketItems: showList.items, newItems: items, replaced, added, limit: basketBudget(profile, showList),
+    basketItems: showList.items, newItems: items, replaced, added, limit: basketBudget(profile, showList, reserve),
     planDays: plan?.days?.length && planBasket?.id === showList.id ? plan.days : null,
   });
 
@@ -697,7 +699,8 @@ export default function ShoppingListPage() {
             basketItems={showList.items || []}
             planDays={menuDays}
             profile={profile}
-            budget={profile ? basketBudget(profile, showList) : 0}
+            budget={profile ? basketBudget(profile, showList, reserve) : 0}
+            budgetLabel={profile ? foodBudgetLabel(budgetPicture({ profile, spending, basket: showList })) : null}
             onReplace={replaceItemAt}
             onReplaceMany={replaceMany}
             saving={saveItemsMutation.isPending}
