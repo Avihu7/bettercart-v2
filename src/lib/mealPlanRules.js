@@ -20,6 +20,8 @@ const GROUPS = [
   { group: "tea",       terms: [" תה "] },
   { group: "nuts",      terms: ["שקד", "אגוז", "קשיו", "פיסטוק", "בוטנים", "גרעינים", "צימוקים", "תמרים"] },
   { group: "tahini",    terms: ["טחינה"] },
+  // Fish canned in oil before oil: "סרדינים בשמן סויה" is a fish portion, not 10 g of cooking fat
+  { group: "fish",      terms: ["טונה", "סרדין", "מקרל"] },
   { group: "oil",       terms: ["שמן"] },
   { group: "cereal",    terms: ["קורנפלקס", "גרנולה", "שיבולת שועל", "דגני בוקר", "קוואקר", "מוזלי"] },
   { group: "yogurt",    terms: ["יוגורט", "מעדן", "אקטיביה", "יופלה", "דנונה"] },
@@ -85,6 +87,10 @@ export function portionCap(product) {
 }
 
 const MAIN_PROTEIN = new Set(["meat", "fish", "eggs", "dairy_protein", "legumes", "yogurt"]);
+// Proteins that make a plate on their own: one per plate, and never a token amount
+// (10 g of sardines is not a serving)
+const PLATE_PROTEIN = new Set(["meat", "fish", "legumes"]);
+const PLATE_PROTEIN_MIN = { meat: 60, fish: 60, legumes: 50 };
 const MAIN_BASE = new Set(["bread", "grain", "starch_veg", "vegetable", "cereal"]);
 const DRINKS = new Set(["coffee", "tea", "milk", "plant_milk"]);
 // Milk and plant milks belong in coffee/tea or with cereal/oats, not beside other food
@@ -254,8 +260,10 @@ export function checkMeal(meal, catalog) {
   }
   // One main animal protein per plate; meat/poultry with fish is also not kosher
   if (groups.includes("meat") && groups.includes("fish")) issues.push("meat and fish in the same meal");
-  else if (new Set(products.filter(p => p.group === "meat" || p.group === "fish").map(p => p.id)).size > 1) {
-    issues.push("more than one main meat/fish protein in the meal");
+  else {
+    // Two legumes (tofu with chickpeas) is one vegan plate; legumes beside meat or fish is two
+    const animal = new Set(products.filter(p => p.group === "meat" || p.group === "fish").map(p => p.id)).size;
+    if (animal > 1 || (animal === 1 && groups.includes("legumes"))) issues.push("more than one main protein (meat/fish/legumes) in the meal");
   }
   const phantom = mealNameMismatches(meal.meal_name, meal.items, catalog);
   if (phantom.length) issues.push(`meal_name mentions foods not in the meal: ${phantom.join(", ")}`);
@@ -263,6 +271,8 @@ export function checkMeal(meal, catalog) {
     const p = catalog.find(c => c.id === item.product_id);
     const cap = p && portionCap(p);
     if (cap && Number(item.grams) > cap) issues.push(`unrealistic portion: ${item.grams}g ${p.name_he} (max ${cap}g)`);
+    const min = p && PLATE_PROTEIN_MIN[p.group];
+    if (min && Number(item.grams) < min) issues.push(`unrealistic portion: ${item.grams}g ${p.name_he} (min ${min}g)`);
   }
   if (meal.meal_type === "Snacks") {
     const bad = products.filter(p => NOT_SNACK.has(p.group) || DRINKS.has(p.group) && products.length === 1);

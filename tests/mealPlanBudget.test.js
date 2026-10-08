@@ -38,8 +38,9 @@ describe("fitPlanToBudget", () => {
   });
 
   it("reaches a reachable budget with valid swaps, keeping calories and protein", () => {
-    // reachable while keeping meal shapes and ≤3 lunches per protein
-    const budget = Math.round(before * 0.85);
+    // reachable while keeping meal shapes, ≤3 lunches per protein and one main protein per
+    // plate (85% was reached only with lentils + chicken on one plate — QA round 4)
+    const budget = Math.round(before * 0.95);
     const p = structuredClone(plan);
     const r = fitPlanToBudget({ plan: p, catalog, densities, targets, basketItems: basket, budget, reports });
     recomputeTotals(p);
@@ -49,6 +50,9 @@ describe("fitPlanToBudget", () => {
     expect(validatePlan(p, catalog).length).toBeLessThanOrEqual(problemsBefore);
     p.days.forEach(d => expect(Math.abs(d.total_calories - 2200) / 2200).toBeLessThanOrEqual(0.05));
     p.days.forEach(d => expect(d.total_protein).toBeGreaterThanOrEqual(140 * 0.85));
+    // no second protein added to a plate to make the swap's numbers work
+    const plateProteins = m => m.items.filter(i => ["meat", "fish", "legumes"].includes(catalog.find(c => c.id === i.product_id)?.group)).length;
+    p.days.forEach(d => d.meals.forEach(m => expect(plateProteins(m), `${d.day_name}/${m.meal_type}`).toBeLessThanOrEqual(1)));
   });
 
   it("reports an unreachable budget honestly, never raising the cost", () => {

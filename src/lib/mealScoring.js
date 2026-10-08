@@ -23,6 +23,8 @@
  * weeklyPenalty (over the whole week, so every meal choice sees the others):
  *   lunchRepeat   main protein in more than 3 lunches (each extra lunch), when the
  *                 basket has the 3 lunch proteins that makes possible
+ *   lightLunch    cheese / egg + bread lunches beyond one a week, for a non-vegetarian
+ *                 whose basket has at least 2 proteins that make a plate (meat, fish, legumes)
  *   proteinSpread Σ uses² of each main protein (lunch + dinner) — spreads proteins
  *   dominance     a protein in more than half of the main meals
  *   sameDay       the same main protein twice in one day
@@ -55,7 +57,7 @@ export const WEIGHTS = {
   // scoreMeal
   protein: 3, fat: 2, carbs: 1, kcal: 0.5, price: 1.5, proteinPrice: 1.5, realism: 2, favorite: 1, expensive: 1.5,
   // weeklyPenalty
-  lunchRepeat: 6, proteinSpread: 0.35, dominance: 3, sameDay: 1.5, consecutive: 0.8,
+  lunchRepeat: 6, lightLunch: 6, proteinSpread: 0.35, dominance: 3, sameDay: 1.5, consecutive: 0.8,
   breakfast: 0.6, carbs: 0.25, produce: 0.3, identical: 2, budget: 40, proteinShort: 12, dayFit: 2,
   mealRepeat: 2, breakfastRepeat: 0.8, unusedProduce: 0.6, cost: 8, previous: 0,
   crossMeal: 1, sameDayCore: 3, productUse: 2,
@@ -121,6 +123,10 @@ export function scoringContext({ catalog, densities, profile, budget, candidates
     // vegetables / fruit the candidates can use — the week should use them
     produceOffered: new Set(Object.values(candidates).flat().flatMap(c => c.produce)),
     lunchRule: new Set((candidates.Lunch || []).filter(c => c.main).map(c => c.main.id)).size >= 3,
+    // cheese / eggs with bread is a light lunch: fine once a week, not the main lunch of
+    // a meat eater whose basket has at least 2 proteins that make a plate
+    lightLunchRule: !/צמחוני|טבעוני|vegetarian|vegan/i.test((profile?.dietary_preferences || []).join(" ")) &&
+      new Set((candidates.Lunch || []).filter(c => c.pattern === "plate" && c.main).map(c => c.main.id)).size >= 2,
     refPerKcal: median(all.map(c => (c.nutrition.kcal > 0 ? c.cost / c.nutrition.kcal : null))) || 0.01,
     refPerProtein: median(foods.filter(p => PROTEIN_GROUPS.has(p.group)).map(perProtein)) || 0.1,
     expensiveFrom: priced.length >= 4 ? priced[Math.floor(priced.length * 0.75)] : Infinity,
@@ -166,7 +172,7 @@ export function weeklyPenalty(week, ctx) {
   const lunchMain = new Map(), mainUse = new Map(), breakfast = new Map(), carbs = new Map(), produce = new Map(), identical = new Map();
   const mealSig = new Map(), breakfastSig = new Map();
   const core = new Map(), coreTypes = new Map(), coreFood = new Map();
-  let sameDayCore = 0;
+  let sameDayCore = 0, lightLunches = 0;
   let sameDay = 0, consecutive = 0, mains = 0, cost = 0, kcal = 0, dayFit = 0, proteinShort = 0;
   week.forEach((day, di) => {
     const mainsToday = new Map(), coresToday = new Map();
@@ -195,6 +201,7 @@ export function weeklyPenalty(week, ctx) {
         if (c.main) bump(mainUse, c.main.id);
         if (c.carb) bump(carbs, c.carb.id);
         if (c.mealType === "Lunch" && c.main) bump(lunchMain, c.main.id);
+        if (c.mealType === "Lunch" && c.pattern === "dairy_plate") lightLunches++;
         const prev = week[di - 1]?.find(x => x?.mealType === c.mealType);
         if (prev?.main && c.main && prev.main.id === c.main.id) consecutive++;
       }
@@ -216,6 +223,7 @@ export function weeklyPenalty(week, ctx) {
   });
   const parts = {
     lunchRepeat: ctx.lunchRule ? [...lunchMain.values()].reduce((s, n) => s + Math.max(0, n - 3), 0) : 0,
+    lightLunch: ctx.lightLunchRule ? Math.max(0, lightLunches - 1) : 0,
     proteinSpread: sumSquares(mainUse) / 7,
     dominance: [...mainUse.values()].reduce((s, n) => s + Math.max(0, n - mains / 2), 0),
     sameDay, consecutive,

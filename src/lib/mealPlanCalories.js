@@ -81,6 +81,8 @@ const MIN_GRAMS = {
 // Protein-dense groups whose portions may grow, and calorie sources that may
 // shrink to make room (carbs/fat), when a day is short on protein.
 const PROTEIN_GROUPS = new Set(["meat", "fish", "eggs", "dairy_protein", "legumes", "yogurt"]);
+// Proteins that make a plate on their own — never two on one plate
+const PLATE_PROTEIN = new Set(["meat", "fish", "legumes"]);
 
 // Groups whose portions are not scaled (negligible calories or sized by habit).
 const FIXED_GROUPS = new Set(["vegetable", "coffee", "tea"]);
@@ -562,12 +564,16 @@ function addProteinSides(day, proteinNeeded, catalog, densities, kcalBudget = In
     const meal = day.meals.find(m => m.meal_type === mealType);
     if (!meal) continue;
     const inMeal = meal.items.map(i => catalog.find(p => p.id === i.product_id)).filter(Boolean);
-    const hasMain = inMeal.some(p => ["meat", "fish"].includes(p.group));
+    // One main protein per plate: a meat / fish / legume plate gets no second protein
+    // (no 80 g chicken on a soy plate); a dairy / egg plate and breakfast only more dairy
+    // or eggs (no tuna beside oats)
+    if (inMeal.some(p => PLATE_PROTEIN.has(p.group))) continue;
+    const dairyPlate = mealType === "Breakfast" || inMeal.some(p => PROTEIN_GROUPS.has(p.group));
     const p = options.find(o =>
       o.meal_roles?.includes(mealType) && !inMeal.some(q => q.id === o.id) &&
       !(o.kosher === "meat" && inMeal.some(q => q.kosher === "dairy")) &&
       !(o.kosher === "dairy" && inMeal.some(q => q.kosher === "meat")) &&
-      !(["meat", "fish"].includes(o.group) && hasMain));
+      !(dairyPlate && PLATE_PROTEIN.has(o.group)));
     if (!p) continue;
     const d = densities.get(p.id);
     const grams = roundGrams(Math.min((portionCap(p) || 150) * 0.8, (kcalBudget - kcalAdded) * 100 / d.kcal,

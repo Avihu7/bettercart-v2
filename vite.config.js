@@ -12,6 +12,7 @@ export default defineConfig({
   // Menu tests build whole weeks (4+ planner variants each) — CPU-heavy when files run in parallel
   test: {
     testTimeout: 20000,
+    hookTimeout: 60000,
   },
   server: {
     allowedHosts: true,
