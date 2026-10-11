@@ -1,5 +1,8 @@
 # BetterCart v2 — Sharing a Local Demo via Public Tunnel
 
+> **Outdated — kept for history only.** This guide predates user accounts and the server-side receipt AI: the app now has email/password accounts, and the Anthropic key is a server setting (`ANTHROPIC_API_KEY`), never a `VITE_` variable. The current system is described in `README.md` and in `docs/project-book/`. Do not use this file as a source.
+
+
 **Created:** 2026-06-21  
 **Method:** Cloudflare Quick Tunnel (no account required)
 

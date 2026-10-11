@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- Node.js 18+ (check: `node --version`)
+- Node.js 20.12+ (check: `node --version`)
 - npm 9+ (check: `npm --version`)
 - No external database or cloud service required
 
@@ -56,18 +56,14 @@ npm run preview
 
 To use real Claude AI instead of demo data:
 
-1. Copy `.env.example` to `.env`:
-   ```bash
-   cp .env.example .env
+1. Create `.env.local` in the project root (git-ignored; the server loads it):
    ```
+   ANTHROPIC_API_KEY=your_anthropic_api_key_here
+   ```
+   The key is a server setting. Do not use a `VITE_` name for it: `VITE_`
+   variables are built into the browser bundle.
 
-2. Edit `.env` and add your Anthropic API key:
-   ```
-   VITE_ANTHROPIC_API_KEY=sk-ant-...
-   VITE_API_URL=http://localhost:3001
-   ```
-
-3. Restart the dev server.
+2. Restart the API server (`npm run dev:full`).
 
 > **Without an API key:** The app runs fully in demo mode using pre-built responses. All UI flows work normally.
 
@@ -87,7 +83,7 @@ To reset all data: delete `server/bettercart.db` and restart the server.
 | `npm run dev` shows blank page | Check that `node_modules` exists — run `npm install` |
 | Shopping list or nutrition plan fails | Start the API server: `npm run dev:server` (port 3001 required) |
 | "Failed to fetch" errors in browser | API server not running — run `npm run dev:full` |
-| Receipt upload fails | Either set `VITE_ANTHROPIC_API_KEY` or use "Load Demo" button |
+| Receipt upload fails | Set `ANTHROPIC_API_KEY` in `.env.local` and restart the server, or use the demo receipt |
 | Port 5173 already in use | Kill the other process or change port in `vite.config.js` |
 | Port 3001 already in use | Change `PORT` env var when starting the server |
 
@@ -104,3 +100,5 @@ To reset all data: delete `server/bettercart.db` and restart the server.
 | `npm run dev:server` | Express with auto-reload (node --watch) |
 | `npm run dev:full` | Frontend + backend concurrently |
 | `npm run lint` | ESLint check |
+| `npm test` | Unit tests (Vitest) |
+| `npm run test:integration` | Integration tests against the running API |

@@ -1,5 +1,8 @@
 # BetterCart v2 — Project Status
 
+> **Outdated — kept for history only.** This file describes the project as of 2026-06-28: AI-generated shopping lists and menus, guest IDs instead of accounts, and an API key in the browser. All three have since been replaced (deterministic basket and planner, email/password accounts, server-side receipt AI). The current system is described in `README.md` and in `docs/project-book/`. Do not use this file as a source.
+
+
 **Last updated:** 2026-06-28
 **Version:** 2.0.0
 **Status:** ✅ MVP Stable — Final QA Passed

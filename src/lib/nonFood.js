@@ -17,8 +17,18 @@ const word = w => `(?:^|[^א-ת])[והלב]?${w}(?![א-ת])`;
 // Word start, any ending ("מסקר" → מסקרה), Hebrew-prefix aware
 const stem = w => `(?:^|[^א-ת])[והלב]?${w}`;
 
+// Pet food is never food for the user: the animal named in the product ("שימורי חתול",
+// "חטיף כלבים", "לחתול" — also glued to the word before, as some catalog names are),
+// but not the cheese brand "החתול המחייך"; or a pet-food brand / fish feed
+export const PET_FOOD = new RegExp([
+  '(?<!ה)חתול', 'חתלתול', word('כלב'), word('כלבים'),
+  word('לה קט'), word('סופר קט'), word('פיין קט'), 'פריסקיז', 'דוגלי', word('פיין דוג'), 'גורמה גולד', 'פנסיפיסט', 'פנסי פי[סט]', 'נייטיב ווי', 'מונג פרש',
+  'פורינה', 'בונזו', 'לדגים במיכל',
+].join('|'));
+
 // Never eaten, whatever else the name says
 export const NON_FOOD_STRONG = new RegExp([
+  PET_FOOD.source,
   stem('שמפו'), stem('מרכך'), stem('סבון'), stem('אלסבון'), stem('סרום'), stem('מסקרה'), stem('מסקרת'), word('גבות'), stem('לגבות'), stem('שפתון'),
   stem('ליפ גלוס'), stem('קונסילר'), stem('פודרה'), '(?:^|[^א-ת])(?<!תבלין )סומק', stem('צללית'), stem('אייליינר'),
   stem('מייקאפ'), stem('איפור'), stem('פריימר'), word('אדפ'), word('אדט'), 'EDP', 'EDT', stem('בושם'),
@@ -31,7 +41,6 @@ export const NON_FOOD_STRONG = new RegExp([
   stem('מטהר'), stem('ספוגי'), stem('ספוג (?:כלים|קרצוף|רחצה|ניקוי)'), stem('שקיות'), stem('נרות'), stem('סוללות'), stem('צלחות'), stem('כוסות חד'),
   stem('מכונת'), stem('אסלה'), stem('נייר טואלט'), stem('מגבות נייר'), word('לק'), stem('ציפורנ'),
   'SPF', 'BB קרם', 'CC קרם', 'MOISTURE', 'Wear',
-  stem('לכלב'), stem('לחתול'), stem('פורינה'), stem('בונזו'),
   stem('קרם לחות'), stem('קרם ידיים'), stem('קרם גוף'), stem('קרם פנים'), stem('קרם לילה'), stem('ק\\. ?גוף'),
   stem('ק\\. ?ידיים'), stem('להסרת שיער'), stem('לשיער'), stem('אקסלנס (?:קרם|[0-9])'), stem('עפרון'),
   stem('מסכה למרקם'), stem('מסכה לעור'), stem('טישו מסק'), stem('ת\\. ?פנים'), stem('מי פנים'),
@@ -60,7 +69,7 @@ export const FOOD_WORDS = new RegExp([
 ].join('|'));
 
 // Never food for the user, even next to a food word ("סלמון לחתול", "סרום אורז", "שפתון תות")
-export const NEVER_FOOD = /לחתול|לכלב|לחתולים|לכלבים|פורינה|בונזו|סרום|מסקרה|שפתון|אדפ|אדט|דאודורנט|שמפו|תחליב|מייקאפ/;
+export const NEVER_FOOD = new RegExp(`${PET_FOOD.source}|סרום|מסקרה|שפתון|אדפ|אדט|דאודורנט|שמפו|תחליב|מייקאפ`);
 
 /** True when a product name is not food (cosmetics, cleaning, household, pet food). */
 export function isNonFoodName(name) {

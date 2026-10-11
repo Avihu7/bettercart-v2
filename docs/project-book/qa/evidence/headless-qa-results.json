@@ -1,0 +1,3439 @@
+{
+ "started": "2026-10-11T16:07:20.946Z",
+ "api": "http://localhost:3001",
+ "node": "v22.21.0",
+ "accounts": [
+  {
+   "label": "a",
+   "email": "qa-a-mv40nvci@example.com"
+  },
+  {
+   "label": "b",
+   "email": "qa-b-mv40nvci@example.com"
+  },
+  {
+   "label": "tight",
+   "email": "qa-tight-mv40nvci@example.com"
+  },
+  {
+   "label": "low",
+   "email": "qa-low-mv40nvci@example.com"
+  },
+  {
+   "label": "noreceipt",
+   "email": "qa-noreceipt-mv40nvci@example.com"
+  },
+  {
+   "label": "vegan",
+   "email": "qa-vegan-mv40nvci@example.com"
+  },
+  {
+   "label": "gain",
+   "email": "qa-gain-mv40nvci@example.com"
+  }
+ ],
+ "ai_status": {
+  "configured": true
+ },
+ "ai_image": {
+  "status": 200,
+  "transcribe_ms": 7330,
+  "extract_ms": 11559,
+  "store_name": "שופרסל דיל",
+  "purchase_date": "2026-09-28",
+  "total_amount": 599.9,
+  "transcript_chars": 895,
+  "printed_lines": 24,
+  "extracted_lines": 24,
+  "lines_found": 24,
+  "prices_correct": 24,
+  "missing": [],
+  "wrong_price": [],
+  "extra": [],
+  "read": [
+   {
+    "name": "חלב תנובה 1 ל' 3% × 2",
+    "price": 15.8
+   },
+   {
+    "name": "לחם אחיד פרוס",
+    "price": 13.9
+   },
+   {
+    "name": "קוטג' תנובה 250 ג' 5% × 2",
+    "price": 12.9
+   },
+   {
+    "name": "גבינה צהובה עמק 200 ג'",
+    "price": 24.9
+   },
+   {
+    "name": "ביצים L תבנית 30",
+    "price": 34.9
+   },
+   {
+    "name": "שמן זית 750 מ\"ל",
+    "price": 29.9
+   },
+   {
+    "name": "אורז בסמטי 1 ק\"ג",
+    "price": 19.9
+   },
+   {
+    "name": "חזה עוף טרי 1 ק\"ג",
+    "price": 49.9
+   },
+   {
+    "name": "פילה סלמון קפוא 700 ג'",
+    "price": 69.9
+   },
+   {
+    "name": "קפה נמס עלית 200 ג'",
+    "price": 24.9
+   },
+   {
+    "name": "פסטה ברילה 500 ג' × 2",
+    "price": 17.9
+   },
+   {
+    "name": "טונה במים מארז 4",
+    "price": 21.9
+   },
+   {
+    "name": "עגבניות 1.5 ק\"ג",
+    "price": 12.9
+   },
+   {
+    "name": "מלפפונים 1.5 ק\"ג",
+    "price": 14.9
+   },
+   {
+    "name": "תפוח עץ פינק ליידי 1 ק\"ג",
+    "price": 19.9
+   },
+   {
+    "name": "בננות 1 ק\"ג",
+    "price": 9.9
+   },
+   {
+    "name": "טחינה גולמית 500 ג'",
+    "price": 16.9
+   },
+   {
+    "name": "קורנפלקס תלמה 750 ג'",
+    "price": 29.9
+   },
+   {
+    "name": "אבקת כביסה 2.5 ק\"ג",
+    "price": 32.9
+   },
+   {
+    "name": "נייר טואלט 24 גלילים",
+    "price": 24.9
+   },
+   {
+    "name": "שמפו פינוק 700 מ\"ל × 2",
+    "price": 34.9
+   },
+   {
+    "name": "נוזל כלים פיירי 650 מ\"ל",
+    "price": 19.9
+   },
+   {
+    "name": "שקיות אשפה 75 ל'",
+    "price": 18.9
+   },
+   {
+    "name": "שקדים טבעיים 250 ג'",
+    "price": 27.3
+   }
+  ],
+  "answer": {
+   "store_name": "שופרסל דיל",
+   "purchase_date": "2026-09-28",
+   "total_amount": 599.9,
+   "items": [
+    {
+     "original_name": "חלב תנובה 1 ל' 3% × 2",
+     "normalized_name": "חלב תנובה 1 ליטר 3% × 2",
+     "quantity": "",
+     "price": 15.8
+    },
+    {
+     "original_name": "לחם אחיד פרוס",
+     "normalized_name": "לחם אחיד פרוס",
+     "quantity": "",
+     "price": 13.9
+    },
+    {
+     "original_name": "קוטג' תנובה 250 ג' 5% × 2",
+     "normalized_name": "קוטג' תנובה 250 גרם 5% × 2",
+     "quantity": "",
+     "price": 12.9
+    },
+    {
+     "original_name": "גבינה צהובה עמק 200 ג'",
+     "normalized_name": "גבינה צהובה עמק 200 גרם",
+     "quantity": "",
+     "price": 24.9
+    },
+    {
+     "original_name": "ביצים L תבנית 30",
+     "normalized_name": "ביצים L תבנית 30",
+     "quantity": "",
+     "price": 34.9
+    },
+    {
+     "original_name": "שמן זית 750 מ\"ל",
+     "normalized_name": "שמן זית 750 מיליליטר",
+     "quantity": "",
+     "price": 29.9
+    },
+    {
+     "original_name": "אורז בסמטי 1 ק\"ג",
+     "normalized_name": "אורז בסמטי 1 קילוגרם",
+     "quantity": "",
+     "price": 19.9
+    },
+    {
+     "original_name": "חזה עוף טרי 1 ק\"ג",
+     "normalized_name": "חזה עוף טרי 1 קילוגרם",
+     "quantity": "",
+     "price": 49.9
+    },
+    {
+     "original_name": "פילה סלמון קפוא 700 ג'",
+     "normalized_name": "פילה סלמון קפוא 700 גרם",
+     "quantity": "",
+     "price": 69.9
+    },
+    {
+     "original_name": "קפה נמס עלית 200 ג'",
+     "normalized_name": "קפה נמס עלית 200 גרם",
+     "quantity": "",
+     "price": 24.9
+    },
+    {
+     "original_name": "פסטה ברילה 500 ג' × 2",
+     "normalized_name": "פסטה ברילה 500 גרם × 2",
+     "quantity": "",
+     "price": 17.9
+    },
+    {
+     "original_name": "טונה במים מארז 4",
+     "normalized_name": "טונה במים מארז 4",
+     "quantity": "",
+     "price": 21.9
+    },
+    {
+     "original_name": "עגבניות 1.5 ק\"ג",
+     "normalized_name": "עגבניות 1.5 קילוגרם",
+     "quantity": "",
+     "price": 12.9
+    },
+    {
+     "original_name": "מלפפונים 1.5 ק\"ג",
+     "normalized_name": "מלפפונים 1.5 קילוגרם",
+     "quantity": "",
+     "price": 14.9
+    },
+    {
+     "original_name": "תפוח עץ פינק ליידי 1 ק\"ג",
+     "normalized_name": "תפוח עץ פינק ליידי 1 קילוגרם",
+     "quantity": "",
+     "price": 19.9
+    },
+    {
+     "original_name": "בננות 1 ק\"ג",
+     "normalized_name": "בננות 1 קילוגרם",
+     "quantity": "",
+     "price": 9.9
+    },
+    {
+     "original_name": "טחינה גולמית 500 ג'",
+     "normalized_name": "טחינה גולמית 500 גרם",
+     "quantity": "",
+     "price": 16.9
+    },
+    {
+     "original_name": "קורנפלקס תלמה 750 ג'",
+     "normalized_name": "קורנפלקס תלמה 750 גרם",
+     "quantity": "",
+     "price": 29.9
+    },
+    {
+     "original_name": "אבקת כביסה 2.5 ק\"ג",
+     "normalized_name": "אבקת כביסה 2.5 קילוגרם",
+     "quantity": "",
+     "price": 32.9
+    },
+    {
+     "original_name": "נייר טואלט 24 גלילים",
+     "normalized_name": "נייר טואלט 24 גלילים",
+     "quantity": "",
+     "price": 24.9
+    },
+    {
+     "original_name": "שמפו פינוק 700 מ\"ל × 2",
+     "normalized_name": "שמפו פינוק 700 מיליליטר × 2",
+     "quantity": "",
+     "price": 34.9
+    },
+    {
+     "original_name": "נוזל כלים פיירי 650 מ\"ל",
+     "normalized_name": "נוזל כלים פיירי 650 מיליליטר",
+     "quantity": "",
+     "price": 19.9
+    },
+    {
+     "original_name": "שקיות אשפה 75 ל'",
+     "normalized_name": "שקיות אשפה 75 ליטר",
+     "quantity": "",
+     "price": 18.9
+    },
+    {
+     "original_name": "שקדים טבעיים 250 ג'",
+     "normalized_name": "שקדים טבעיים 250 גרם",
+     "quantity": "",
+     "price": 27.3
+    }
+   ]
+  }
+ },
+ "ai_pdf": {
+  "status": 200,
+  "transcribe_ms": 7507,
+  "extract_ms": 12282,
+  "store_name": "שופרסל דיל",
+  "purchase_date": "2026-09-28",
+  "total_amount": 599.9,
+  "transcript_chars": 1080,
+  "printed_lines": 24,
+  "extracted_lines": 24,
+  "lines_found": 23,
+  "prices_correct": 23,
+  "missing": [
+   "שמפו פינוק 700 מ\"ל"
+  ],
+  "wrong_price": [],
+  "extra": [
+   "שמפו פנטין 700 מ\"ל × 2"
+  ],
+  "read": [
+   {
+    "name": "חלב תנובה 1 ל' 3% × 2",
+    "price": 15.8
+   },
+   {
+    "name": "לחם אחיד פרוס",
+    "price": 13.9
+   },
+   {
+    "name": "קוטג' תנובה 250 ג' 5% × 2",
+    "price": 12.9
+   },
+   {
+    "name": "גבינה צהובה עמק 200 ג'",
+    "price": 24.9
+   },
+   {
+    "name": "ביצים L תבנית 30",
+    "price": 34.9
+   },
+   {
+    "name": "שמן זית 750 מ\"ל",
+    "price": 29.9
+   },
+   {
+    "name": "אורז בסמטי 1 ק\"ג",
+    "price": 19.9
+   },
+   {
+    "name": "חזה עוף טרי 1 ק\"ג",
+    "price": 49.9
+   },
+   {
+    "name": "פילה סלמון קפוא 700 ג'",
+    "price": 69.9
+   },
+   {
+    "name": "קפה נמס עלית 200 ג'",
+    "price": 24.9
+   },
+   {
+    "name": "פסטה ברילה 500 ג' × 2",
+    "price": 17.9
+   },
+   {
+    "name": "טונה במים מארז 4",
+    "price": 21.9
+   },
+   {
+    "name": "עגבניות 1.5 ק\"ג",
+    "price": 12.9
+   },
+   {
+    "name": "מלפפונים 1.5 ק\"ג",
+    "price": 14.9
+   },
+   {
+    "name": "תפוח עץ פינק ליידי 1 ק\"ג",
+    "price": 19.9
+   },
+   {
+    "name": "בננות 1 ק\"ג",
+    "price": 9.9
+   },
+   {
+    "name": "טחינה גולמית 500 ג'",
+    "price": 16.9
+   },
+   {
+    "name": "קורנפלקס תלמה 750 ג'",
+    "price": 29.9
+   },
+   {
+    "name": "אבקת כביסה 2.5 ק\"ג",
+    "price": 32.9
+   },
+   {
+    "name": "נייר טואלט 24 גלילים",
+    "price": 24.9
+   },
+   {
+    "name": "שמפו פנטין 700 מ\"ל × 2",
+    "price": 34.9
+   },
+   {
+    "name": "נוזל כלים פיירי 650 מ\"ל",
+    "price": 19.9
+   },
+   {
+    "name": "שקיות אשפה 75 ל'",
+    "price": 18.9
+   },
+   {
+    "name": "שקדים טבעיים 250 ג'",
+    "price": 27.3
+   }
+  ],
+  "answer": {
+   "store_name": "שופרסל דיל",
+   "purchase_date": "2026-09-28",
+   "total_amount": 599.9,
+   "items": [
+    {
+     "original_name": "חלב תנובה 1 ל' 3% × 2",
+     "normalized_name": "חלב תנובה 1 ליטר 3% × 2",
+     "quantity": "1 ל' × 2",
+     "price": 15.8
+    },
+    {
+     "original_name": "לחם אחיד פרוס",
+     "normalized_name": "לחם אחיד פרוס",
+     "quantity": "",
+     "price": 13.9
+    },
+    {
+     "original_name": "קוטג' תנובה 250 ג' 5% × 2",
+     "normalized_name": "קוטג' תנובה 250 גרם 5% × 2",
+     "quantity": "250 ג' × 2",
+     "price": 12.9
+    },
+    {
+     "original_name": "גבינה צהובה עמק 200 ג'",
+     "normalized_name": "גבינה צהובה עמק 200 גרם",
+     "quantity": "200 ג'",
+     "price": 24.9
+    },
+    {
+     "original_name": "ביצים L תבנית 30",
+     "normalized_name": "ביצים L תבנית 30",
+     "quantity": "30",
+     "price": 34.9
+    },
+    {
+     "original_name": "שמן זית 750 מ\"ל",
+     "normalized_name": "שמן זית 750 מיליליטר",
+     "quantity": "750 מ\"ל",
+     "price": 29.9
+    },
+    {
+     "original_name": "אורז בסמטי 1 ק\"ג",
+     "normalized_name": "אורז בסמטי 1 קילוגרם",
+     "quantity": "1 ק\"ג",
+     "price": 19.9
+    },
+    {
+     "original_name": "חזה עוף טרי 1 ק\"ג",
+     "normalized_name": "חזה עוף טרי 1 קילוגרם",
+     "quantity": "1 ק\"ג",
+     "price": 49.9
+    },
+    {
+     "original_name": "פילה סלמון קפוא 700 ג'",
+     "normalized_name": "פילה סלמון קפוא 700 גרם",
+     "quantity": "700 ג'",
+     "price": 69.9
+    },
+    {
+     "original_name": "קפה נמס עלית 200 ג'",
+     "normalized_name": "קפה נמס עלית 200 גרם",
+     "quantity": "200 ג'",
+     "price": 24.9
+    },
+    {
+     "original_name": "פסטה ברילה 500 ג' × 2",
+     "normalized_name": "פסטה ברילה 500 גרם × 2",
+     "quantity": "500 ג' × 2",
+     "price": 17.9
+    },
+    {
+     "original_name": "טונה במים מארז 4",
+     "normalized_name": "טונה במים מארז 4",
+     "quantity": "4",
+     "price": 21.9
+    },
+    {
+     "original_name": "עגבניות 1.5 ק\"ג",
+     "normalized_name": "עגבניות 1.5 קילוגרם",
+     "quantity": "1.5 ק\"ג",
+     "price": 12.9
+    },
+    {
+     "original_name": "מלפפונים 1.5 ק\"ג",
+     "normalized_name": "מלפפונים 1.5 קילוגרם",
+     "quantity": "1.5 ק\"ג",
+     "price": 14.9
+    },
+    {
+     "original_name": "תפוח עץ פינק ליידי 1 ק\"ג",
+     "normalized_name": "תפוח עץ פינק ליידי 1 קילוגרם",
+     "quantity": "1 ק\"ג",
+     "price": 19.9
+    },
+    {
+     "original_name": "בננות 1 ק\"ג",
+     "normalized_name": "בננות 1 קילוגרם",
+     "quantity": "1 ק\"ג",
+     "price": 9.9
+    },
+    {
+     "original_name": "טחינה גולמית 500 ג'",
+     "normalized_name": "טחינה גולמית 500 גרם",
+     "quantity": "500 ג'",
+     "price": 16.9
+    },
+    {
+     "original_name": "קורנפלקס תלמה 750 ג'",
+     "normalized_name": "קורנפלקס תלמה 750 גרם",
+     "quantity": "750 ג'",
+     "price": 29.9
+    },
+    {
+     "original_name": "אבקת כביסה 2.5 ק\"ג",
+     "normalized_name": "אבקת כביסה 2.5 קילוגרם",
+     "quantity": "2.5 ק\"ג",
+     "price": 32.9
+    },
+    {
+     "original_name": "נייר טואלט 24 גלילים",
+     "normalized_name": "נייר טואלט 24 גלילים",
+     "quantity": "24",
+     "price": 24.9
+    },
+    {
+     "original_name": "שמפו פנטין 700 מ\"ל × 2",
+     "normalized_name": "שמפו פנטין 700 מיליליטר × 2",
+     "quantity": "700 מ\"ל × 2",
+     "price": 34.9
+    },
+    {
+     "original_name": "נוזל כלים פיירי 650 מ\"ל",
+     "normalized_name": "נוזל כלים פיירי 650 מיליליטר",
+     "quantity": "650 מ\"ל",
+     "price": 19.9
+    },
+    {
+     "original_name": "שקיות אשפה 75 ל'",
+     "normalized_name": "שקיות אשפה 75 ליטר",
+     "quantity": "75 ל'",
+     "price": 18.9
+    },
+    {
+     "original_name": "שקדים טבעיים 250 ג'",
+     "normalized_name": "שקדים טבעיים 250 גרם",
+     "quantity": "250 ג'",
+     "price": 27.3
+    }
+   ]
+  }
+ },
+ "ai_unsupported": {
+  "text_plain": {
+   "status": 415,
+   "error": "סוג הקובץ אינו נתמך. אפשר להעלות תמונה (JPG, PNG, WEBP, GIF) או PDF.",
+   "code": "unsupported_media"
+  },
+  "heic": {
+   "status": 415,
+   "error": "סוג הקובץ אינו נתמך. אפשר להעלות תמונה (JPG, PNG, WEBP, GIF) או PDF.",
+   "code": "unsupported_media"
+  },
+  "no_type": {
+   "status": 415,
+   "error": "סוג הקובץ אינו נתמך. אפשר להעלות תמונה (JPG, PNG, WEBP, GIF) או PDF.",
+   "code": "unsupported_media"
+  },
+  "empty_data": {
+   "status": 400,
+   "error": "הקובץ ריק",
+   "code": "bad_request"
+  },
+  "malformed_png": {
+   "status": 502,
+   "code": "unknown"
+  },
+  "empty_text": {
+   "status": 400,
+   "error": "חסר טקסט קבלה",
+   "code": "bad_request"
+  },
+  "too_long_text": {
+   "status": 413,
+   "error": "טקסט הקבלה ארוך מדי",
+   "code": "too_large"
+  },
+  "no_session": {
+   "status": 401
+  },
+  "response_has_no_key_field": [
+   "configured"
+  ]
+ },
+ "A_profile": {
+  "daily_calories": 2709,
+  "protein_target": 125,
+  "fat_target": 90,
+  "carbs_target": 350,
+  "weekly_budget": 747
+ },
+ "A_receipt": {
+  "source": "receipt AI (image)",
+  "lines": 24,
+  "food": 19,
+  "non_food": 5,
+  "non_food_names": [
+   "אבקת כביסה 2.5 ק\"ג",
+   "נייר טואלט 24 גלילים",
+   "שמפו פינוק 700 מ\"ל × 2",
+   "נוזל כלים פיירי 650 מ\"ל",
+   "שקיות אשפה 75 ל'"
+  ],
+  "match_ms": 1824,
+  "statuses": {
+   "matched": 11,
+   "not_found": 6,
+   "needs_review": 2,
+   "not_checked": 5
+  },
+  "basket_ready": 11,
+  "unresolved": 8,
+  "rows": [
+   {
+    "name": "חלב תנובה 1 ליטר 3% × 2",
+    "status": "matched",
+    "matched": "חלב תנובה 3% 1 ליטר",
+    "type": "token",
+    "confidence": 0.82,
+    "health": 8
+   },
+   {
+    "name": "לחם אחיד פרוס",
+    "status": "matched",
+    "matched": "לחם אחיד פרוס",
+    "type": "exact",
+    "confidence": 1,
+    "health": 5
+   },
+   {
+    "name": "קוטג' תנובה 250 גרם 5% × 2",
+    "status": "matched",
+    "matched": "קוטג' תנובה 5% 250 גרם",
+    "type": "token",
+    "confidence": 0.82,
+    "health": 8
+   },
+   {
+    "name": "גבינה צהובה עמק 200 גרם",
+    "status": "matched",
+    "matched": "גבינה צהובה עמק 200 גרם",
+    "type": "exact",
+    "confidence": 1,
+    "health": 5
+   },
+   {
+    "name": "ביצים L תבנית 30",
+    "status": "not_found",
+    "matched": "ביצים L קרטון 12",
+    "type": "token",
+    "confidence": 0.62,
+    "health": 8
+   },
+   {
+    "name": "שמן זית 750 מיליליטר",
+    "status": "matched",
+    "matched": "שמן זית  750 מ\"ל",
+    "type": "exact",
+    "confidence": 1,
+    "health": 8
+   },
+   {
+    "name": "אורז בסמטי 1 קילוגרם",
+    "status": "not_found",
+    "matched": "אורז פרסי סוגת 1 ק\"ג",
+    "type": "token",
+    "confidence": 0.62,
+    "health": 6
+   },
+   {
+    "name": "חזה עוף טרי 1 קילוגרם",
+    "status": "matched",
+    "matched": "חזה עוף טרי 1 ק\"ג",
+    "type": "token",
+    "confidence": 0.83,
+    "health": 8
+   },
+   {
+    "name": "פילה סלמון קפוא 700 גרם",
+    "status": "not_found",
+    "matched": "פילה סלמון נתחים 600 גרם",
+    "type": "token",
+    "confidence": 0.69,
+    "health": 9
+   },
+   {
+    "name": "קפה נמס עלית 200 גרם",
+    "status": "not_found",
+    "matched": "משקה גו קפה אגוזי לוז340",
+    "type": "token",
+    "confidence": 0.51,
+    "health": 6
+   },
+   {
+    "name": "פסטה ברילה 500 גרם × 2",
+    "status": "matched",
+    "matched": "פסטה פנה ברילה 500 גרם",
+    "type": "token",
+    "confidence": 0.82,
+    "health": 6
+   },
+   {
+    "name": "טונה במים מארז 4",
+    "status": "matched",
+    "matched": "טונה במים 150X3ג",
+    "type": "token",
+    "confidence": 0.83,
+    "health": 9
+   },
+   {
+    "name": "עגבניות 1.5 קילוגרם",
+    "status": "matched",
+    "matched": "עגבניות שרי 500 גרם",
+    "type": "token",
+    "confidence": 0.83,
+    "health": 10
+   },
+   {
+    "name": "מלפפונים 1.5 קילוגרם",
+    "status": "needs_review",
+    "matched": "מלפפונים בחומץ צנצנת680ג",
+    "type": "token",
+    "confidence": 0.83,
+    "health": 10
+   },
+   {
+    "name": "תפוח עץ פינק ליידי 1 קילוגרם",
+    "status": "not_found",
+    "matched": "תפוח עץ גולדן 1 ק\"ג",
+    "type": "token",
+    "confidence": 0.56,
+    "health": 9
+   },
+   {
+    "name": "בננות 1 קילוגרם",
+    "status": "not_found",
+    "matched": "תותים ובננות מוקפאים 300",
+    "type": "token",
+    "confidence": 0.37,
+    "health": 9
+   },
+   {
+    "name": "טחינה גולמית 500 גרם",
+    "status": "matched",
+    "matched": "טחינה גולמית 500 גרם סלה",
+    "type": "partial",
+    "confidence": 0.93,
+    "health": 8
+   },
+   {
+    "name": "קורנפלקס תלמה 750 גרם",
+    "status": "needs_review",
+    "matched": "קורנפלקס דבש 448ג תלמה",
+    "type": "token",
+    "confidence": 0.8,
+    "health": 5
+   },
+   {
+    "name": "שקדים טבעיים 250 גרם",
+    "status": "matched",
+    "matched": "שקדים טבעיים 200 גרם",
+    "type": "token",
+    "confidence": 0.82,
+    "health": 9
+   }
+  ]
+ },
+ "A_manual_match": {
+  "actions": [
+   {
+    "item": "ביצים L תבנית 30",
+    "action": "manual pick",
+    "product": "ביצים L 12יח'"
+   },
+   {
+    "item": "אורז בסמטי 1 קילוגרם",
+    "action": "manual pick",
+    "product": "אורז בסמטי"
+   },
+   {
+    "item": "פילה סלמון קפוא 700 גרם",
+    "action": "manual pick",
+    "product": "פילה סלמון"
+   },
+   {
+    "item": "קפה נמס עלית 200 גרם",
+    "action": "manual pick",
+    "product": "קפה נמס 200ג MONRO"
+   },
+   {
+    "item": "מלפפונים 1.5 קילוגרם",
+    "action": "approved suggestion",
+    "product": "מלפפונים בחומץ צנצנת680ג"
+   },
+   {
+    "item": "תפוח עץ פינק ליידי 1 קילוגרם",
+    "action": "manual pick",
+    "product": "תפוח עץ סמיט 70"
+   },
+   {
+    "item": "בננות 1 קילוגרם",
+    "action": "left unresolved"
+   },
+   {
+    "item": "קורנפלקס תלמה 750 גרם",
+    "action": "approved suggestion",
+    "product": "קורנפלקס דבש 448ג תלמה"
+   }
+  ],
+  "basket_ready_after": 17,
+  "unresolved_after": 1
+ },
+ "A_basket_one_receipt": {
+  "ms": 1600,
+  "items": 20,
+  "total": 405.4,
+  "food_budget": 624,
+  "reserve": 123,
+  "within_budget": true,
+  "from_receipt": 17,
+  "from_history": 0,
+  "added_by_engine": 3,
+  "staples": 0,
+  "every_added_item_has_reason": true,
+  "conflicts": [],
+  "disliked": [],
+  "non_food": [],
+  "pet": [],
+  "duplicate_produce_families": [],
+  "sufficiency": [],
+  "alternative": {
+   "index": 0,
+   "of": 5,
+   "exhausted": false,
+   "wrapped": false
+  },
+  "names": [
+   "חלב תנובה 1 ליטר 3% × 2",
+   "לחם אחיד פרוס",
+   "קוטג' תנובה 250 גרם 5% × 2",
+   "גבינה צהובה עמק 200 גרם",
+   "ביצים L 12יח'",
+   "שמן זית 750 מיליליטר",
+   "אורז בסמטי",
+   "חזה עוף טרי 1 קילוגרם",
+   "פילה סלמון",
+   "קפה נמס 200ג MONRO",
+   "פסטה ברילה 500 גרם × 2",
+   "טונה במים מארז 4",
+   "עגבניות 1.5 קילוגרם",
+   "מלפפונים בחומץ צנצנת680ג",
+   "תפוח עץ סמיט 70",
+   "טחינה גולמית 500 גרם",
+   "שקדים טבעיים 250 גרם",
+   "גזר 1 ק\"ג [תוספת]",
+   "חסה קטיף כהלכה [תוספת]",
+   "קלמנטינה [תוספת]"
+  ]
+ },
+ "A_basket_determinism": {
+  "same_items_same_order": true,
+  "same_total": true
+ },
+ "A_basket_alternatives": [
+  {
+   "index": 1,
+   "of": 5,
+   "exhausted": false,
+   "wrapped": false,
+   "total": 420.4,
+   "within_budget": true,
+   "difference_from_previous": 1,
+   "sufficiency": [],
+   "receipt_items_kept": true
+  },
+  {
+   "index": 2,
+   "of": 5,
+   "exhausted": false,
+   "wrapped": false,
+   "total": 420.4,
+   "within_budget": true,
+   "difference_from_previous": 1,
+   "sufficiency": [],
+   "receipt_items_kept": true
+  },
+  {
+   "index": 3,
+   "of": 5,
+   "exhausted": false,
+   "wrapped": false,
+   "total": 412.4,
+   "within_budget": true,
+   "difference_from_previous": 1,
+   "sufficiency": [],
+   "receipt_items_kept": true
+  },
+  {
+   "index": 4,
+   "of": 5,
+   "exhausted": false,
+   "wrapped": false,
+   "total": 413.4,
+   "within_budget": true,
+   "difference_from_previous": 0.5,
+   "sufficiency": [],
+   "receipt_items_kept": true
+  },
+  {
+   "index": 0,
+   "of": 5,
+   "exhausted": false,
+   "wrapped": true,
+   "total": 405.4,
+   "within_budget": true,
+   "difference_from_previous": 0.5,
+   "sufficiency": [],
+   "receipt_items_kept": true
+  }
+ ],
+ "A_replace_remove": {
+  "item": "חזה עוף טרי 1 קילוגרם",
+  "options": [
+   {
+    "name": "חזה הודו טרי תפזורת",
+    "keeps_protein_goal": true,
+    "conflict": false
+   },
+   {
+    "name": "שוקיים עוף ארוז קפוא",
+    "keeps_protein_goal": true,
+    "conflict": false
+   },
+   {
+    "name": "בשר בקר טחון קפוא",
+    "keeps_protein_goal": true,
+    "conflict": false
+   }
+  ],
+  "after_replace_sufficiency": [],
+  "replaced_item_gone": true,
+  "remove_all_proteins_issues": [
+   "protein"
+  ],
+  "remove_bread_issues": [
+   "bread"
+  ]
+ },
+ "A_plan": {
+  "ms": 644,
+  "days": 7,
+  "day_order_ok": true,
+  "meals_per_day": [
+   4,
+   4,
+   4,
+   4,
+   4,
+   4,
+   4
+  ],
+  "every_day_has_breakfast_lunch_dinner": true,
+  "all_products_from_basket": true,
+  "profile_conflicts_in_menu": [],
+  "meat_with_dairy_meals": 0,
+  "more_than_one_plate_protein": 0,
+  "targets": {
+   "calories": 2709,
+   "protein": 125,
+   "fat": 90,
+   "carbs": 350
+  },
+  "per_day": [
+   {
+    "day": "Sunday",
+    "kcal": 2709,
+    "kcal_diff_pct": 0,
+    "protein": 134.5,
+    "protein_pct_of_target": 108,
+    "fat": 94.8,
+    "fat_pct_of_target": 105,
+    "carbs": 324.1,
+    "within_3pct": true,
+    "within_5pct": true
+   },
+   {
+    "day": "Monday",
+    "kcal": 2700,
+    "kcal_diff_pct": -0.3,
+    "protein": 136.4,
+    "protein_pct_of_target": 109,
+    "fat": 87.2,
+    "fat_pct_of_target": 97,
+    "carbs": 334.1,
+    "within_3pct": true,
+    "within_5pct": true
+   },
+   {
+    "day": "Tuesday",
+    "kcal": 2713,
+    "kcal_diff_pct": 0.1,
+    "protein": 135.8,
+    "protein_pct_of_target": 109,
+    "fat": 94.4,
+    "fat_pct_of_target": 105,
+    "carbs": 321.1,
+    "within_3pct": true,
+    "within_5pct": true
+   },
+   {
+    "day": "Wednesday",
+    "kcal": 2689,
+    "kcal_diff_pct": -0.7,
+    "protein": 135,
+    "protein_pct_of_target": 108,
+    "fat": 94.5,
+    "fat_pct_of_target": 105,
+    "carbs": 320.1,
+    "within_3pct": true,
+    "within_5pct": true
+   },
+   {
+    "day": "Thursday",
+    "kcal": 2716,
+    "kcal_diff_pct": 0.3,
+    "protein": 138,
+    "protein_pct_of_target": 110,
+    "fat": 93.8,
+    "fat_pct_of_target": 104,
+    "carbs": 324.8,
+    "within_3pct": true,
+    "within_5pct": true
+   },
+   {
+    "day": "Friday",
+    "kcal": 2706,
+    "kcal_diff_pct": -0.1,
+    "protein": 136.8,
+    "protein_pct_of_target": 109,
+    "fat": 88.8,
+    "fat_pct_of_target": 99,
+    "carbs": 334.8,
+    "within_3pct": true,
+    "within_5pct": true
+   },
+   {
+    "day": "Saturday",
+    "kcal": 2726,
+    "kcal_diff_pct": 0.6,
+    "protein": 133.9,
+    "protein_pct_of_target": 107,
+    "fat": 98.1,
+    "fat_pct_of_target": 109,
+    "carbs": 324.5,
+    "within_3pct": true,
+    "within_5pct": true
+   }
+  ],
+  "quality_level": 1,
+  "failed_checks": [],
+  "limited_checks": [],
+  "diversity": 0.86,
+  "cost": 467,
+  "food_budget": 624,
+  "within_budget": true,
+  "planner_variant": "budget",
+  "variants": [
+   {
+    "name": "balanced",
+    "level": 2,
+    "failed": [],
+    "cost": 462.5
+   },
+   {
+    "name": "protein",
+    "level": 2,
+    "failed": [],
+    "cost": 479.4
+   },
+   {
+    "name": "budget",
+    "level": 1,
+    "failed": [],
+    "cost": 467
+   },
+   {
+    "name": "variety",
+    "level": 1,
+    "failed": [],
+    "cost": 492.9
+   }
+  ],
+  "candidates": {
+   "Breakfast": 16,
+   "Lunch": 84,
+   "Dinner": 84,
+   "Snacks": 4
+  },
+  "alternative": {
+   "index": 0,
+   "of": 4,
+   "name": "budget",
+   "exhausted": false,
+   "wrapped": false
+  },
+  "budget_swaps": 0,
+  "sample_day": [
+   "Breakfast: קוטג' תנובה 250 גרם 5% × 2 215g + לחם אחיד פרוס 150g + גזר 1 ק\"ג 120g + חסה קטיף כהלכה 120g + קפה נמס 200ג MONRO 10g + חלב תנובה 1 ליטר 3% × 2 100g",
+   "Lunch: גבינה צהובה עמק 200 גרם 75g + לחם אחיד פרוס 150g + גזר 1 ק\"ג 120g + חסה קטיף כהלכה 120g",
+   "Dinner: טונה במים מארז 4 145g + אורז בסמטי 300g + גזר 1 ק\"ג 120g + חסה קטיף כהלכה 120g + שמן זית 750 מיליליטר 17g",
+   "Snacks: קלמנטינה 250g + שקדים טבעיים 250 גרם 45g"
+  ]
+ },
+ "A_plan_determinism": {
+  "identical_days": true,
+  "same_cost": true
+ },
+ "A_plan_rebuild": [
+  {
+   "index": 1,
+   "of": 5,
+   "name": "variety",
+   "exhausted": false,
+   "wrapped": false,
+   "level": 1,
+   "failed": [],
+   "cost": 492.9,
+   "difference_from_previous": 0.71,
+   "ms": 734
+  },
+  {
+   "index": 2,
+   "of": 5,
+   "name": "protein",
+   "exhausted": false,
+   "wrapped": false,
+   "level": 2,
+   "failed": [],
+   "cost": 479.4,
+   "difference_from_previous": 0.71,
+   "ms": 788
+  },
+  {
+   "index": 3,
+   "of": 5,
+   "name": "balanced",
+   "exhausted": false,
+   "wrapped": false,
+   "level": 2,
+   "failed": [],
+   "cost": 462.5,
+   "difference_from_previous": 0.57,
+   "ms": 705
+  },
+  {
+   "index": 4,
+   "of": 5,
+   "name": "fresh",
+   "exhausted": false,
+   "wrapped": false,
+   "level": 1,
+   "failed": [],
+   "cost": 478.6,
+   "difference_from_previous": 0.57,
+   "ms": 707
+  },
+  {
+   "index": 0,
+   "of": 5,
+   "name": "budget",
+   "exhausted": false,
+   "wrapped": true,
+   "level": 1,
+   "failed": [],
+   "cost": 467,
+   "difference_from_previous": 0.9,
+   "ms": 728
+  }
+ ],
+ "A_final_list": {
+  "items": 20,
+  "unused": [],
+  "total": 467,
+  "plan_cost": 467,
+  "cost_equal": true,
+  "rows": [
+   {
+    "name": "חלב תנובה 1 ליטר 3% × 2",
+    "group": "milk",
+    "weekly_usage_grams": 700,
+    "summed_from_menu": 700,
+    "purchase_grams": 1000,
+    "quantity": "1 ליטר",
+    "sold_by_weight": false,
+    "pack_grams": 1000,
+    "pack_price": 6.2,
+    "price_per_kg": 6.2,
+    "price": 6.2,
+    "price_is_estimate": false
+   },
+   {
+    "name": "לחם אחיד פרוס",
+    "group": "bread",
+    "weekly_usage_grams": 1800,
+    "summed_from_menu": 1800,
+    "purchase_grams": 2250,
+    "quantity": "750 גרם × 3",
+    "sold_by_weight": false,
+    "pack_grams": 750,
+    "pack_price": 8.38,
+    "price_per_kg": 11.17,
+    "price": 25.1,
+    "price_is_estimate": false
+   },
+   {
+    "name": "קוטג' תנובה 250 גרם 5% × 2",
+    "group": "dairy_protein",
+    "weekly_usage_grams": 555,
+    "summed_from_menu": 555,
+    "purchase_grams": 750,
+    "quantity": "250 גרם × 3",
+    "sold_by_weight": false,
+    "pack_grams": 250,
+    "pack_price": 6.9,
+    "price_per_kg": 27.6,
+    "price": 20.7,
+    "price_is_estimate": false
+   },
+   {
+    "name": "גבינה צהובה עמק 200 גרם",
+    "group": "dairy_protein",
+    "weekly_usage_grams": 245,
+    "summed_from_menu": 245,
+    "purchase_grams": 400,
+    "quantity": "200 גרם × 2",
+    "sold_by_weight": false,
+    "pack_grams": 200,
+    "pack_price": 16.9,
+    "price_per_kg": 84.5,
+    "price": 33.8,
+    "price_is_estimate": false
+   },
+   {
+    "name": "ביצים L 12יח'",
+    "group": "eggs",
+    "weekly_usage_grams": 290,
+    "summed_from_menu": 290,
+    "purchase_grams": 720,
+    "quantity": "תבנית 12 ביצים",
+    "sold_by_weight": false,
+    "pack_grams": 720,
+    "pack_price": 34.9,
+    "price_per_kg": 48.47,
+    "price": 34.9,
+    "price_is_estimate": false
+   },
+   {
+    "name": "שמן זית 750 מיליליטר",
+    "group": "oil",
+    "weekly_usage_grams": 208,
+    "summed_from_menu": 208,
+    "purchase_grams": 750,
+    "quantity": "750 מ\"ל",
+    "sold_by_weight": false,
+    "pack_grams": 750,
+    "pack_price": 34.9,
+    "price_per_kg": 46.53,
+    "price": 34.9,
+    "price_is_estimate": false
+   },
+   {
+    "name": "אורז בסמטי",
+    "group": "grain",
+    "weekly_usage_grams": 1500,
+    "summed_from_menu": 1500,
+    "purchase_grams": 5000,
+    "quantity": "5 ק\"ג",
+    "sold_by_weight": false,
+    "pack_grams": 5000,
+    "pack_price": 49.9,
+    "price_per_kg": 9.98,
+    "price": 49.9,
+    "price_is_estimate": false
+   },
+   {
+    "name": "חזה עוף טרי 1 קילוגרם",
+    "group": "meat",
+    "weekly_usage_grams": 335,
+    "summed_from_menu": 335,
+    "purchase_grams": 1000,
+    "quantity": "1 ק\"ג",
+    "sold_by_weight": false,
+    "pack_grams": 1000,
+    "pack_price": 32.9,
+    "price_per_kg": 32.9,
+    "price": 32.9,
+    "price_is_estimate": false
+   },
+   {
+    "name": "פילה סלמון",
+    "group": "fish",
+    "weekly_usage_grams": 245,
+    "summed_from_menu": 245,
+    "purchase_grams": 300,
+    "quantity": "כ-300 גרם",
+    "sold_by_weight": true,
+    "pack_grams": null,
+    "pack_price": null,
+    "price_per_kg": 79.9,
+    "price": 24,
+    "price_is_estimate": false
+   },
+   {
+    "name": "קפה נמס 200ג MONRO",
+    "group": "coffee",
+    "weekly_usage_grams": 70,
+    "summed_from_menu": 70,
+    "purchase_grams": 200,
+    "quantity": "200 גרם",
+    "sold_by_weight": false,
+    "pack_grams": 200,
+    "pack_price": 23.9,
+    "price_per_kg": 119.5,
+    "price": 23.9,
+    "price_is_estimate": false
+   },
+   {
+    "name": "פסטה ברילה 500 גרם × 2",
+    "group": "grain",
+    "weekly_usage_grams": 1200,
+    "summed_from_menu": 1200,
+    "purchase_grams": 500,
+    "quantity": "500 גרם",
+    "sold_by_weight": false,
+    "pack_grams": 500,
+    "pack_price": 8.9,
+    "price_per_kg": 17.8,
+    "price": 8.9,
+    "price_is_estimate": false
+   },
+   {
+    "name": "טונה במים מארז 4",
+    "group": "fish",
+    "weekly_usage_grams": 895,
+    "summed_from_menu": 895,
+    "purchase_grams": 1350,
+    "quantity": "450 גרם × 3",
+    "sold_by_weight": false,
+    "pack_grams": 450,
+    "pack_price": 14.9,
+    "price_per_kg": 33.11,
+    "price": 44.7,
+    "price_is_estimate": false
+   },
+   {
+    "name": "עגבניות 1.5 קילוגרם",
+    "group": "vegetable",
+    "weekly_usage_grams": 240,
+    "summed_from_menu": 240,
+    "purchase_grams": 500,
+    "quantity": "500 גרם",
+    "sold_by_weight": false,
+    "pack_grams": 500,
+    "pack_price": 9.9,
+    "price_per_kg": 19.8,
+    "price": 9.9,
+    "price_is_estimate": false
+   },
+   {
+    "name": "מלפפונים בחומץ צנצנת680ג",
+    "group": "vegetable",
+    "weekly_usage_grams": 120,
+    "summed_from_menu": 120,
+    "purchase_grams": 680,
+    "quantity": "680 גרם",
+    "sold_by_weight": false,
+    "pack_grams": 680,
+    "pack_price": 12.5,
+    "price_per_kg": 18.38,
+    "price": 12.5,
+    "price_is_estimate": false
+   },
+   {
+    "name": "תפוח עץ סמיט 70",
+    "group": "fruit",
+    "weekly_usage_grams": 500,
+    "summed_from_menu": 500,
+    "purchase_grams": 600,
+    "quantity": "כ-600 גרם",
+    "sold_by_weight": true,
+    "pack_grams": null,
+    "pack_price": null,
+    "price_per_kg": 12.9,
+    "price": 7.7,
+    "price_is_estimate": false
+   },
+   {
+    "name": "טחינה גולמית 500 גרם",
+    "group": "tahini",
+    "weekly_usage_grams": 60,
+    "summed_from_menu": 60,
+    "purchase_grams": 500,
+    "quantity": "500 גרם",
+    "sold_by_weight": false,
+    "pack_grams": 500,
+    "pack_price": 14.9,
+    "price_per_kg": 29.8,
+    "price": 14.9,
+    "price_is_estimate": false
+   },
+   {
+    "name": "שקדים טבעיים 250 גרם",
+    "group": "nuts",
+    "weekly_usage_grams": 205,
+    "summed_from_menu": 205,
+    "purchase_grams": 400,
+    "quantity": "200 גרם × 2",
+    "sold_by_weight": false,
+    "pack_grams": 200,
+    "pack_price": 19.9,
+    "price_per_kg": 99.5,
+    "price": 39.8,
+    "price_is_estimate": false
+   },
+   {
+    "name": "גזר 1 ק\"ג",
+    "group": "vegetable",
+    "weekly_usage_grams": 2400,
+    "summed_from_menu": 2400,
+    "purchase_grams": 3000,
+    "quantity": "1 ק\"ג × 3",
+    "sold_by_weight": false,
+    "pack_grams": 1000,
+    "pack_price": 4.9,
+    "price_per_kg": 4.9,
+    "price": 14.7,
+    "price_is_estimate": false
+   },
+   {
+    "name": "חסה קטיף כהלכה",
+    "group": "vegetable",
+    "weekly_usage_grams": 2280,
+    "summed_from_menu": 2280,
+    "purchase_grams": 3000,
+    "quantity": "1 ק\"ג × 3",
+    "sold_by_weight": false,
+    "pack_grams": 1000,
+    "pack_price": 6.9,
+    "price_per_kg": 6.9,
+    "price": 20.7,
+    "price_is_estimate": false
+   },
+   {
+    "name": "קלמנטינה",
+    "group": "fruit",
+    "weekly_usage_grams": 1250,
+    "summed_from_menu": 1250,
+    "purchase_grams": 1400,
+    "quantity": "כ-1.4 ק\"ג",
+    "sold_by_weight": true,
+    "pack_grams": null,
+    "pack_price": null,
+    "price_per_kg": 4.9,
+    "price": 6.9,
+    "price_is_estimate": false
+   }
+  ]
+ },
+ "A_budget": {
+  "monthly_budget": 3200,
+  "weekly_total_budget": 747,
+  "household_reserve": 123,
+  "reserve_basis": "receipts",
+  "available_food_budget": 624,
+  "accepted_override": false,
+  "planned_food_cost": 467,
+  "status": "within",
+  "over_by": 0,
+  "left": 157,
+  "history": {
+   "receipts_counted": 1,
+   "confidence": "low",
+   "food_plannable": 409,
+   "food_non_plannable": 28,
+   "non_food": 123,
+   "total": 560
+  },
+  "basket_cost_one_pack_each": 405.4,
+  "spending_per_receipt": {
+   "food_plannable": 438.5,
+   "food_non_plannable": 29.9,
+   "non_food": 131.5,
+   "total": 599.9
+  }
+ },
+ "A_persist_saved_records": {
+  "ids": {
+   "receipt": "mv40or1fr7n8v9",
+   "item": "mv40or1hyglyg4",
+   "list": "mv40p083qymcpo",
+   "plan": "mv40p085foddgu",
+   "final": "mv40p087mrfxov",
+   "profile": "mv40or1053bm3z"
+  }
+ },
+ "A_multi_receipt": {
+  "receipts": 3,
+  "history_products": 21,
+  "confidence": 0.6,
+  "total_receipts_in_window": 3,
+  "top_history": [
+   {
+    "name": "עגבניות",
+    "receipts": 3,
+    "frequency": 1,
+    "recency": 0.933,
+    "quality": 1,
+    "raw": 0.987,
+    "score": 0.792
+   },
+   {
+    "name": "חלב תנובה 3% 1 ליטר",
+    "receipts": 3,
+    "frequency": 1,
+    "recency": 0.933,
+    "quality": 0.8,
+    "raw": 0.937,
+    "score": 0.762
+   },
+   {
+    "name": "קוטג' תנובה 5% 250 גרם",
+    "receipts": 3,
+    "frequency": 1,
+    "recency": 0.933,
+    "quality": 0.8,
+    "raw": 0.937,
+    "score": 0.762
+   },
+   {
+    "name": "חזה עוף טרי 1 ק\"ג",
+    "receipts": 3,
+    "frequency": 1,
+    "recency": 0.933,
+    "quality": 0.8,
+    "raw": 0.937,
+    "score": 0.762
+   },
+   {
+    "name": "מלפפונים במלח 7-9 5",
+    "receipts": 2,
+    "frequency": 0.667,
+    "recency": 0.933,
+    "quality": 0.9,
+    "raw": 0.778,
+    "score": 0.667
+   },
+   {
+    "name": "עדשים אדומות 500 גרם",
+    "receipts": 2,
+    "frequency": 0.667,
+    "recency": 0.933,
+    "quality": 0.9,
+    "raw": 0.778,
+    "score": 0.667
+   },
+   {
+    "name": "לחם אחיד פרוס",
+    "receipts": 2,
+    "frequency": 0.667,
+    "recency": 0.831,
+    "quality": 0.5,
+    "raw": 0.658,
+    "score": 0.595
+   },
+   {
+    "name": "מלפפונים בחומץ צנצנת680ג",
+    "receipts": 1,
+    "frequency": 0.333,
+    "recency": 0.741,
+    "quality": 1,
+    "raw": 0.581,
+    "score": 0.549
+   }
+  ],
+  "history_contains_non_food": [],
+  "basket": {
+   "items": 21,
+   "total": 412.4,
+   "food_budget": 688,
+   "reserve": 59,
+   "within_budget": true,
+   "from_receipt": 17,
+   "from_history": 0,
+   "added_by_engine": 4,
+   "staples": 0,
+   "every_added_item_has_reason": true,
+   "conflicts": [],
+   "disliked": [],
+   "non_food": [],
+   "pet": [],
+   "duplicate_produce_families": [],
+   "sufficiency": [],
+   "alternative": {
+    "index": 0,
+    "of": 5,
+    "exhausted": false,
+    "wrapped": false
+   },
+   "names": [
+    "חלב תנובה 1 ליטר 3% × 2",
+    "לחם אחיד פרוס",
+    "קוטג' תנובה 250 גרם 5% × 2",
+    "גבינה צהובה עמק 200 גרם",
+    "ביצים L 12יח'",
+    "שמן זית 750 מיליליטר",
+    "אורז בסמטי",
+    "חזה עוף טרי 1 קילוגרם",
+    "פילה סלמון",
+    "קפה נמס 200ג MONRO",
+    "פסטה ברילה 500 גרם × 2",
+    "טונה במים מארז 4",
+    "עגבניות 1.5 קילוגרם",
+    "מלפפונים בחומץ צנצנת680ג",
+    "תפוח עץ סמיט 70",
+    "טחינה גולמית 500 גרם",
+    "שקדים טבעיים 250 גרם",
+    "גזר 1 ק\"ג [תוספת]",
+    "חסה קטיף כהלכה [תוספת]",
+    "קלמנטינה [תוספת]",
+    "עדשים אדומות 500 גרם [תוספת]"
+   ]
+  },
+  "spending": {
+   "food_plannable": 224.8,
+   "food_non_plannable": 11.6,
+   "non_food": 63.7,
+   "total": 300.1
+  },
+  "reserve": 59,
+  "history_confidence_for_budget": 3
+ },
+ "vegan_scenario": {
+  "targets": {
+   "calories": 1463,
+   "protein": 112,
+   "fat": 49
+  },
+  "receipt_lines_excluded_by_profile": [
+   {
+    "name": "קוטג' תנובה 5% 250 גרם",
+    "in_basket": false
+   },
+   {
+    "name": "חזה עוף טרי 1 ק\"ג",
+    "in_basket": false
+   },
+   {
+    "name": "שקדים טבעיים 200 גרם",
+    "in_basket": false
+   },
+   {
+    "name": "פטריות טריות 250 גרם",
+    "in_basket": false
+   }
+  ],
+  "animal_products_in_basket": [],
+  "basket_ms": 455,
+  "basket": {
+   "items": 16,
+   "total": 196.4,
+   "food_budget": 607,
+   "reserve": 0,
+   "within_budget": true,
+   "from_receipt": 10,
+   "from_history": 0,
+   "added_by_engine": 6,
+   "staples": 2,
+   "every_added_item_has_reason": true,
+   "conflicts": [],
+   "disliked": [],
+   "non_food": [],
+   "pet": [],
+   "duplicate_produce_families": [],
+   "sufficiency": [],
+   "alternative": {
+    "index": 0,
+    "of": 5,
+    "exhausted": false,
+    "wrapped": false
+   },
+   "names": [
+    "טופו 300 גרם",
+    "עדשים ירוקות 500 גרם",
+    "אורז מלא 1 ק\"ג",
+    "משקה סויה 1 ליטר",
+    "עגבניות",
+    "מלפפונים במלח 7-9 5",
+    "גזר",
+    "תפוח עץ",
+    "טחינה גולמית 500 גרם",
+    "שמן זית 750 מ\"ל",
+    "סייטן בסגנון טבעי 500 גר [תוספת]",
+    "לחם מלא100%+שיפון-קל750ג [יסוד]",
+    "תפוח אדמה 1 ק\"ג [יסוד]",
+    "חסה קטיף כהלכה [תוספת]",
+    "קלמנטינה [תוספת]",
+    "שיבולת שועל מלאה 500 גרם [תוספת]"
+   ]
+  },
+  "plan_ms": 456,
+  "plan": {
+   "days": 7,
+   "day_order_ok": true,
+   "meals_per_day": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4
+   ],
+   "every_day_has_breakfast_lunch_dinner": true,
+   "all_products_from_basket": true,
+   "profile_conflicts_in_menu": [],
+   "meat_with_dairy_meals": 0,
+   "more_than_one_plate_protein": 0,
+   "targets": {
+    "calories": 1463,
+    "protein": 112,
+    "fat": 49,
+    "carbs": 144
+   },
+   "per_day": [
+    {
+     "day": "Sunday",
+     "kcal": 1471,
+     "kcal_diff_pct": 0.5,
+     "protein": 109.5,
+     "protein_pct_of_target": 98,
+     "fat": 48,
+     "fat_pct_of_target": 98,
+     "carbs": 154.8,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Monday",
+     "kcal": 1463,
+     "kcal_diff_pct": 0,
+     "protein": 110.4,
+     "protein_pct_of_target": 99,
+     "fat": 47.6,
+     "fat_pct_of_target": 97,
+     "carbs": 153.1,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Tuesday",
+     "kcal": 1473,
+     "kcal_diff_pct": 0.7,
+     "protein": 109,
+     "protein_pct_of_target": 97,
+     "fat": 48.2,
+     "fat_pct_of_target": 98,
+     "carbs": 152.1,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Wednesday",
+     "kcal": 1471,
+     "kcal_diff_pct": 0.5,
+     "protein": 110,
+     "protein_pct_of_target": 98,
+     "fat": 44.2,
+     "fat_pct_of_target": 90,
+     "carbs": 161.5,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Thursday",
+     "kcal": 1465,
+     "kcal_diff_pct": 0.1,
+     "protein": 110.8,
+     "protein_pct_of_target": 99,
+     "fat": 43.8,
+     "fat_pct_of_target": 89,
+     "carbs": 161.5,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Friday",
+     "kcal": 1468,
+     "kcal_diff_pct": 0.3,
+     "protein": 110.8,
+     "protein_pct_of_target": 99,
+     "fat": 45.5,
+     "fat_pct_of_target": 93,
+     "carbs": 158.4,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Saturday",
+     "kcal": 1462,
+     "kcal_diff_pct": -0.1,
+     "protein": 110.3,
+     "protein_pct_of_target": 98,
+     "fat": 42,
+     "fat_pct_of_target": 86,
+     "carbs": 166.4,
+     "within_3pct": true,
+     "within_5pct": true
+    }
+   ],
+   "quality_level": 1,
+   "failed_checks": [],
+   "limited_checks": [],
+   "diversity": 0.9,
+   "cost": 198.6,
+   "food_budget": 607,
+   "within_budget": true,
+   "planner_variant": "budget",
+   "variants": [
+    {
+     "name": "balanced",
+     "level": 1,
+     "failed": [],
+     "cost": 211.5
+    },
+    {
+     "name": "protein",
+     "level": 2,
+     "failed": [
+      "lunch_protein_repeat",
+      "breakfast_variety"
+     ],
+     "cost": 218.6
+    },
+    {
+     "name": "budget",
+     "level": 1,
+     "failed": [],
+     "cost": 198.6
+    },
+    {
+     "name": "variety",
+     "level": 3,
+     "failed": [
+      "protein"
+     ],
+     "cost": 244.6
+    }
+   ],
+   "candidates": {
+    "Breakfast": 6,
+    "Lunch": 72,
+    "Dinner": 108,
+    "Snacks": 2
+   },
+   "alternative": {
+    "index": 0,
+    "of": 2,
+    "name": "budget",
+    "exhausted": false,
+    "wrapped": false
+   },
+   "budget_swaps": 0,
+   "sample_day": [
+    "Breakfast: טופו 300 גרם 195g + לחם מלא100%+שיפון-קל750ג 30g + מלפפונים במלח 7-9 5 120g + עגבניות 120g + טחינה גולמית 500 גרם 10g",
+    "Lunch: סייטן בסגנון טבעי 500 גר 150g + תפוח אדמה 1 ק\"ג 80g + גזר 120g + חסה קטיף כהלכה 120g + טחינה גולמית 500 גרם 20g",
+    "Dinner: עדשים ירוקות 500 גרם 220g + לחם מלא100%+שיפון-קל750ג 30g + גזר 120g + חסה קטיף כהלכה 120g + טחינה גולמית 500 גרם 20g",
+    "Snacks: קלמנטינה 60g"
+   ]
+  }
+ },
+ "gain_scenario": {
+  "targets": {
+   "calories": 3417,
+   "protein": 130,
+   "fat": 95
+  },
+  "salmon_in_basket": false,
+  "tuna_in_basket": true,
+  "basket_ms": 521,
+  "basket": {
+   "items": 18,
+   "total": 222.4,
+   "food_budget": 810,
+   "reserve": 123,
+   "within_budget": true,
+   "from_receipt": 12,
+   "from_history": 0,
+   "added_by_engine": 6,
+   "staples": 1,
+   "every_added_item_has_reason": true,
+   "conflicts": [],
+   "disliked": [],
+   "non_food": [],
+   "pet": [],
+   "duplicate_produce_families": [],
+   "sufficiency": [],
+   "alternative": {
+    "index": 0,
+    "of": 4,
+    "exhausted": false,
+    "wrapped": false
+   },
+   "names": [
+    "חלב תנובה 3% 1 ל'",
+    "לחם אחיד פרוס",
+    "קוטג' תנובה 5% 250 ג'",
+    "גבינה צהובה עמק 200 ג'",
+    "שמן זית 750 מ\"ל",
+    "חזה עוף טרי 1 ק\"ג",
+    "פסטה ברילה 500 ג'",
+    "טונה במים מארז 4",
+    "עגבניות 1.5 ק\"ג",
+    "מלפפונים בחומץ צנצנת680ג",
+    "טחינה גולמית 500 ג'",
+    "שקדים טבעיים 250 ג'",
+    "תפוח אדמה 1 ק\"ג [יסוד]",
+    "גזר 1 ק\"ג [תוספת]",
+    "חסה קטיף כהלכה [תוספת]",
+    "קלמנטינה [תוספת]",
+    "בננה 1 ק\"ג [תוספת]",
+    "יוגורט חלבון גו 200גרם [תוספת]"
+   ]
+  },
+  "plan_ms": 392,
+  "plan": {
+   "days": 7,
+   "day_order_ok": true,
+   "meals_per_day": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4
+   ],
+   "every_day_has_breakfast_lunch_dinner": true,
+   "all_products_from_basket": true,
+   "profile_conflicts_in_menu": [],
+   "meat_with_dairy_meals": 0,
+   "more_than_one_plate_protein": 0,
+   "targets": {
+    "calories": 3417,
+    "protein": 130,
+    "fat": 95,
+    "carbs": 511
+   },
+   "per_day": [
+    {
+     "day": "Sunday",
+     "kcal": 3346,
+     "kcal_diff_pct": -2.1,
+     "protein": 137.8,
+     "protein_pct_of_target": 106,
+     "fat": 93.6,
+     "fat_pct_of_target": 99,
+     "carbs": 490.3,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Monday",
+     "kcal": 3394,
+     "kcal_diff_pct": -0.7,
+     "protein": 139.8,
+     "protein_pct_of_target": 108,
+     "fat": 86.3,
+     "fat_pct_of_target": 91,
+     "carbs": 509.4,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Tuesday",
+     "kcal": 3423,
+     "kcal_diff_pct": 0.2,
+     "protein": 154.1,
+     "protein_pct_of_target": 119,
+     "fat": 93.8,
+     "fat_pct_of_target": 99,
+     "carbs": 494.3,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Wednesday",
+     "kcal": 3317,
+     "kcal_diff_pct": -2.9,
+     "protein": 136.5,
+     "protein_pct_of_target": 105,
+     "fat": 88.5,
+     "fat_pct_of_target": 93,
+     "carbs": 487.9,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Thursday",
+     "kcal": 3300,
+     "kcal_diff_pct": -3.4,
+     "protein": 132.5,
+     "protein_pct_of_target": 102,
+     "fat": 97.6,
+     "fat_pct_of_target": 103,
+     "carbs": 465.5,
+     "within_3pct": false,
+     "within_5pct": true
+    },
+    {
+     "day": "Friday",
+     "kcal": 3370,
+     "kcal_diff_pct": -1.4,
+     "protein": 138.4,
+     "protein_pct_of_target": 106,
+     "fat": 94.3,
+     "fat_pct_of_target": 99,
+     "carbs": 494.5,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Saturday",
+     "kcal": 3419,
+     "kcal_diff_pct": 0.1,
+     "protein": 138,
+     "protein_pct_of_target": 106,
+     "fat": 101.5,
+     "fat_pct_of_target": 107,
+     "carbs": 490.3,
+     "within_3pct": true,
+     "within_5pct": true
+    }
+   ],
+   "quality_level": 2,
+   "failed_checks": [
+    "cross_meal_repeat"
+   ],
+   "limited_checks": [
+    "product_repeat"
+   ],
+   "diversity": 0.87,
+   "cost": 350.2,
+   "food_budget": 810,
+   "within_budget": true,
+   "planner_variant": "budget",
+   "variants": [
+    {
+     "name": "balanced",
+     "level": 2,
+     "failed": [
+      "cross_meal_repeat"
+     ],
+     "cost": 356.9
+    },
+    {
+     "name": "protein",
+     "level": 2,
+     "failed": [
+      "lunch_protein_repeat"
+     ],
+     "cost": 360.3
+    },
+    {
+     "name": "budget",
+     "level": 2,
+     "failed": [
+      "cross_meal_repeat"
+     ],
+     "cost": 350.2
+    },
+    {
+     "name": "variety",
+     "level": 2,
+     "failed": [
+      "lunch_protein_repeat"
+     ],
+     "cost": 367.5
+    }
+   ],
+   "candidates": {
+    "Breakfast": 14,
+    "Lunch": 56,
+    "Dinner": 48,
+    "Snacks": 5
+   },
+   "alternative": {
+    "index": 0,
+    "of": 4,
+    "name": "budget",
+    "exhausted": false,
+    "wrapped": false
+   },
+   "budget_swaps": 0,
+   "sample_day": [
+    "Breakfast: גבינה צהובה עמק 200 ג' 45g + לחם אחיד פרוס 150g + גזר 1 ק\"ג 120g + חסה קטיף כהלכה 120g + בננה 1 ק\"ג 250g",
+    "Lunch: טונה במים מארז 4 110g + פסטה ברילה 500 ג' 300g + גזר 1 ק\"ג 120g + חסה קטיף כהלכה 120g + טחינה גולמית 500 ג' 60g + תפוח אדמה 1 ק\"ג 350g",
+    "Dinner: קוטג' תנובה 5% 250 ג' 90g + לחם אחיד פרוס 150g + גזר 1 ק\"ג 120g + חסה קטיף כהלכה 120g + תפוח אדמה 1 ק\"ג 350g",
+    "Snacks: קלמנטינה 250g + שקדים טבעיים 250 ג' 45g"
+   ]
+  }
+ },
+ "budget_tight": {
+  "monthly_budget": 1500,
+  "weekly_budget": 350,
+  "basket": {
+   "items": 18,
+   "total": 222.4,
+   "food_budget": 227,
+   "reserve": 123,
+   "within_budget": true,
+   "from_receipt": 12,
+   "from_history": 0,
+   "added_by_engine": 6,
+   "staples": 1,
+   "every_added_item_has_reason": true,
+   "conflicts": [],
+   "disliked": [],
+   "non_food": [],
+   "pet": [],
+   "duplicate_produce_families": [],
+   "sufficiency": [],
+   "alternative": {
+    "index": 0,
+    "of": 5,
+    "exhausted": false,
+    "wrapped": false
+   },
+   "names": [
+    "חלב תנובה 3% 1 ל'",
+    "לחם אחיד פרוס",
+    "קוטג' תנובה 5% 250 ג'",
+    "גבינה צהובה עמק 200 ג'",
+    "שמן זית 750 מ\"ל",
+    "חזה עוף טרי 1 ק\"ג",
+    "פסטה ברילה 500 ג'",
+    "טונה במים מארז 4",
+    "עגבניות 1.5 ק\"ג",
+    "מלפפונים בחומץ צנצנת680ג",
+    "טחינה גולמית 500 ג'",
+    "שקדים טבעיים 250 ג'",
+    "תפוח אדמה 1 ק\"ג [יסוד]",
+    "גזר 1 ק\"ג [תוספת]",
+    "חסה קטיף כהלכה [תוספת]",
+    "קלמנטינה [תוספת]",
+    "בננה 1 ק\"ג [תוספת]",
+    "יוגורט חלבון גו 200גרם [תוספת]"
+   ]
+  },
+  "plan": {
+   "days": 7,
+   "day_order_ok": true,
+   "meals_per_day": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4
+   ],
+   "every_day_has_breakfast_lunch_dinner": true,
+   "all_products_from_basket": true,
+   "profile_conflicts_in_menu": [],
+   "meat_with_dairy_meals": 0,
+   "more_than_one_plate_protein": 0,
+   "targets": {
+    "calories": 2709,
+    "protein": 125,
+    "fat": 90,
+    "carbs": 350
+   },
+   "per_day": [
+    {
+     "day": "Sunday",
+     "kcal": 2691,
+     "kcal_diff_pct": -0.7,
+     "protein": 136,
+     "protein_pct_of_target": 109,
+     "fat": 81.9,
+     "fat_pct_of_target": 91,
+     "carbs": 350.6,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Monday",
+     "kcal": 2705,
+     "kcal_diff_pct": -0.1,
+     "protein": 132.6,
+     "protein_pct_of_target": 106,
+     "fat": 86.4,
+     "fat_pct_of_target": 96,
+     "carbs": 340.3,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Tuesday",
+     "kcal": 2699,
+     "kcal_diff_pct": -0.4,
+     "protein": 129.4,
+     "protein_pct_of_target": 104,
+     "fat": 82.3,
+     "fat_pct_of_target": 91,
+     "carbs": 360.1,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Wednesday",
+     "kcal": 2712,
+     "kcal_diff_pct": 0.1,
+     "protein": 133.3,
+     "protein_pct_of_target": 107,
+     "fat": 83.7,
+     "fat_pct_of_target": 93,
+     "carbs": 356.4,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Thursday",
+     "kcal": 2710,
+     "kcal_diff_pct": 0,
+     "protein": 134.3,
+     "protein_pct_of_target": 107,
+     "fat": 84.8,
+     "fat_pct_of_target": 94,
+     "carbs": 357.7,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Friday",
+     "kcal": 2684,
+     "kcal_diff_pct": -0.9,
+     "protein": 133.1,
+     "protein_pct_of_target": 106,
+     "fat": 86.4,
+     "fat_pct_of_target": 96,
+     "carbs": 345,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Saturday",
+     "kcal": 2707,
+     "kcal_diff_pct": -0.1,
+     "protein": 132.7,
+     "protein_pct_of_target": 106,
+     "fat": 80.4,
+     "fat_pct_of_target": 89,
+     "carbs": 369.4,
+     "within_3pct": true,
+     "within_5pct": true
+    }
+   ],
+   "quality_level": 3,
+   "failed_checks": [
+    "within_budget",
+    "cross_meal_repeat"
+   ],
+   "limited_checks": [
+    "product_repeat"
+   ],
+   "diversity": 0.84,
+   "cost": 355.1,
+   "food_budget": 227,
+   "within_budget": false,
+   "planner_variant": "balanced",
+   "variants": [
+    {
+     "name": "balanced",
+     "level": 3,
+     "failed": [
+      "within_budget",
+      "cross_meal_repeat"
+     ],
+     "cost": 355.1
+    },
+    {
+     "name": "protein",
+     "level": 3,
+     "failed": [
+      "within_budget",
+      "lunch_protein_repeat",
+      "breakfast_variety",
+      "cross_meal_repeat",
+      "product_repeat"
+     ],
+     "cost": 284.9
+    },
+    {
+     "name": "budget",
+     "level": 3,
+     "failed": [
+      "within_budget",
+      "lunch_protein_repeat",
+      "vegetable_rotation",
+      "cross_meal_repeat"
+     ],
+     "cost": 300.2
+    },
+    {
+     "name": "variety",
+     "level": 3,
+     "failed": [
+      "within_budget",
+      "lunch_protein_repeat"
+     ],
+     "cost": 351.7
+    }
+   ],
+   "candidates": {
+    "Breakfast": 14,
+    "Lunch": 56,
+    "Dinner": 48,
+    "Snacks": 5
+   },
+   "alternative": {
+    "index": 0,
+    "of": 4,
+    "name": "balanced",
+    "exhausted": false,
+    "wrapped": false
+   },
+   "budget_swaps": 3,
+   "sample_day": [
+    "Breakfast: גבינה צהובה עמק 200 ג' 40g + לחם אחיד פרוס 150g + חסה קטיף כהלכה 120g + מלפפונים בחומץ צנצנת680ג 120g",
+    "Lunch: חזה עוף טרי 1 ק\"ג 90g + פסטה ברילה 500 ג' 300g + גזר 1 ק\"ג 120g + חסה קטיף כהלכה 120g + טחינה גולמית 500 ג' 30g",
+    "Dinner: טונה במים מארז 4 90g + פסטה ברילה 500 ג' 300g + גזר 1 ק\"ג 120g + חסה קטיף כהלכה 120g + טחינה גולמית 500 ג' 30g",
+    "Snacks: קלמנטינה 250g + שקדים טבעיים 250 ג' 35g"
+   ]
+  },
+  "picture": {
+   "weekly_total_budget": 350,
+   "household_reserve": 123,
+   "reserve_basis": "receipts",
+   "available_food_budget": 227,
+   "accepted_override": false,
+   "planned_food_cost": 355.1,
+   "status": "over",
+   "over_by": 128.1,
+   "left": 0,
+   "history": {
+    "receipts_counted": 1,
+    "confidence": "low",
+    "food_plannable": 409,
+    "food_non_plannable": 28,
+    "non_food": 123,
+    "total": 560
+   }
+  },
+  "final_list_total": 355.1
+ },
+ "budget_insufficient": {
+  "monthly_budget": 500,
+  "weekly_budget": 117,
+  "basket": {
+   "items": 1,
+   "total": 5.9,
+   "food_budget": 0,
+   "reserve": 123,
+   "within_budget": false,
+   "from_receipt": 0,
+   "from_history": 0,
+   "added_by_engine": 1,
+   "staples": 1,
+   "every_added_item_has_reason": true,
+   "conflicts": [],
+   "disliked": [],
+   "non_food": [],
+   "pet": [],
+   "duplicate_produce_families": [],
+   "sufficiency": [
+    "bread",
+    "fat",
+    "protein"
+   ],
+   "alternative": {
+    "index": 0,
+    "of": 1,
+    "exhausted": false,
+    "wrapped": false
+   },
+   "names": [
+    "תפוח אדמה 1 ק\"ג [יסוד]"
+   ]
+  },
+  "plan_error": {
+   "name": "IncompleteMenuError",
+   "message": "לא הצלחנו לבנות תפריט שלם: אין ארוחת בוקר בכל הימים. הוסיפו לסל מוצרים לארוחת בוקר (לחם, ביצים, יוגורט או דגני בוקר) ונסו שוב."
+  }
+ },
+ "no_receipt_scenario": {
+  "basket_ms": 560,
+  "basket": {
+   "items": 15,
+   "total": 198.3,
+   "food_budget": 747,
+   "reserve": 0,
+   "within_budget": true,
+   "from_receipt": 0,
+   "from_history": 0,
+   "added_by_engine": 15,
+   "staples": 4,
+   "every_added_item_has_reason": true,
+   "conflicts": [],
+   "disliked": [],
+   "non_food": [],
+   "pet": [],
+   "duplicate_produce_families": [],
+   "sufficiency": [],
+   "alternative": {
+    "index": 0,
+    "of": 1,
+    "exhausted": false,
+    "wrapped": false
+   },
+   "names": [
+    "סייטן בסגנון טבעי 500 גר [תוספת]",
+    "טונה במים בד\"צ כשל\"פ 960 [תוספת]",
+    "חזה עוף טרי 1 ק\"ג [תוספת]",
+    "לחם מלא100%+שיפון-קל750ג [יסוד]",
+    "תפוח אדמה 1 ק\"ג [יסוד]",
+    "פסטה ספרלה \"יש\" 500 גרם [יסוד]",
+    "שמן זית  750 מ\"ל [תוספת]",
+    "טחינה \"יש\" 900 גרם [יסוד]",
+    "גזר 1 ק\"ג [תוספת]",
+    "מלפפון 1 ק\"ג [תוספת]",
+    "חסה קטיף כהלכה [תוספת]",
+    "עגבניה ירדן [תוספת]",
+    "קלמנטינה [תוספת]",
+    "בננה 1 ק\"ג [תוספת]",
+    "יוגורט חלבון גו 200גרם [תוספת]"
+   ]
+  },
+  "plan": {
+   "days": 7,
+   "day_order_ok": true,
+   "meals_per_day": [
+    4,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4
+   ],
+   "every_day_has_breakfast_lunch_dinner": true,
+   "all_products_from_basket": true,
+   "profile_conflicts_in_menu": [],
+   "meat_with_dairy_meals": 0,
+   "more_than_one_plate_protein": 0,
+   "targets": {
+    "calories": 2709,
+    "protein": 125,
+    "fat": 90,
+    "carbs": 350
+   },
+   "per_day": [
+    {
+     "day": "Sunday",
+     "kcal": 2711,
+     "kcal_diff_pct": 0.1,
+     "protein": 134.2,
+     "protein_pct_of_target": 107,
+     "fat": 84.4,
+     "fat_pct_of_target": 94,
+     "carbs": 348.3,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Monday",
+     "kcal": 2710,
+     "kcal_diff_pct": 0,
+     "protein": 133.8,
+     "protein_pct_of_target": 107,
+     "fat": 85.1,
+     "fat_pct_of_target": 95,
+     "carbs": 344.8,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Tuesday",
+     "kcal": 2736,
+     "kcal_diff_pct": 1,
+     "protein": 135.6,
+     "protein_pct_of_target": 108,
+     "fat": 78,
+     "fat_pct_of_target": 87,
+     "carbs": 366.8,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Wednesday",
+     "kcal": 2689,
+     "kcal_diff_pct": -0.7,
+     "protein": 132.8,
+     "protein_pct_of_target": 106,
+     "fat": 95.3,
+     "fat_pct_of_target": 106,
+     "carbs": 316.4,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Thursday",
+     "kcal": 2705,
+     "kcal_diff_pct": -0.1,
+     "protein": 134.8,
+     "protein_pct_of_target": 108,
+     "fat": 76.4,
+     "fat_pct_of_target": 85,
+     "carbs": 366.7,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Friday",
+     "kcal": 2706,
+     "kcal_diff_pct": -0.1,
+     "protein": 137.4,
+     "protein_pct_of_target": 110,
+     "fat": 83.8,
+     "fat_pct_of_target": 93,
+     "carbs": 350.6,
+     "within_3pct": true,
+     "within_5pct": true
+    },
+    {
+     "day": "Saturday",
+     "kcal": 2719,
+     "kcal_diff_pct": 0.4,
+     "protein": 133.9,
+     "protein_pct_of_target": 107,
+     "fat": 84.9,
+     "fat_pct_of_target": 94,
+     "carbs": 356.6,
+     "within_3pct": true,
+     "within_5pct": true
+    }
+   ],
+   "quality_level": 1,
+   "failed_checks": [],
+   "limited_checks": [],
+   "diversity": 0.8,
+   "cost": 277.4,
+   "food_budget": 747,
+   "within_budget": true,
+   "planner_variant": "budget",
+   "variants": [
+    {
+     "name": "balanced",
+     "level": 3,
+     "failed": [
+      "fat"
+     ],
+     "cost": 280.4
+    },
+    {
+     "name": "protein",
+     "level": 2,
+     "failed": [
+      "lunch_protein_repeat",
+      "cross_meal_repeat"
+     ],
+     "cost": 286.1
+    },
+    {
+     "name": "budget",
+     "level": 1,
+     "failed": [],
+     "cost": 277.4
+    },
+    {
+     "name": "variety",
+     "level": 2,
+     "failed": [
+      "cross_meal_repeat"
+     ],
+     "cost": 302.3
+    }
+   ],
+   "candidates": {
+    "Breakfast": 6,
+    "Lunch": 72,
+    "Dinner": 76,
+    "Snacks": 3
+   },
+   "alternative": {
+    "index": 0,
+    "of": 3,
+    "name": "budget",
+    "exhausted": false,
+    "wrapped": false
+   },
+   "budget_swaps": 0,
+   "sample_day": [
+    "Breakfast: טונה במים בד\"צ כשל\"פ 960 90g + לחם מלא100%+שיפון-קל750ג 145g + גזר 1 ק\"ג 120g + חסה קטיף כהלכה 120g + שמן זית  750 מ\"ל 20g",
+    "Lunch: סייטן בסגנון טבעי 500 גר 115g + פסטה ספרלה \"יש\" 500 גרם 285g + חסה קטיף כהלכה 120g + מלפפון 1 ק\"ג 120g + שמן זית  750 מ\"ל 25g + תפוח אדמה 1 ק\"ג 170g",
+    "Dinner: טונה במים בד\"צ כשל\"פ 960 95g + תפוח אדמה 1 ק\"ג 335g + חסה קטיף כהלכה 120g + מלפפון 1 ק\"ג 120g + שמן זית  750 מ\"ל 25g + פסטה ספרלה \"יש\" 500 גרם 85g",
+    "Snacks: קלמנטינה 240g"
+   ]
+  },
+  "picture": {
+   "weekly_total_budget": 747,
+   "household_reserve": 0,
+   "reserve_basis": "none",
+   "available_food_budget": 747,
+   "accepted_override": false,
+   "planned_food_cost": 277.4,
+   "status": "within",
+   "over_by": 0,
+   "left": 469.6,
+   "history": {
+    "receipts_counted": 0,
+    "confidence": "none",
+    "food_plannable": 0,
+    "food_non_plannable": 0,
+    "non_food": 0,
+    "total": 0
+   }
+  }
+ },
+ "B_edge_receipt": {
+  "rows": [
+   {
+    "name": "לה קט פטה סלמון 100 גרם",
+    "is_food": false,
+    "category": "other",
+    "group": "fish",
+    "health": null,
+    "status": "not_checked",
+    "matched": null
+   },
+   {
+    "name": "פריסקיז עוף ברוטב 156 גרם",
+    "is_food": false,
+    "category": "other",
+    "group": "meat",
+    "health": null,
+    "status": "not_checked",
+    "matched": null
+   },
+   {
+    "name": "דוגלי בוגר בקר 3 ק\"ג",
+    "is_food": false,
+    "category": "other",
+    "group": "meat",
+    "health": null,
+    "status": "not_checked",
+    "matched": null
+   },
+   {
+    "name": "לחם דגנים מלא 750 גרם",
+    "is_food": true,
+    "category": "carb",
+    "group": "bread",
+    "health": 7,
+    "status": "matched",
+    "matched": "לחם דגנים מלא 750 גרם"
+   },
+   {
+    "name": "פריכיות 5 דגנים",
+    "is_food": true,
+    "category": "carb",
+    "group": "bread",
+    "health": 5,
+    "status": "not_found",
+    "matched": "פריכיות"
+   },
+   {
+    "name": "דגני בוקר קורנפלקס",
+    "is_food": true,
+    "category": "carb",
+    "group": "cereal",
+    "health": 5,
+    "status": "matched",
+    "matched": "דגני בוקר קורנפלקס קלוגס 500 גרם"
+   },
+   {
+    "name": "פילה דג בקלה 400 גרם",
+    "is_food": true,
+    "category": "protein",
+    "group": "fish",
+    "health": 9,
+    "status": "not_found",
+    "matched": "פילה דג זהבון 80%דג 1 ק\""
+   },
+   {
+    "name": "חזה עוף טרי 1 ק\"ג",
+    "is_food": true,
+    "category": "protein",
+    "group": "meat",
+    "health": 8,
+    "status": "matched",
+    "matched": "חזה עוף טרי 1 ק\"ג"
+   },
+   {
+    "name": "עגבניות",
+    "is_food": true,
+    "category": "vegetable",
+    "group": "vegetable",
+    "health": 10,
+    "status": "matched",
+    "matched": "עגבניות שרי 500 גרם"
+   }
+  ],
+  "pet_in_basket": [],
+  "grain_items_in_basket": [
+   {
+    "name": "לחם דגנים מלא 750 גרם",
+    "group": "bread",
+    "category": "carb"
+   },
+   {
+    "name": "דגני בוקר קורנפלקס",
+    "group": "cereal",
+    "category": "carb"
+   }
+  ],
+  "basket_names": [
+   "לחם דגנים מלא 750 גרם",
+   "דגני בוקר קורנפלקס",
+   "חזה עוף טרי 1 ק\"ג",
+   "עגבניות",
+   "סייטן בסגנון טבעי 500 גר",
+   "טונה במים בד\"צ כשל\"פ 960",
+   "תפוח אדמה 1 ק\"ג",
+   "פסטה ספרלה \"יש\" 500 גרם",
+   "שמן זית  750 מ\"ל",
+   "טחינה \"יש\" 900 גרם",
+   "גזר 1 ק\"ג",
+   "מלפפון 1 ק\"ג",
+   "חסה קטיף כהלכה",
+   "קלמנטינה",
+   "בננה 1 ק\"ג",
+   "יוגורט חלבון גו 200גרם"
+  ]
+ },
+ "catalog_pet_search": {
+  "לה קט": {
+   "results": 2,
+   "pet": []
+  },
+  "פריסקיז": {
+   "results": 0,
+   "pet": []
+  },
+  "חתול": {
+   "results": 0,
+   "pet": []
+  },
+  "כלב": {
+   "results": 0,
+   "pet": []
+  },
+  "דוגלי": {
+   "results": 0,
+   "pet": []
+  },
+  "סלמון": {
+   "results": 20,
+   "pet": []
+  },
+  "טונה": {
+   "results": 20,
+   "pet": []
+  },
+  "פטה": {
+   "results": 20,
+   "pet": []
+  },
+  "match_items": [
+   {
+    "input": "לה קט פטה סלמון 100 גרם",
+    "matched": false,
+    "name": "קציצות דג סלמון לבשול 75",
+    "category": null,
+    "calories": null
+   },
+   {
+    "input": "פריסקיז עוף ברוטב",
+    "matched": false,
+    "name": "שעועית ברוטב עגבניות580ג",
+    "category": null,
+    "calories": null
+   },
+   {
+    "input": "מזון לחתולים",
+    "matched": false,
+    "name": "דבש עם מזון מלכות 350ג",
+    "category": null,
+    "calories": null
+   },
+   {
+    "input": "לחם דגנים מלא 750 גרם",
+    "matched": true,
+    "name": "לחם דגנים מלא 750 גרם",
+    "category": "bakery",
+    "calories": null
+   }
+  ]
+ },
+ "matching_sample": [
+  {
+   "product": "חלב תנובה 3% 1 ליטר",
+   "expected": "חלב 3%",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "exact",
+   "confidence": 1,
+   "catalog_name": "חלב תנובה 3% 1 ליטר",
+   "status": "matched"
+  },
+  {
+   "product": "קוטג' תנובה 5% 250 גרם",
+   "expected": "קוטג' 5%",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "exact",
+   "confidence": 1,
+   "catalog_name": "קוטג' תנובה 5% 250 גרם",
+   "status": "matched"
+  },
+  {
+   "product": "גבינה צהובה עמק 200 גרם",
+   "expected": "גבינה צהובה",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "exact",
+   "confidence": 1,
+   "catalog_name": "גבינה צהובה עמק 200 גרם",
+   "status": "matched"
+  },
+  {
+   "product": "יוגורט טבעי 3%",
+   "expected": "יוגורט",
+   "is_food": true,
+   "server_matched": false,
+   "server_type": null,
+   "confidence": 0.63,
+   "catalog_name": "יוגורט עיזים 500 מ\"ל",
+   "status": "not_found"
+  },
+  {
+   "product": "ביצים L תבנית 12",
+   "expected": "ביצים",
+   "is_food": true,
+   "server_matched": false,
+   "server_type": null,
+   "confidence": 0.62,
+   "catalog_name": "ביצים L קרטון 12",
+   "status": "not_found"
+  },
+  {
+   "product": "חזה עוף טרי",
+   "expected": "חזה עוף",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "partial",
+   "confidence": 0.89,
+   "catalog_name": "חזה עוף טרי ארוז",
+   "status": "matched"
+  },
+  {
+   "product": "בשר בקר טחון טרי",
+   "expected": "בשר טחון",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "partial",
+   "confidence": 0.89,
+   "catalog_name": "בשר בקר טחון טרי קג",
+   "status": "matched"
+  },
+  {
+   "product": "פילה סלמון קפוא",
+   "expected": "סלמון",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "partial",
+   "confidence": 0.91,
+   "catalog_name": "פילה סלמון קפוא צילה",
+   "status": "matched"
+  },
+  {
+   "product": "טונה במים",
+   "expected": "טונה",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "partial",
+   "confidence": 0.87,
+   "catalog_name": "טונה במים 150X3ג",
+   "status": "matched"
+  },
+  {
+   "product": "עדשים אדומות 500 גרם",
+   "expected": "עדשים",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "exact",
+   "confidence": 1,
+   "catalog_name": "עדשים אדומות 500 גרם",
+   "status": "matched"
+  },
+  {
+   "product": "אורז בסמטי 1 ק\"ג",
+   "expected": "אורז בסמטי",
+   "is_food": true,
+   "server_matched": false,
+   "server_type": null,
+   "confidence": 0.62,
+   "catalog_name": "אורז פרסי סוגת 1 ק\"ג",
+   "status": "not_found"
+  },
+  {
+   "product": "פסטה ברילה 500 גרם",
+   "expected": "פסטה",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "token",
+   "confidence": 0.82,
+   "catalog_name": "פסטה פנה ברילה 500 גרם",
+   "status": "matched"
+  },
+  {
+   "product": "לחם אחיד פרוס",
+   "expected": "לחם אחיד",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "exact",
+   "confidence": 1,
+   "catalog_name": "לחם אחיד פרוס",
+   "status": "matched"
+  },
+  {
+   "product": "לחם דגנים מלא 750 גרם",
+   "expected": "לחם דגנים",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "exact",
+   "confidence": 1,
+   "catalog_name": "לחם דגנים מלא 750 גרם",
+   "status": "matched"
+  },
+  {
+   "product": "קורנפלקס תלמה 750 גרם",
+   "expected": "קורנפלקס",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "token",
+   "confidence": 0.8,
+   "catalog_name": "קורנפלקס דבש 448ג תלמה",
+   "status": "needs_review"
+  },
+  {
+   "product": "עגבניות",
+   "expected": "עגבניות",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "partial",
+   "confidence": 0.82,
+   "catalog_name": "עגבניות שרי 500 גרם",
+   "status": "matched"
+  },
+  {
+   "product": "מלפפונים",
+   "expected": "מלפפונים",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "partial",
+   "confidence": 0.83,
+   "catalog_name": "מלפפונים במלח 7-9 5",
+   "status": "needs_review"
+  },
+  {
+   "product": "בננות",
+   "expected": "בננות",
+   "is_food": true,
+   "server_matched": false,
+   "server_type": null,
+   "confidence": 0.72,
+   "catalog_name": "תותים ובננות מוקפאים 300",
+   "status": "not_found"
+  },
+  {
+   "product": "תפוח עץ פינק ליידי",
+   "expected": "תפוח עץ",
+   "is_food": true,
+   "server_matched": false,
+   "server_type": null,
+   "confidence": 0.56,
+   "catalog_name": "תפוח עץ גולדן 1 ק\"ג",
+   "status": "not_found"
+  },
+  {
+   "product": "גזר",
+   "expected": "גזר",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "partial",
+   "confidence": 0.8,
+   "catalog_name": "גזר תפזורת",
+   "status": "matched"
+  },
+  {
+   "product": "שמן זית 750 מ\"ל",
+   "expected": "שמן זית",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "exact",
+   "confidence": 1,
+   "catalog_name": "שמן זית  750 מ\"ל",
+   "status": "matched"
+  },
+  {
+   "product": "טחינה גולמית 500 גרם",
+   "expected": "טחינה",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "partial",
+   "confidence": 0.93,
+   "catalog_name": "טחינה גולמית 500 גרם סלה",
+   "status": "matched"
+  },
+  {
+   "product": "שקדים טבעיים 250 גרם",
+   "expected": "שקדים",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "token",
+   "confidence": 0.82,
+   "catalog_name": "שקדים טבעיים 200 גרם",
+   "status": "matched"
+  },
+  {
+   "product": "קפה נמס עלית 200 גרם",
+   "expected": "קפה נמס",
+   "is_food": true,
+   "server_matched": false,
+   "server_type": null,
+   "confidence": 0.51,
+   "catalog_name": "משקה גו קפה אגוזי לוז340",
+   "status": "not_found"
+  },
+  {
+   "product": "ח.עוף טרי",
+   "expected": "חזה עוף (קיצור)",
+   "is_food": true,
+   "server_matched": false,
+   "server_type": null,
+   "confidence": 0.58,
+   "catalog_name": "חזה עוף טרי 1 ק\"ג",
+   "status": "not_found"
+  },
+  {
+   "product": "עגבניה שרי",
+   "expected": "עגבניות שרי",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "partial",
+   "confidence": 0.89,
+   "catalog_name": "עגבניה שרי צהוב",
+   "status": "matched"
+  },
+  {
+   "product": "חטיף במבה 80 גרם",
+   "expected": "במבה",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "token",
+   "confidence": 0.77,
+   "catalog_name": "במבה חטיף בוטנים 200 גרם",
+   "status": "needs_review"
+  },
+  {
+   "product": "קוקה קולה 1.5 ליטר",
+   "expected": "קולה",
+   "is_food": true,
+   "server_matched": true,
+   "server_type": "exact",
+   "confidence": 1,
+   "catalog_name": "קוקה קולה 1.5 ליטר",
+   "status": "matched"
+  },
+  {
+   "product": "שמפו פינוק 700 מ\"ל",
+   "expected": "לא מזון",
+   "is_food": false,
+   "server_matched": false,
+   "server_type": null,
+   "confidence": 0.58,
+   "catalog_name": "פינוק ת.רחצה מנגו+שקד700",
+   "status": "non_food (not sent for matching in the app)"
+  },
+  {
+   "product": "נייר טואלט 24 גלילים",
+   "expected": "לא מזון",
+   "is_food": false,
+   "server_matched": false,
+   "server_type": null,
+   "confidence": 0.54,
+   "catalog_name": "נייר גלגול",
+   "status": "non_food (not sent for matching in the app)"
+  },
+  {
+   "product": "לה קט פטה סלמון 100 גרם",
+   "expected": "לא מזון (חיות)",
+   "is_food": false,
+   "server_matched": false,
+   "server_type": null,
+   "confidence": 0.58,
+   "catalog_name": "קציצות דג סלמון לבשול 75",
+   "status": "non_food (not sent for matching in the app)"
+  },
+  {
+   "product": "מוצר שלא קיים בכלל xyz",
+   "expected": "ללא התאמה",
+   "is_food": true,
+   "server_matched": false,
+   "server_type": null,
+   "confidence": 0.37,
+   "catalog_name": "שוקיים עוף קפוא",
+   "status": "not_found"
+  }
+ ],
+ "isolation": {
+  "rows": [
+   {
+    "what": "B lists userProfile",
+    "request": "GET /api/userProfile",
+    "status": 200,
+    "returned": "1 rows, 0 of A's 1"
+   },
+   {
+    "what": "B lists userProfile filtered by A's id",
+    "request": "GET /api/userProfile?created_by=user_<id>",
+    "status": 200,
+    "returned": "1 rows, 0 owned by A"
+   },
+   {
+    "what": "B lists receipts",
+    "request": "GET /api/receipts",
+    "status": 200,
+    "returned": "1 rows, 0 of A's 3"
+   },
+   {
+    "what": "B lists receipts filtered by A's id",
+    "request": "GET /api/receipts?created_by=user_<id>",
+    "status": 200,
+    "returned": "1 rows, 0 owned by A"
+   },
+   {
+    "what": "B lists receiptItems",
+    "request": "GET /api/receiptItems",
+    "status": 200,
+    "returned": "9 rows, 0 of A's 48"
+   },
+   {
+    "what": "B lists receiptItems filtered by A's id",
+    "request": "GET /api/receiptItems?created_by=user_<id>",
+    "status": 200,
+    "returned": "9 rows, 0 owned by A"
+   },
+   {
+    "what": "B lists shoppingLists",
+    "request": "GET /api/shoppingLists",
+    "status": 200,
+    "returned": "0 rows, 0 of A's 2"
+   },
+   {
+    "what": "B lists shoppingLists filtered by A's id",
+    "request": "GET /api/shoppingLists?created_by=user_<id>",
+    "status": 200,
+    "returned": "0 rows, 0 owned by A"
+   },
+   {
+    "what": "B lists nutritionPlans",
+    "request": "GET /api/nutritionPlans",
+    "status": 200,
+    "returned": "0 rows, 0 of A's 1"
+   },
+   {
+    "what": "B lists nutritionPlans filtered by A's id",
+    "request": "GET /api/nutritionPlans?created_by=user_<id>",
+    "status": 200,
+    "returned": "0 rows, 0 owned by A"
+   },
+   {
+    "what": "B updates A's receipts",
+    "request": "PATCH /api/receipts/<id>",
+    "status": 404,
+    "returned": "error"
+   },
+   {
+    "what": "B deletes A's receipts",
+    "request": "DELETE /api/receipts/<id>",
+    "status": 404,
+    "returned": "error"
+   },
+   {
+    "what": "B updates A's receiptItems",
+    "request": "PATCH /api/receiptItems/<id>",
+    "status": 404,
+    "returned": "error"
+   },
+   {
+    "what": "B deletes A's receiptItems",
+    "request": "DELETE /api/receiptItems/<id>",
+    "status": 404,
+    "returned": "error"
+   },
+   {
+    "what": "B updates A's shoppingLists",
+    "request": "PATCH /api/shoppingLists/<id>",
+    "status": 404,
+    "returned": "error"
+   },
+   {
+    "what": "B deletes A's shoppingLists",
+    "request": "DELETE /api/shoppingLists/<id>",
+    "status": 404,
+    "returned": "error"
+   },
+   {
+    "what": "B updates A's nutritionPlans",
+    "request": "PATCH /api/nutritionPlans/<id>",
+    "status": 404,
+    "returned": "error"
+   },
+   {
+    "what": "B deletes A's nutritionPlans",
+    "request": "DELETE /api/nutritionPlans/<id>",
+    "status": 404,
+    "returned": "error"
+   },
+   {
+    "what": "B updates A's userProfile",
+    "request": "PATCH /api/userProfile/<id>",
+    "status": 404,
+    "returned": "error"
+   },
+   {
+    "what": "B deletes A's userProfile",
+    "request": "DELETE /api/userProfile/<id>",
+    "status": 404,
+    "returned": "error"
+   },
+   {
+    "what": "B reads A's items by receipt id",
+    "request": "GET /api/receiptItems?receipt_id=<id>",
+    "status": 200,
+    "returned": "0 rows"
+   },
+   {
+    "what": "B creates a receipt with created_by = A",
+    "request": "POST /api/receipts",
+    "status": 201,
+    "returned": "owner=B, id set by server"
+   },
+   {
+    "what": "B reads purchase history",
+    "request": "GET /api/purchase-history",
+    "status": 200,
+    "returned": "only B's own products"
+   },
+   {
+    "what": "no session: list receipts",
+    "request": "GET /api/receipts",
+    "status": 401,
+    "returned": "error"
+   },
+   {
+    "what": "no session: list userProfile",
+    "request": "GET /api/userProfile",
+    "status": 401,
+    "returned": "error"
+   },
+   {
+    "what": "no session: purchase history",
+    "request": "GET /api/purchase-history",
+    "status": 401,
+    "returned": "error"
+   },
+   {
+    "what": "forged cookie",
+    "request": "GET /api/receipts",
+    "status": 401,
+    "returned": "error"
+   }
+  ],
+  "a_records_still_present": {
+   "receipts": true,
+   "receiptItems": true,
+   "shoppingLists": true,
+   "nutritionPlans": true,
+   "userProfile": true
+  },
+  "a_receipt_store_name_unchanged": true
+ },
+ "auth": {
+  "wrong_password": 401,
+  "unknown_email": 401,
+  "duplicate_register": 409,
+  "short_password": 400,
+  "bad_email": 400,
+  "foreign_origin_post": 403,
+  "me": {
+   "status": 200,
+   "fields": [
+    "id",
+    "email"
+   ]
+  },
+  "login": {
+   "status": 200,
+   "cookie_flags": [
+    "Max-Age",
+    "Path",
+    "Expires",
+    "HttpOnly",
+    "SameSite"
+   ],
+   "response_fields": [
+    "id",
+    "email"
+   ]
+  },
+  "data_after_new_login": {
+   "receipts": 3,
+   "lists": 2,
+   "plans": 1,
+   "profile": 1
+  },
+  "logout": 200,
+  "after_logout_same_cookie": 401,
+  "first_session_still_valid": 200,
+  "twelve_failed_logins": "401,401,401,401,401,401,401,401,401,401,429,429"
+ },
+ "api_timing": {
+  "health": {
+   "samples": 10,
+   "median_ms": 1,
+   "min_ms": 0,
+   "max_ms": 1
+  },
+  "search": {
+   "samples": 10,
+   "median_ms": 33,
+   "min_ms": 31,
+   "max_ms": 35
+  },
+  "search_prefix": {
+   "samples": 10,
+   "median_ms": 24,
+   "min_ms": 23,
+   "max_ms": 24
+  },
+  "match_19_items": {
+   "samples": 5,
+   "median_ms": 1609,
+   "min_ms": 1586,
+   "max_ms": 1651
+  },
+  "purchase_history": {
+   "samples": 10,
+   "median_ms": 2,
+   "min_ms": 2,
+   "max_ms": 2
+  },
+  "list_receipt_items": {
+   "samples": 10,
+   "median_ms": 1,
+   "min_ms": 1,
+   "max_ms": 2
+  }
+ },
+ "algorithm_timing": {
+  "basket_build_including_alternatives": {
+   "samples": 5,
+   "median_ms": 737,
+   "min_ms": 734,
+   "max_ms": 751
+  },
+  "weekly_plan_4_variants": {
+   "samples": 5,
+   "median_ms": 532,
+   "min_ms": 531,
+   "max_ms": 552
+  },
+  "first_basket_build_cold_cache_ms": 1600,
+  "first_plan_ms": 644,
+  "note": "run in Node (vite-node) on the QA machine, not in a browser; the basket time includes the catalog searches over HTTP"
+ },
+ "finished": "2026-10-11T16:08:50.699Z"
+}

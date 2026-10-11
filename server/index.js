@@ -20,6 +20,7 @@ import {
 } from './auth.js';
 import { sendPasswordResetEmail } from './email.js';
 import { purchaseHistoryForUser } from './purchaseHistory.js';
+import { registerAiRoutes } from './ai.js';
 import { productHealthScore, healthScoreName } from '../src/lib/healthScore.js';
 import { catalogPack, catalogPricePer100g } from '../src/lib/pricing.js';
 
@@ -229,6 +230,9 @@ app.get('/api/health', (_req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// ─── Receipt AI (server-side only: the browser never sees the API key) ───────
+registerAiRoutes(app, requireAuth);
 
 // ─── Product catalog routes ───────────────────────────────────────────────────
 // These MUST be declared before GET /api/:entity to avoid param capture.

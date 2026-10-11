@@ -18,7 +18,7 @@ import { applyReceiptRules, foodName, isDiscountLine, categoryOf, spendClass } f
 import { isNonFoodName } from "@/lib/nonFood";
 import { productHealthScore } from "@/lib/healthScore";
 import { pricingFields, isWeighedGroup } from "@/lib/pricing";
-import { buildSmartAdditions } from "@/lib/smartBasketEngine";
+import { buildSmartAdditions, isDuplicate } from "@/lib/smartBasketEngine";
 import { missingStaples, isDisliked, profileConflict, isSupplement, itemRole, isFavorite, basketSufficiency } from "@/lib/basketAlternatives";
 import { requireProfile } from "@/lib/profileGuard";
 
@@ -243,6 +243,16 @@ export const REGULAR_MIN_SCORE = 0.72;
 const REGULAR_MIN_QUALITY = 0.6;
 const MAX_REGULARS = 5;
 
+// A history product the basket already has: the same catalog product, or a duplicate by
+// the engine's own rule (same product, produce family or product type — isDuplicate).
+// By name alone, the same milk read as "חלב תנובה 1 ליטר 3% x 2" on this receipt and
+// "חלב תנובה 3% 1 ליטר" on an older one went into the basket twice.
+function alreadyIn(basket, h) {
+  const id = h.latest_item?.matched_product_id;
+  return (id != null && id !== "" && basket.some(b => b.catalog_product_id != null && String(b.catalog_product_id) === String(id))) ||
+    isDuplicate({ name: h.name }, basket);
+}
+
 // ─── The basket ──────────────────────────────────────────────────────────────
 
 /**
@@ -291,7 +301,7 @@ export async function buildBasket({
   for (const h of historyCandidates) {
     if (historyBasket.length >= MAX_REGULARS) break;
     if (h.history_score < REGULAR_MIN_SCORE || h.quality_score < REGULAR_MIN_QUALITY || !h.latest_item) continue;
-    if ([...receiptBasket, ...historyBasket].some(b => sameFood(b.name, h.name))) continue;
+    if (alreadyIn([...receiptBasket, ...historyBasket], h)) continue;
     historyBasket.push({
       ...receiptToBasketItem(h.latest_item),
       name: h.name,
@@ -309,7 +319,7 @@ export async function buildBasket({
   const anchorCost = anchor.reduce((s, i) => s + (i.estimated_price || 0), 0);
   // History products that are not regulars compete with catalog candidates
   const historyItems = historyCandidates
-    .filter(h => h.latest_item && !anchor.some(b => sameFood(b.name, h.name)))
+    .filter(h => h.latest_item && !alreadyIn(anchor, h))
     .map(h => ({ item: { ...receiptToBasketItem(h.latest_item), name: h.name, from_receipt: false }, history: h }));
   const added = await additions({
     basket: anchor,

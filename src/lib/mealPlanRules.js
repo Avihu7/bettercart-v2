@@ -9,6 +9,10 @@
 
 export const MEAL_TYPES = ["Breakfast", "Lunch", "Dinner", "Snacks"];
 
+// The word "דג" / "דגים" / "דגי" (Hebrew prefixes ה/ו/ב/ל/מ/ש allowed), on normalized text
+// (final letters already regular: "דגים" → "דגימ")
+export const FISH_WORD = /(?:^|[^א-ת])[הובלמש]?דג(?:ימ|י)?(?![א-ת])/;
+
 // Order matters: the first matching group wins (e.g. "קפה" before "חלב" so
 // "קפה עם חלב" style names classify as coffee; "חמאת בוטנים" before dairy).
 const GROUPS = [
@@ -32,7 +36,10 @@ const GROUPS = [
   // " שוקו " as a whole word, so "שוקולד" is not read as chocolate milk
   { group: "milk",      terms: ["חלב", " שוקו "], nameOnly: true },
   { group: "eggs",      terms: ["ביצ", "חביתה", "שקשוקה"] },
-  { group: "fish",      terms: ["סלמון", "דג", "טונה", "אמנון", "מושט", "בקלה", "סרדין"] },
+  // "דג" only as a word ("דג סלמון", "פילה דג", "דגים", "קציצות דגים") — never the
+  // letters inside another word ("דגנים", "דגש", "דגם"). "קרפיון" and the fish brand "דלידג"
+  // keep catalog names that were fish only through those letters ("דגקרפיון", "פילה לברק דלידג")
+  { group: "fish",      terms: ["סלמון", FISH_WORD, "טונה", "אמנון", "מושט", "בקלה", "סרדין", "קרפיון", "דלידג"] },
   { group: "meat",      terms: ["עוף", "הודו", "בקר", "בשר", " כבש ", "שניצל", "קבב", "המבורגר", "פרגית", "שוקיים", "כרעיים", "נקניק"] },
   { group: "bread",     terms: ["לחם", "פיתה", "פיתות", "לחמני", "טורטיה", "באגט", "חלה", "פריכיות", "טוסט", "כריך", "סנדוויץ"] },
   { group: "grain",     terms: ["אורז", "פסטה", "ספגטי", "פתיתים", "קוסקוס", "בורגול", "קינואה", "אטריות", "נודלס"] },
@@ -125,7 +132,7 @@ export function classifyProduct(name, category = "") {
   const fullText = `${nameText}${normalizeHebrew(category)} `;
   for (const { group, terms, nameOnly } of GROUPS) {
     const text = nameOnly ? nameText.replace(/חלבונ/g, "") : fullText;
-    if (terms.some(t => text.includes(unfinal(t)))) return group;
+    if (terms.some(t => (t instanceof RegExp ? t.test(text) : text.includes(unfinal(t))))) return group;
   }
   return "other";
 }

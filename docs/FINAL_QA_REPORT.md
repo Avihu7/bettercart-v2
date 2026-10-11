@@ -1,5 +1,8 @@
 # BetterCart v2 — Final QA Report
 
+> **Outdated — kept for history only.** This QA report covers the June 2026 version (guest IDs, AI-generated lists). The current QA report is `docs/project-book/qa/final-qa-report.md`. The current system is described in `README.md` and in `docs/project-book/`. Do not use this file as a source.
+
+
 **Date:** 2026-06-28
 **Version:** 2.0.0
 **Overall Verdict:** ✅ PASS — MVP Stable

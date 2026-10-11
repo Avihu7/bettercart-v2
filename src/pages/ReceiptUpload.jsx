@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/api/localAPI";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +10,7 @@ import { Upload, FileText, Camera, Loader2, Sparkles, AlertCircle, Info } from "
 import { DEMO_RECEIPT_TEXT } from "@/lib/demoData";
 import { analyzeReceipt } from "@/lib/receiptPipeline";
 import { classifyReceiptLine, receiptInsights } from "@/lib/receiptClassifier";
-import { IS_DEMO_MODE } from "@/lib/ai";
+import { aiConfigured } from "@/lib/ai";
 import { useAuth } from "@/lib/AuthContext";
 import FlowSteps from "@/components/FlowSteps";
 import { useFlowData } from "@/lib/flowData";
@@ -25,6 +25,8 @@ function getErrorHeadline(error) {
       return 'סוג קובץ לא נתמך';
     case 'too_large':
       return 'הקובץ גדול מדי';
+    case 'not_configured':
+      return 'קריאת קבלות אינה מוגדרת בשרת';
     default:
       return 'משהו השתבש בניתוח הקבלה';
   }
@@ -46,6 +48,9 @@ export default function ReceiptUpload() {
   const [file, setFile] = useState(null);
   const [uploadMode, setUploadMode] = useState("text");
   const [pipelineStep, setPipelineStep] = useState("");
+  // Demo mode: the server has no receipt-AI key (asked once; unknown counts as not demo)
+  const { data: aiReady } = useQuery({ queryKey: ["ai-status"], queryFn: aiConfigured, staleTime: Infinity });
+  const IS_DEMO_MODE = aiReady === false;
 
   const processMutation = useMutation({
     mutationFn: async () => {
@@ -154,7 +159,7 @@ export default function ReceiptUpload() {
               <p className="text-sm font-medium text-amber-800">מצב הדגמה פעיל — ללא API Key</p>
               <p className="text-xs text-amber-700 mt-0.5">
                 כל ניתוח קבלה יחזיר נתוני הדגמה (קבלת רמי לוי לדוגמה), ללא קשר לטקסט שתדביקו.
-                להפעלת ניתוח אמיתי — הגדירו <strong>VITE_ANTHROPIC_API_KEY</strong> בקובץ .env.
+                להפעלת ניתוח אמיתי — הגדירו <strong>ANTHROPIC_API_KEY</strong> בהגדרות השרת (קובץ .env.local).
                 ניתן להשתמש בכפתור "טען קבלה לדוגמה" לניתוח מהיר.
               </p>
             </div>
@@ -259,10 +264,10 @@ export default function ReceiptUpload() {
                     <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl p-10 cursor-pointer hover:border-primary/50 hover:bg-accent/50 transition-colors">
                       <Upload className="w-8 h-8 text-muted-foreground mb-3" />
                       <p className="font-medium text-sm">{file ? file.name : "לחצו להעלאת קבלה"}</p>
-                      <p className="text-xs text-muted-foreground mt-1">PDF, PNG, JPG נתמכים</p>
+                      <p className="text-xs text-muted-foreground mt-1">PDF, PNG, JPG, WEBP נתמכים</p>
                       <input
                         type="file"
-                        accept="image/*,.pdf"
+                        accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf"
                         className="hidden"
                         onChange={handleFileChange}
                       />

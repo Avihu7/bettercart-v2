@@ -209,7 +209,10 @@ function purchaseQuantity(item, eatenGrams, group) {
   if (group === 'eggs') {
     const eggs = Math.ceil(need / 60);
     const cartons = Math.ceil(eggs / 12);
-    return { label: cartons === 1 ? 'תבנית 12 ביצים' : `תבנית 12 ביצים × ${cartons}`, purchaseGrams: cartons * 12 * 60 };
+    // A carton is one pack of the item: priced by its own pack weight when it has one
+    // (a 12-egg carton the catalog lists as 500 g was charged as two packs for one carton)
+    const cartonGrams = !item.sold_by_weight && Number(item.pack_grams) > 0 ? Number(item.pack_grams) : 12 * 60;
+    return { label: cartons === 1 ? 'תבנית 12 ביצים' : `תבנית 12 ביצים × ${cartons}`, purchaseGrams: cartons * cartonGrams };
   }
   // Known pricing unit (see src/lib/pricing.js): weighed → by the 100 g, packed → whole packs
   const knownPack = !item.sold_by_weight && Number(item.pack_grams) > 0 ? Number(item.pack_grams) : null;

@@ -73,7 +73,7 @@ export const EMPTY_CATALOG = {
 };
 
 // Words that make a catalog product a different product than the plain one
-const PRODUCT_CHANGING = /במלח|כבוש|כבושים|חמוצ|מוחמץ|מיובש|ברוטב|מטוגן|מעושן|ממולא|ירוק|בטעם|מצופה|שימורי|בשמן|במים|מתוק/;
+const PRODUCT_CHANGING = /במלח|בחומץ|כבוש|כבושים|חמוצ|מוחמץ|מיובש|ברוטב|מטוגן|מעושן|ממולא|ירוק|בטעם|מצופה|שימורי|בשמן|במים|מתוק|דבש/;
 function changesProduct(receiptName, catalogName) {
   const words = String(catalogName || "").match(new RegExp(PRODUCT_CHANGING.source, "g")) || [];
   return words.some(w => !String(receiptName || "").includes(w));

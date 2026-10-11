@@ -94,7 +94,8 @@ const SNACK_FILLERS = ["fruit", "nuts", "yogurt"];
  */
 export function parseQuantityGrams(text, group) {
   const s = String(text || "").replace(/[״"]/g, '"').replace(/[׳']/g, "'").replace(/,/g, ".");
-  const mult = Number(s.match(/(\d+)\s*[×x*]\s*\d/)?.[1]) || 1;
+  // (capital X too: the catalog writes "טונה במים 150X3ג" — read as 3 g, it priced tuna at ₪7,300 a kg)
+  const mult = Number(s.match(/(\d+)\s*[×xX*]\s*\d/)?.[1]) || 1;
   const num = re => {
     const m = s.match(re);
     return m ? parseFloat(m[1]) : null;

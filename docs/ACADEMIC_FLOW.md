@@ -1,5 +1,8 @@
 # BetterCart v2 — Academic Workflow & CS Value
 
+> **Outdated — kept for history only.** This file predates the deterministic basket and planner (October 2026). The current system is described in `README.md` and in `docs/project-book/`. Do not use this file as a source.
+
+
 ## Project Overview
 
 BetterCart v2 is a full-stack web application that helps Israeli supermarket shoppers save money and improve nutrition by analyzing real purchase data, building a personalized user profile, and generating an optimized shopping list and weekly nutrition plan.
