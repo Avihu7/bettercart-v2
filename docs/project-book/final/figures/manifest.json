@@ -1,0 +1,82 @@
+{
+ "fig-1-1-engine.png": [
+  1880,
+  1764
+ ],
+ "fig-2-1-journey.png": [
+  1880,
+  697
+ ],
+ "fig-2-2-algorithm-map.png": [
+  1880,
+  1036
+ ],
+ "fig-3-1-architecture.png": [
+  1880,
+  1202
+ ],
+ "fig-3-2-er.png": [
+  1807,
+  1547
+ ],
+ "fig-4-1-receipt-pipeline.png": [
+  1880,
+  1586
+ ],
+ "fig-4-2-matching.png": [
+  1880,
+  1787
+ ],
+ "fig-5-1-basket.png": [
+  1880,
+  1373
+ ],
+ "fig-6-1-planner.png": [
+  1880,
+  1377
+ ],
+ "fig-6-2-neighbourhood.png": [
+  1880,
+  676
+ ],
+ "fig-6-3-balance-validation.png": [
+  1880,
+  932
+ ],
+ "fig-7-1-budget.png": [
+  1880,
+  762
+ ],
+ "fig-7-2-final-list.png": [
+  1880,
+  506
+ ],
+ "fig-8-1-benchmark.png": [
+  1686,
+  1059
+ ],
+ "shot-02-receipt-review.jpg": [
+  1463,
+  816
+ ],
+ "shot-03-manual-catalog-match.jpg": [
+  1463,
+  816
+ ],
+ "shot-04-smart-basket-items-and-reasons.jpg": [
+  1463,
+  816
+ ],
+ "shot-05-weekly-plan-quality-and-budget.jpg": [
+  1463,
+  816
+ ],
+ "shot-06-weekly-plan-day-view.jpg": [
+  1463,
+  816
+ ],
+ "shot-07-final-shopping-list.jpg": [
+  1463,
+  816
+ ]
+}

@@ -692,3 +692,40 @@ Fixed issues are not repeated here.
 1. Real store receipts were not available — receipt-reading accuracy stays "not tested".
 2. Rotate the Anthropic key if earlier builds were ever shared.
 3. The changes are uncommitted; the submission commit does not exist yet.
+
+---
+
+# Additional Receipt Run — receipt_example2 (real store receipt)
+
+Added 2026-10-11, after the QA stage, for the Project Book. Code unchanged (`3471663`; production code identical to `c7247a3`). One run, one receipt: **qualitative evidence, not an accuracy benchmark.**
+
+- File: `receipt_example2.jpeg` — a phone photo (963×3898 px, 1.0 MB) of a real Shufersal receipt dated 2026-10-04, crumpled, total ₪319.94. The image contains personal payment details and is not reproduced anywhere.
+- Tool: `docs/project-book/qa/scripts/receipt2-qa.mjs` (same calls as the app: `/api/ai/receipt-file` → `/api/ai/receipt-text` → rule classification → `/api/products/match-items` + client acceptance rule). Raw result: `docs/project-book/qa/evidence/receipt-example2-results.json`.
+- Ground truth: typed by reading the image — 20 product lines, 5 discount lines.
+
+**AI extraction**
+
+| Check | Result |
+|---|---|
+| File accepted | yes (200) |
+| Transcription / extraction time | 18.0 s / 13.6 s |
+| Store, date, total | all correct (שופרסל, 2026-10-04, 319.94) |
+| Product lines | 19 of 20 |
+| Discount lines | 5 of 5 detected, each merged into the product above it by the rules |
+| Lost line | lemon (1.005 kg, ₪10.95) was merged into the milk line; the milk kept lemon's quantity and price, and its own price (₪11.02) was lost |
+| Prices | 18 of the 19 extracted lines correct |
+| Names | 2 unusable (פיתות כוסמין → "פומיפוח כוסמי"; מרידול לחניכיים → "מרידרוד לחנייכיחם"), 2 slightly wrong (ריצפז → ריצפד; גזר ארוז → גזר ארוך), 1 qualifier dropped (עגבניות חתוכות → "עגבניות") |
+| Sum of lines vs printed total | 308.92 vs 319.94 — the difference is exactly the lost milk price |
+
+**Rule classification** — 4 of the 20 printed lines are not food (floor cleaner, fabric softener, toothpaste, carrier bag). Only the softener was classified non-food. The floor cleaner was classified as fruit (its name contains "מלון"), the toothpaste name was unreadable, and "שקית קופה" matches no non-food rule. None of the three reached a basket-ready state (all `not_found`).
+
+**Catalog matching** (18 lines treated as food)
+
+| Outcome | Lines | Notes |
+|---|---|---|
+| matched automatically | 8 | 6 the product itself; 2 another variant: "עגבניות" → cherry tomatoes (the receipt line was chopped tomatoes), "קוטג" → cottage with garlic and dill |
+| needs review | 2 | avocado, eggs (the suggested egg product is the right one) |
+| not found | 8 | 3 real non-food lines, water, the 2 unreadable names, milk, carrot / yogurt wording |
+| basket-ready | 7 | the 8 matched minus sugar (not a menu food) |
+
+**Reading.** On a real, crumpled receipt the pipeline completed and got the header, the discounts and most lines right, but it lost one line, misread several names, and one automatic match was a different product. This is weaker than the result on the printed sample receipt, and is consistent with the stated limitation: receipt accuracy is not established, and the user review step is required. No accuracy rate is derived from these two receipts.

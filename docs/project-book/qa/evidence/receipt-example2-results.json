@@ -1,0 +1,542 @@
+{
+ "started": "2026-10-11T19:39:26.299Z",
+ "node": "v22.21.0",
+ "file": "receipt_example2.jpeg",
+ "media_type": "image/jpeg",
+ "bytes": 1047091,
+ "ai_status": {
+  "configured": true
+ },
+ "transcribe": {
+  "status": 200,
+  "ms": 17952,
+  "chars": 2659,
+  "lines": 102
+ },
+ "extract": {
+  "status": 200,
+  "ms": 13598
+ },
+ "header": {
+  "store_name": "שופרסל",
+  "purchase_date": "2026-10-04",
+  "total_amount": 319.94
+ },
+ "model_items": [
+  {
+   "original_name": "עגבניות חזרכוות דק",
+   "normalized_name": "עגבניות",
+   "quantity": "",
+   "price": 17.9
+  },
+  {
+   "original_name": "סוכר לבן 1 ק\"ג",
+   "normalized_name": "סוכר לבן",
+   "quantity": "1 ק\"ג",
+   "price": 5.5
+  },
+  {
+   "original_name": "מלפפון",
+   "normalized_name": "מלפפון",
+   "quantity": "1.140 ק\"ג",
+   "price": 7.87
+  },
+  {
+   "original_name": "מחוון-מלפפון קטיף",
+   "normalized_name": "מלפפון קטיף",
+   "quantity": "",
+   "price": -3.42
+  },
+  {
+   "original_name": "ריצפד פרשהום מלון",
+   "normalized_name": "ריצפד פרשהום מלון",
+   "quantity": "",
+   "price": 19.9
+  },
+  {
+   "original_name": "מים מינרל נביעות 6*1",
+   "normalized_name": "מים מינרל נביעות",
+   "quantity": "2",
+   "price": 33
+  },
+  {
+   "original_name": "קוטג 250 גרם 5% בטלז",
+   "normalized_name": "קוטג",
+   "quantity": "2",
+   "price": 12.2
+  },
+  {
+   "original_name": "לנור מרכך אוקיינוס",
+   "normalized_name": "לנור מרכך אוקיינוס",
+   "quantity": "",
+   "price": 15.9
+  },
+  {
+   "original_name": "לנור מרכך כביטה מרוכז",
+   "normalized_name": "לנור מרכך כביטה מרוכז",
+   "quantity": "",
+   "price": -8
+  },
+  {
+   "original_name": "פומיפוח כוסמי 2550",
+   "normalized_name": "פומיפוח כוסמי",
+   "quantity": "",
+   "price": 18.9
+  },
+  {
+   "original_name": "מרידרוד לחנייכיחם 2*",
+   "normalized_name": "מרידרוד לחנייכיחם",
+   "quantity": "2",
+   "price": 39.9
+  },
+  {
+   "original_name": "משחח שינייים להגנת החניכי",
+   "normalized_name": "משחח שינייים להגנת החניכי",
+   "quantity": "",
+   "price": -14
+  },
+  {
+   "original_name": "אבוקדו",
+   "normalized_name": "אבוקדו",
+   "quantity": "0.640 ק\"ג",
+   "price": 6.34
+  },
+  {
+   "original_name": "אבוקדו קטיף",
+   "normalized_name": "אבוקדו קטיף",
+   "quantity": "",
+   "price": -0.64
+  },
+  {
+   "original_name": "בשר טחון טרי",
+   "normalized_name": "בשר טחון טרי",
+   "quantity": "0.744 ק\"ג",
+   "price": 59.45
+  },
+  {
+   "original_name": "חלב טרי הומוגני 3% ליחום",
+   "normalized_name": "חלב טרי הומוגני 3%",
+   "quantity": "1.005 ק\"ג",
+   "price": 10.95
+  },
+  {
+   "original_name": "פלפל אדום",
+   "normalized_name": "פלפל אדום",
+   "quantity": "1.005 ק\"ג",
+   "price": 8.94
+  },
+  {
+   "original_name": "ענבים ירוקים אוטום ק",
+   "normalized_name": "ענבים ירוקים",
+   "quantity": "1.245 ק\"ג",
+   "price": 28.51
+  },
+  {
+   "original_name": "גזר ארוך",
+   "normalized_name": "גזר ארוך",
+   "quantity": "0.320 ק\"ג",
+   "price": 1.57
+  },
+  {
+   "original_name": "גזר ארוך קטיף",
+   "normalized_name": "גזר ארוך קטיף",
+   "quantity": "",
+   "price": -0.32
+  },
+  {
+   "original_name": "דנונה פרו 21 חלבון 0%",
+   "normalized_name": "דנונה פרו 21 חלבון 0%",
+   "quantity": "2",
+   "price": 13.2
+  },
+  {
+   "original_name": "עגבניה",
+   "normalized_name": "עגבניה",
+   "quantity": "1.100 ק\"ג",
+   "price": 6.49
+  },
+  {
+   "original_name": "ביצי משק טריות L",
+   "normalized_name": "ביצי משק טריות",
+   "quantity": "2",
+   "price": 28.48
+  },
+  {
+   "original_name": "שקית קופה",
+   "normalized_name": "שקית קופה",
+   "quantity": "3",
+   "price": 0.3
+  }
+ ],
+ "lines_after_rules": 19,
+ "discounts_merged": [
+  {
+   "name": "מלפפון",
+   "discount": 3.42,
+   "price": 4.45
+  },
+  {
+   "name": "לנור מרכך אוקיינוס",
+   "discount": 8,
+   "price": 7.9
+  },
+  {
+   "name": "מרידרוד לחנייכיחם 2*",
+   "discount": 14,
+   "price": 25.9
+  },
+  {
+   "name": "אבוקדו",
+   "discount": 0.64,
+   "price": 5.7
+  },
+  {
+   "name": "גזר ארוך",
+   "discount": 0.32,
+   "price": 1.25
+  }
+ ],
+ "sum_of_lines": 308.92,
+ "match_ms": 1361,
+ "items": [
+  {
+   "original_name": "עגבניות חזרכוות דק",
+   "normalized_name": "עגבניות",
+   "quantity": "",
+   "price": 17.9,
+   "is_food": true,
+   "category": "vegetable",
+   "menu": true,
+   "health_score": 10,
+   "needs_review": false,
+   "match_type": "partial",
+   "match_confidence": 0.82,
+   "matched_product": "עגבניות שרי 500 גרם",
+   "basket_ready": true,
+   "match_status": "matched"
+  },
+  {
+   "original_name": "סוכר לבן 1 ק\"ג",
+   "normalized_name": "סוכר לבן",
+   "quantity": "1 ק\"ג",
+   "price": 5.5,
+   "is_food": true,
+   "category": "snack",
+   "menu": false,
+   "health_score": 1,
+   "needs_review": false,
+   "match_type": "partial",
+   "match_confidence": 0.81,
+   "matched_product": "סוכר לבן 1 ק\"ג",
+   "basket_ready": false,
+   "match_status": "matched"
+  },
+  {
+   "original_name": "מלפפון",
+   "normalized_name": "מלפפון",
+   "quantity": "1.140 ק\"ג",
+   "price": 4.45,
+   "is_food": true,
+   "category": "vegetable",
+   "menu": true,
+   "health_score": 10,
+   "needs_review": false,
+   "match_type": "exact",
+   "match_confidence": 1,
+   "matched_product": "מלפפון",
+   "basket_ready": true,
+   "match_status": "matched"
+  },
+  {
+   "original_name": "ריצפד פרשהום מלון",
+   "normalized_name": "ריצפד פרשהום מלון",
+   "quantity": "",
+   "price": 19.9,
+   "is_food": true,
+   "category": "fruit",
+   "menu": true,
+   "health_score": 9,
+   "needs_review": true,
+   "match_type": "token",
+   "match_confidence": 0.63,
+   "matched_product": "ריצפז פרשהום מלון חלומי2",
+   "basket_ready": false,
+   "match_status": "not_found"
+  },
+  {
+   "original_name": "מים מינרל נביעות 6*1",
+   "normalized_name": "מים מינרל נביעות",
+   "quantity": "2",
+   "price": 33,
+   "is_food": true,
+   "category": "drink",
+   "menu": true,
+   "health_score": 10,
+   "needs_review": true,
+   "match_type": "token",
+   "match_confidence": 0.56,
+   "matched_product": "מים טעם פירות יער 1.5 ל",
+   "basket_ready": false,
+   "match_status": "not_found"
+  },
+  {
+   "original_name": "קוטג 250 גרם 5% בטלז",
+   "normalized_name": "קוטג",
+   "quantity": "2",
+   "price": 12.2,
+   "is_food": true,
+   "category": "dairy",
+   "menu": true,
+   "health_score": 7,
+   "needs_review": false,
+   "match_type": "partial",
+   "match_confidence": 0.8,
+   "matched_product": "קוטג' +שום שמיר",
+   "basket_ready": true,
+   "match_status": "matched"
+  },
+  {
+   "original_name": "לנור מרכך אוקיינוס",
+   "normalized_name": "לנור מרכך אוקיינוס",
+   "quantity": "",
+   "price": 7.9,
+   "is_food": false,
+   "category": "other",
+   "menu": false,
+   "health_score": null,
+   "needs_review": false,
+   "match_type": null,
+   "match_confidence": null,
+   "matched_product": null,
+   "basket_ready": false,
+   "match_status": "not_checked"
+  },
+  {
+   "original_name": "פומיפוח כוסמי 2550",
+   "normalized_name": "פומיפוח כוסמי",
+   "quantity": "",
+   "price": 18.9,
+   "is_food": true,
+   "category": "other",
+   "menu": true,
+   "health_score": 5,
+   "needs_review": true,
+   "match_type": "token",
+   "match_confidence": 0.38,
+   "matched_product": "10פיתות כוסמין700ג תנעמי",
+   "basket_ready": false,
+   "match_status": "not_found"
+  },
+  {
+   "original_name": "מרידרוד לחנייכיחם 2*",
+   "normalized_name": "מרידרוד לחנייכיחם",
+   "quantity": "2",
+   "price": 25.9,
+   "is_food": true,
+   "category": "other",
+   "menu": true,
+   "health_score": 5,
+   "needs_review": true,
+   "match_type": null,
+   "match_confidence": null,
+   "matched_product": null,
+   "basket_ready": false,
+   "match_status": "not_found"
+  },
+  {
+   "original_name": "אבוקדו",
+   "normalized_name": "אבוקדו",
+   "quantity": "0.640 ק\"ג",
+   "price": 5.7,
+   "is_food": true,
+   "category": "fat",
+   "menu": true,
+   "health_score": 9,
+   "needs_review": true,
+   "match_type": "exact",
+   "match_confidence": 1,
+   "matched_product": "אבוקדו",
+   "basket_ready": false,
+   "match_status": "needs_review"
+  },
+  {
+   "original_name": "בשר טחון טרי",
+   "normalized_name": "בשר טחון טרי",
+   "quantity": "0.744 ק\"ג",
+   "price": 59.45,
+   "is_food": true,
+   "category": "protein",
+   "menu": true,
+   "health_score": 6,
+   "needs_review": false,
+   "match_type": "exact",
+   "match_confidence": 1,
+   "matched_product": "בשר טחון טרי",
+   "basket_ready": true,
+   "match_status": "matched"
+  },
+  {
+   "original_name": "חלב טרי הומוגני 3% ליחום",
+   "normalized_name": "חלב טרי הומוגני 3%",
+   "quantity": "1.005 ק\"ג",
+   "price": 10.95,
+   "is_food": true,
+   "category": "dairy",
+   "menu": true,
+   "health_score": 8,
+   "needs_review": true,
+   "match_type": "token",
+   "match_confidence": 0.69,
+   "matched_product": "חלב עמיד הומוגני 3% 1 ל",
+   "basket_ready": false,
+   "match_status": "not_found"
+  },
+  {
+   "original_name": "פלפל אדום",
+   "normalized_name": "פלפל אדום",
+   "quantity": "1.005 ק\"ג",
+   "price": 8.94,
+   "is_food": true,
+   "category": "vegetable",
+   "menu": true,
+   "health_score": 10,
+   "needs_review": false,
+   "match_type": "exact",
+   "match_confidence": 1,
+   "matched_product": "פלפל אדום",
+   "basket_ready": true,
+   "match_status": "matched"
+  },
+  {
+   "original_name": "ענבים ירוקים אוטום ק",
+   "normalized_name": "ענבים ירוקים",
+   "quantity": "1.245 ק\"ג",
+   "price": 28.51,
+   "is_food": true,
+   "category": "fruit",
+   "menu": true,
+   "health_score": 9,
+   "needs_review": false,
+   "match_type": "exact",
+   "match_confidence": 1,
+   "matched_product": "ענבים ירוקים",
+   "basket_ready": true,
+   "match_status": "matched"
+  },
+  {
+   "original_name": "גזר ארוך",
+   "normalized_name": "גזר ארוך",
+   "quantity": "0.320 ק\"ג",
+   "price": 1.25,
+   "is_food": true,
+   "category": "vegetable",
+   "menu": true,
+   "health_score": 10,
+   "needs_review": true,
+   "match_type": "token",
+   "match_confidence": 0.63,
+   "matched_product": "גזר 1 ק\"ג",
+   "basket_ready": false,
+   "match_status": "not_found"
+  },
+  {
+   "original_name": "דנונה פרו 21 חלבון 0%",
+   "normalized_name": "דנונה פרו 21 חלבון 0%",
+   "quantity": "2",
+   "price": 13.2,
+   "is_food": true,
+   "category": "dairy",
+   "menu": true,
+   "health_score": 9,
+   "needs_review": true,
+   "match_type": "token",
+   "match_confidence": 0.69,
+   "matched_product": "דנונה פרו מנגו ללת\"ס215ג",
+   "basket_ready": false,
+   "match_status": "not_found"
+  },
+  {
+   "original_name": "עגבניה",
+   "normalized_name": "עגבניה",
+   "quantity": "1.100 ק\"ג",
+   "price": 6.49,
+   "is_food": true,
+   "category": "vegetable",
+   "menu": true,
+   "health_score": 10,
+   "needs_review": false,
+   "match_type": "exact",
+   "match_confidence": 1,
+   "matched_product": "עגבניה",
+   "basket_ready": true,
+   "match_status": "matched"
+  },
+  {
+   "original_name": "ביצי משק טריות L",
+   "normalized_name": "ביצי משק טריות",
+   "quantity": "2",
+   "price": 28.48,
+   "is_food": true,
+   "category": "protein",
+   "menu": true,
+   "health_score": 8,
+   "needs_review": true,
+   "match_type": "partial",
+   "match_confidence": 0.81,
+   "matched_product": "12 ביצי משק טריות L לסר",
+   "basket_ready": false,
+   "match_status": "needs_review"
+  },
+  {
+   "original_name": "שקית קופה",
+   "normalized_name": "שקית קופה",
+   "quantity": "3",
+   "price": 0.3,
+   "is_food": true,
+   "category": "other",
+   "menu": true,
+   "health_score": 5,
+   "needs_review": true,
+   "match_type": "token",
+   "match_confidence": 0.62,
+   "matched_product": "שקית זרעים שעועית שטוחה",
+   "basket_ready": false,
+   "match_status": "not_found"
+  }
+ ],
+ "summary": {
+  "lines": 19,
+  "food": 18,
+  "non_food": 1,
+  "by_status": {
+   "matched": 8,
+   "not_found": 8,
+   "not_checked": 1,
+   "needs_review": 2
+  },
+  "basket_ready": 7
+ },
+ "note": "match_status / needs_review were read back from the saved rows (catalog_match_status, catalog_needs_review) after the run; the script printed the wrong field names. No second AI call was made.",
+ "manual_reading": {
+  "printed_product_lines": 20,
+  "printed_discount_lines": 5,
+  "printed_total": 319.94,
+  "extracted_product_lines": 19,
+  "discount_lines_detected_and_merged": 5,
+  "lost_line": "לימון 1.005 ק\"ג 10.95 — merged into the milk line, which received its quantity and price; the milk price 11.02 was lost",
+  "names_misread": [
+   "פיתות כוסמין -> פומיפוח כוסמי",
+   "מרידול לחניכיים -> מרידרוד לחנייכיחם",
+   "ריצפז -> ריצפד",
+   "גזר ארוז -> גזר ארוך",
+   "עגבניות חתוכות: qualifier dropped in the normalized name"
+  ],
+  "true_non_food_lines": 4,
+  "non_food_detected_by_rules": 1,
+  "auto_matched": 8,
+  "auto_matched_same_product": 6,
+  "auto_matched_other_variant": 2,
+  "needs_review": 2,
+  "not_found": 8
+ }
+}

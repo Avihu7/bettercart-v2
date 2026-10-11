@@ -1,0 +1,4 @@
+{ "name": "bettercart-project-book-build", "private": true, "version": "1.0.0",
+  "description": "Builds BetterCart_Project_Book.docx from ../content and ../figures",
+  "scripts": { "build": "node build.cjs" },
+  "dependencies": { "docx": "^9.5.1", "jszip": "^3.10.1" } }
