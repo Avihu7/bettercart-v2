@@ -1,0 +1,5274 @@
+{
+ "meta": {
+  "seed": 20261012,
+  "generated": 90,
+  "refusedCandidates": 27,
+  "refusedDetail": [
+   {
+    "slot": 0,
+    "attempt": 0,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "weight_loss",
+     "size": "sparse",
+     "budget": "tight",
+     "diet": "ללא לקטוז"
+    },
+    "products": 10
+   },
+   {
+    "slot": 0,
+    "attempt": 1,
+    "error": "IncompleteMenuError",
+    "design": {
+     "goal": "weight_loss",
+     "size": "sparse",
+     "budget": "tight",
+     "diet": "ללא לקטוז"
+    },
+    "products": 11
+   },
+   {
+    "slot": 2,
+    "attempt": 0,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "weight_gain",
+     "size": "sparse",
+     "budget": "tight",
+     "diet": "ללא העדפה"
+    },
+    "products": 12
+   },
+   {
+    "slot": 2,
+    "attempt": 1,
+    "error": "IncompleteMenuError",
+    "design": {
+     "goal": "weight_gain",
+     "size": "sparse",
+     "budget": "tight",
+     "diet": "ללא העדפה"
+    },
+    "products": 10
+   },
+   {
+    "slot": 2,
+    "attempt": 2,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "weight_gain",
+     "size": "sparse",
+     "budget": "tight",
+     "diet": "ללא העדפה"
+    },
+    "products": 12
+   },
+   {
+    "slot": 9,
+    "attempt": 0,
+    "error": "IncompleteMenuError",
+    "design": {
+     "goal": "weight_loss",
+     "size": "sparse",
+     "budget": "normal",
+     "diet": "ללא העדפה"
+    },
+    "products": 11
+   },
+   {
+    "slot": 10,
+    "attempt": 0,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "maintenance",
+     "size": "sparse",
+     "budget": "normal",
+     "diet": "ללא העדפה"
+    },
+    "products": 9
+   },
+   {
+    "slot": 10,
+    "attempt": 1,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "maintenance",
+     "size": "sparse",
+     "budget": "normal",
+     "diet": "ללא העדפה"
+    },
+    "products": 10
+   },
+   {
+    "slot": 10,
+    "attempt": 2,
+    "error": "IncompleteMenuError",
+    "design": {
+     "goal": "maintenance",
+     "size": "sparse",
+     "budget": "normal",
+     "diet": "ללא העדפה"
+    },
+    "products": 9
+   },
+   {
+    "slot": 19,
+    "attempt": 0,
+    "error": "IncompleteMenuError",
+    "design": {
+     "goal": "maintenance",
+     "size": "sparse",
+     "budget": "generous",
+     "diet": "ללא העדפה"
+    },
+    "products": 9
+   },
+   {
+    "slot": 20,
+    "attempt": 0,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "weight_gain",
+     "size": "sparse",
+     "budget": "generous",
+     "diet": "ללא לקטוז"
+    },
+    "products": 10
+   },
+   {
+    "slot": 20,
+    "attempt": 1,
+    "error": "IncompleteMenuError",
+    "design": {
+     "goal": "weight_gain",
+     "size": "sparse",
+     "budget": "generous",
+     "diet": "ללא לקטוז"
+    },
+    "products": 11
+   },
+   {
+    "slot": 28,
+    "attempt": 0,
+    "error": "IncompleteMenuError",
+    "design": {
+     "goal": "maintenance",
+     "size": "sparse",
+     "budget": "tight",
+     "diet": "ללא העדפה"
+    },
+    "products": 12
+   },
+   {
+    "slot": 32,
+    "attempt": 0,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "weight_gain",
+     "size": "medium",
+     "budget": "tight",
+     "diet": "כשר"
+    },
+    "products": 18
+   },
+   {
+    "slot": 42,
+    "attempt": 0,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "weight_loss",
+     "size": "rich",
+     "budget": "normal",
+     "diet": "ללא העדפה"
+    },
+    "products": 23
+   },
+   {
+    "slot": 46,
+    "attempt": 0,
+    "error": "IncompleteMenuError",
+    "design": {
+     "goal": "maintenance",
+     "size": "sparse",
+     "budget": "generous",
+     "diet": "ללא גלוטן"
+    },
+    "products": 9
+   },
+   {
+    "slot": 46,
+    "attempt": 1,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "maintenance",
+     "size": "sparse",
+     "budget": "generous",
+     "diet": "ללא גלוטן"
+    },
+    "products": 11
+   },
+   {
+    "slot": 46,
+    "attempt": 2,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "maintenance",
+     "size": "sparse",
+     "budget": "generous",
+     "diet": "ללא גלוטן"
+    },
+    "products": 10
+   },
+   {
+    "slot": 46,
+    "attempt": 3,
+    "error": "IncompleteMenuError",
+    "design": {
+     "goal": "maintenance",
+     "size": "sparse",
+     "budget": "generous",
+     "diet": "ללא גלוטן"
+    },
+    "products": 12
+   },
+   {
+    "slot": 48,
+    "attempt": 0,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "weight_loss",
+     "size": "medium",
+     "budget": "generous",
+     "diet": "ללא העדפה"
+    },
+    "products": 15
+   },
+   {
+    "slot": 48,
+    "attempt": 1,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "weight_loss",
+     "size": "medium",
+     "budget": "generous",
+     "diet": "ללא העדפה"
+    },
+    "products": 16
+   },
+   {
+    "slot": 59,
+    "attempt": 0,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "weight_gain",
+     "size": "medium",
+     "budget": "tight",
+     "diet": "ללא העדפה"
+    },
+    "products": 15
+   },
+   {
+    "slot": 63,
+    "attempt": 0,
+    "error": "IncompleteMenuError",
+    "design": {
+     "goal": "weight_loss",
+     "size": "sparse",
+     "budget": "normal",
+     "diet": "ללא העדפה"
+    },
+    "products": 10
+   },
+   {
+    "slot": 66,
+    "attempt": 0,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "weight_loss",
+     "size": "medium",
+     "budget": "normal",
+     "diet": "ללא העדפה"
+    },
+    "products": 20
+   },
+   {
+    "slot": 66,
+    "attempt": 1,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "weight_loss",
+     "size": "medium",
+     "budget": "normal",
+     "diet": "ללא העדפה"
+    },
+    "products": 14
+   },
+   {
+    "slot": 73,
+    "attempt": 0,
+    "error": "IncompleteMenuError",
+    "design": {
+     "goal": "maintenance",
+     "size": "sparse",
+     "budget": "generous",
+     "diet": "טבעוני"
+    },
+    "products": 10
+   },
+   {
+    "slot": 80,
+    "attempt": 0,
+    "error": "UnacceptableMenuError",
+    "design": {
+     "goal": "weight_gain",
+     "size": "rich",
+     "budget": "generous",
+     "diet": "ללא גלוטן"
+    },
+    "products": 24
+   }
+  ],
+  "distinctScenarios": 90,
+  "distinctBaskets": 90,
+  "basketJaccard": {
+   "min": 0,
+   "median": 0.31,
+   "max": 0.93
+  },
+  "byGoal": {
+   "weight_loss": 30,
+   "maintenance": 30,
+   "weight_gain": 30
+  },
+  "bySize": {
+   "sparse": 30,
+   "medium": 30,
+   "rich": 30
+  },
+  "byBudget": {
+   "tight": 36,
+   "normal": 27,
+   "generous": 27
+  },
+  "byDiet": {
+   "ללא לקטוז": 9,
+   "טבעוני": 12,
+   "ללא העדפה": 36,
+   "ללא גלוטן": 9,
+   "צמחוני": 14,
+   "כשר": 10
+  },
+  "withAllergy": 31,
+  "withDislikes": 27,
+  "withFavourites": 22,
+  "products": {
+   "min": 9,
+   "max": 29
+  },
+  "calories": {
+   "min": 1031,
+   "max": 4027
+  },
+  "monthlyBudget": {
+   "min": 1200,
+   "max": 3400
+  }
+ },
+ "scenarios": [
+  {
+   "id": "G011",
+   "slot": 0,
+   "attempt": 2,
+   "design": {
+    "goal": "weight_loss",
+    "size": "sparse",
+    "budget": "tight",
+    "diet": "ללא לקטוז"
+   },
+   "keys": [
+    "chicken",
+    "eggs",
+    "quinoa",
+    "pita",
+    "tomato",
+    "carrot",
+    "orange",
+    "tahini",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 98,
+    "height": 167,
+    "age": 27,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "weight_loss",
+    "strength_training": "1-2",
+    "daily_calories": 2867,
+    "protein_target": 186,
+    "carbs_target": 315,
+    "fat_target": 96,
+    "monthly_budget": 1300,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא לקטוז"
+    ],
+    "allergies": [
+     "דגים"
+    ],
+    "favorite_foods": [
+     "עגבניות"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G012",
+   "slot": 1,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "sparse",
+    "budget": "tight",
+    "diet": "טבעוני"
+   },
+   "keys": [
+    "lentils",
+    "chickpeas",
+    "rice",
+    "pasta",
+    "bread",
+    "cucumber",
+    "carrot",
+    "banana",
+    "apple",
+    "orange",
+    "almonds",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 60,
+    "height": 176,
+    "age": 47,
+    "gender": "female",
+    "activity_level": "very_active",
+    "goal": "maintenance",
+    "strength_training": "none",
+    "daily_calories": 2249,
+    "protein_target": 96,
+    "carbs_target": 298,
+    "fat_target": 75,
+    "monthly_budget": 1200,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "טבעוני"
+    ],
+    "allergies": [
+     "סויה"
+    ],
+    "favorite_foods": [
+     "תפוז",
+     "גזר"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G013",
+   "slot": 2,
+   "attempt": 3,
+   "design": {
+    "goal": "weight_gain",
+    "size": "sparse",
+    "budget": "tight",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "tuna",
+    "whiteCheese",
+    "rice",
+    "pasta",
+    "pita",
+    "tomato",
+    "cucumber",
+    "banana",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 69,
+    "height": 154,
+    "age": 51,
+    "gender": "female",
+    "activity_level": "sedentary",
+    "goal": "weight_gain",
+    "strength_training": "3-5",
+    "daily_calories": 1884,
+    "protein_target": 124,
+    "carbs_target": 230,
+    "fat_target": 52,
+    "monthly_budget": 1450,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G014",
+   "slot": 3,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "medium",
+    "budget": "tight",
+    "diet": "ללא גלוטן"
+   },
+   "keys": [
+    "chicken",
+    "turkey",
+    "eggs",
+    "cottage",
+    "whiteCheese",
+    "yellowCheese",
+    "yogurt",
+    "milk",
+    "rice",
+    "quinoa",
+    "potato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "banana",
+    "berries",
+    "oil",
+    "tahini",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 75,
+    "height": 178,
+    "age": 54,
+    "gender": "female",
+    "activity_level": "very_active",
+    "goal": "weight_loss",
+    "strength_training": "3-5",
+    "daily_calories": 2069,
+    "protein_target": 150,
+    "carbs_target": 212,
+    "fat_target": 69,
+    "monthly_budget": 1250,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא גלוטן"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "מלפפון"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G015",
+   "slot": 4,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "medium",
+    "budget": "tight",
+    "diet": "ללא לקטוז"
+   },
+   "keys": [
+    "chicken",
+    "eggs",
+    "chickpeas",
+    "pasta",
+    "bread",
+    "pita",
+    "oats",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "banana",
+    "apple",
+    "berries",
+    "oil",
+    "almonds"
+   ],
+   "profile": {
+    "weight": 72,
+    "height": 178,
+    "age": 38,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "maintenance",
+    "strength_training": "none",
+    "daily_calories": 2842,
+    "protein_target": 115,
+    "carbs_target": 382,
+    "fat_target": 95,
+    "monthly_budget": 1250,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא לקטוז"
+    ],
+    "allergies": [
+     "סויה"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "גזר",
+     "גרגירי חומוס"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G016",
+   "slot": 5,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "medium",
+    "budget": "tight",
+    "diet": "ללא לקטוז"
+   },
+   "keys": [
+    "beef",
+    "tuna",
+    "salmon",
+    "lentils",
+    "chickpeas",
+    "rice",
+    "quinoa",
+    "pita",
+    "tomato",
+    "carrot",
+    "broccoli",
+    "banana",
+    "apple",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 67,
+    "height": 179,
+    "age": 61,
+    "gender": "female",
+    "activity_level": "very_active",
+    "goal": "weight_gain",
+    "strength_training": "6-7",
+    "daily_calories": 2682,
+    "protein_target": 127,
+    "carbs_target": 375,
+    "fat_target": 75,
+    "monthly_budget": 1350,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא לקטוז"
+    ],
+    "allergies": [
+     "ביצים"
+    ],
+    "favorite_foods": [
+     "פיתות",
+     "קינואה"
+    ],
+    "disliked_foods": [
+     "אורז פרסי"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G017",
+   "slot": 6,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "rich",
+    "budget": "tight",
+    "diet": "ללא לקטוז"
+   },
+   "keys": [
+    "chicken",
+    "turkey",
+    "tuna",
+    "salmon",
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "yellowCheese",
+    "soyDrink",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "oats",
+    "potato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "oil",
+    "tahini",
+    "almonds",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 68,
+    "height": 190,
+    "age": 24,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "weight_loss",
+    "strength_training": "6-7",
+    "daily_calories": 2623,
+    "protein_target": 143,
+    "carbs_target": 317,
+    "fat_target": 87,
+    "monthly_budget": 1450,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא לקטוז"
+    ],
+    "allergies": [
+     "אגוזים"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G018",
+   "slot": 7,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "rich",
+    "budget": "tight",
+    "diet": "ללא לקטוז"
+   },
+   "keys": [
+    "beef",
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "cottage",
+    "whiteCheese",
+    "yogurt",
+    "rice",
+    "quinoa",
+    "pita",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "broccoli",
+    "banana",
+    "apple",
+    "berries",
+    "tahini",
+    "almonds",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 64,
+    "height": 185,
+    "age": 57,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "maintenance",
+    "strength_training": "1-2",
+    "daily_calories": 2616,
+    "protein_target": 109,
+    "carbs_target": 349,
+    "fat_target": 87,
+    "monthly_budget": 1450,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא לקטוז"
+    ],
+    "allergies": [
+     "דגים"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G019",
+   "slot": 8,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "rich",
+    "budget": "tight",
+    "diet": "טבעוני"
+   },
+   "keys": [
+    "turkey",
+    "tuna",
+    "salmon",
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "cottage",
+    "yellowCheese",
+    "yogurt",
+    "milk",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "pita",
+    "potato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "broccoli",
+    "banana",
+    "berries",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 88,
+    "height": 170,
+    "age": 49,
+    "gender": "male",
+    "activity_level": "sedentary",
+    "goal": "weight_gain",
+    "strength_training": "6-7",
+    "daily_calories": 2443,
+    "protein_target": 167,
+    "carbs_target": 291,
+    "fat_target": 68,
+    "monthly_budget": 1400,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "טבעוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G020",
+   "slot": 9,
+   "attempt": 1,
+   "design": {
+    "goal": "weight_loss",
+    "size": "sparse",
+    "budget": "normal",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "beef",
+    "eggs",
+    "yellowCheese",
+    "pasta",
+    "pita",
+    "oats",
+    "tomato",
+    "cucumber",
+    "lettuce",
+    "banana",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 66,
+    "height": 163,
+    "age": 32,
+    "gender": "female",
+    "activity_level": "very_active",
+    "goal": "weight_loss",
+    "strength_training": "6-7",
+    "daily_calories": 1942,
+    "protein_target": 139,
+    "carbs_target": 200,
+    "fat_target": 65,
+    "monthly_budget": 1850,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [
+     "דגים"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "חסה"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G021",
+   "slot": 10,
+   "attempt": 3,
+   "design": {
+    "goal": "maintenance",
+    "size": "sparse",
+    "budget": "normal",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "beef",
+    "eggs",
+    "cottage",
+    "quinoa",
+    "bread",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "orange",
+    "tahini",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 66,
+    "height": 184,
+    "age": 43,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "maintenance",
+    "strength_training": "3-5",
+    "daily_calories": 2760,
+    "protein_target": 119,
+    "carbs_target": 364,
+    "fat_target": 92,
+    "monthly_budget": 1700,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [
+     "סויה"
+    ],
+    "favorite_foods": [
+     "ביצים L 12 יחידות",
+     "חסה"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G022",
+   "slot": 11,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "sparse",
+    "budget": "normal",
+    "diet": "ללא לקטוז"
+   },
+   "keys": [
+    "salmon",
+    "eggs",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "potato",
+    "tomato",
+    "broccoli",
+    "banana",
+    "orange",
+    "tahini"
+   ],
+   "profile": {
+    "weight": 83,
+    "height": 181,
+    "age": 55,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "weight_gain",
+    "strength_training": "1-2",
+    "daily_calories": 3317,
+    "protein_target": 141,
+    "carbs_target": 481,
+    "fat_target": 92,
+    "monthly_budget": 1850,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא לקטוז"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "עגבניות",
+     "פסטה פנה"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G023",
+   "slot": 12,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "medium",
+    "budget": "normal",
+    "diet": "טבעוני"
+   },
+   "keys": [
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "soyDrink",
+    "rice",
+    "pasta",
+    "quinoa",
+    "pita",
+    "tomato",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "orange",
+    "berries",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 82,
+    "height": 180,
+    "age": 47,
+    "gender": "male",
+    "activity_level": "moderately_active",
+    "goal": "weight_loss",
+    "strength_training": "none",
+    "daily_calories": 2258,
+    "protein_target": 148,
+    "carbs_target": 248,
+    "fat_target": 75,
+    "monthly_budget": 1600,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "טבעוני"
+    ],
+    "allergies": [
+     "ביצים"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G024",
+   "slot": 13,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "medium",
+    "budget": "normal",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "chickpeas",
+    "whiteCheese",
+    "yogurt",
+    "rice",
+    "quinoa",
+    "bread",
+    "cucumber",
+    "carrot",
+    "lettuce",
+    "banana",
+    "orange",
+    "tahini",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 79,
+    "height": 163,
+    "age": 44,
+    "gender": "female",
+    "activity_level": "moderately_active",
+    "goal": "maintenance",
+    "strength_training": "none",
+    "daily_calories": 2213,
+    "protein_target": 126,
+    "carbs_target": 261,
+    "fat_target": 74,
+    "monthly_budget": 1600,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [
+     "אורז פרסי"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G025",
+   "slot": 14,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "medium",
+    "budget": "normal",
+    "diet": "טבעוני"
+   },
+   "keys": [
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "rice",
+    "pasta",
+    "bread",
+    "pita",
+    "oats",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "broccoli",
+    "banana",
+    "apple",
+    "berries",
+    "oil",
+    "tahini",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 62,
+    "height": 152,
+    "age": 36,
+    "gender": "female",
+    "activity_level": "sedentary",
+    "goal": "weight_gain",
+    "strength_training": "3-5",
+    "daily_calories": 1875,
+    "protein_target": 112,
+    "carbs_target": 240,
+    "fat_target": 52,
+    "monthly_budget": 2000,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "טבעוני"
+    ],
+    "allergies": [
+     "אגוזים"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G026",
+   "slot": 15,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "rich",
+    "budget": "normal",
+    "diet": "ללא גלוטן"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "turkey",
+    "tuna",
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "whiteCheese",
+    "yogurt",
+    "rice",
+    "pasta",
+    "quinoa",
+    "oats",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "apple",
+    "berries",
+    "oil",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 61,
+    "height": 167,
+    "age": 23,
+    "gender": "female",
+    "activity_level": "lightly_active",
+    "goal": "weight_loss",
+    "strength_training": "none",
+    "daily_calories": 1494,
+    "protein_target": 110,
+    "carbs_target": 151,
+    "fat_target": 50,
+    "monthly_budget": 2000,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא גלוטן"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "גזר"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G027",
+   "slot": 16,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "rich",
+    "budget": "normal",
+    "diet": "צמחוני"
+   },
+   "keys": [
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "cottage",
+    "whiteCheese",
+    "yellowCheese",
+    "yogurt",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "oats",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "orange",
+    "berries",
+    "almonds",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 63,
+    "height": 164,
+    "age": 44,
+    "gender": "female",
+    "activity_level": "moderately_active",
+    "goal": "maintenance",
+    "strength_training": "3-5",
+    "daily_calories": 1975,
+    "protein_target": 113,
+    "carbs_target": 232,
+    "fat_target": 66,
+    "monthly_budget": 1800,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "צמחוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [
+     "פסטה פנה",
+     "אבוקדו"
+    ],
+    "disliked_foods": [
+     "פלפל אדום"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G028",
+   "slot": 17,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "rich",
+    "budget": "normal",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "beef",
+    "tuna",
+    "salmon",
+    "lentils",
+    "cottage",
+    "whiteCheese",
+    "soyDrink",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "banana",
+    "orange",
+    "berries",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 73,
+    "height": 177,
+    "age": 39,
+    "gender": "female",
+    "activity_level": "lightly_active",
+    "goal": "weight_gain",
+    "strength_training": "6-7",
+    "daily_calories": 2435,
+    "protein_target": 139,
+    "carbs_target": 317,
+    "fat_target": 68,
+    "monthly_budget": 1750,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G029",
+   "slot": 18,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "sparse",
+    "budget": "generous",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "chicken",
+    "salmon",
+    "tofu",
+    "quinoa",
+    "bread",
+    "cucumber",
+    "pepper",
+    "berries",
+    "tahini"
+   ],
+   "profile": {
+    "weight": 85,
+    "height": 169,
+    "age": 36,
+    "gender": "male",
+    "activity_level": "moderately_active",
+    "goal": "weight_loss",
+    "strength_training": "1-2",
+    "daily_calories": 2283,
+    "protein_target": 162,
+    "carbs_target": 238,
+    "fat_target": 76,
+    "monthly_budget": 3200,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G030",
+   "slot": 19,
+   "attempt": 1,
+   "design": {
+    "goal": "maintenance",
+    "size": "sparse",
+    "budget": "generous",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "salmon",
+    "tofu",
+    "yogurt",
+    "pasta",
+    "bread",
+    "carrot",
+    "broccoli",
+    "orange",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 66,
+    "height": 191,
+    "age": 32,
+    "gender": "male",
+    "activity_level": "moderately_active",
+    "goal": "maintenance",
+    "strength_training": "3-5",
+    "daily_calories": 2633,
+    "protein_target": 119,
+    "carbs_target": 341,
+    "fat_target": 88,
+    "monthly_budget": 2450,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "יוגורט 3%"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G031",
+   "slot": 20,
+   "attempt": 2,
+   "design": {
+    "goal": "weight_gain",
+    "size": "sparse",
+    "budget": "generous",
+    "diet": "ללא לקטוז"
+   },
+   "keys": [
+    "turkey",
+    "salmon",
+    "lentils",
+    "rice",
+    "pasta",
+    "bread",
+    "cucumber",
+    "carrot",
+    "broccoli",
+    "banana",
+    "tahini",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 59,
+    "height": 164,
+    "age": 42,
+    "gender": "female",
+    "activity_level": "very_active",
+    "goal": "weight_gain",
+    "strength_training": "6-7",
+    "daily_calories": 2546,
+    "protein_target": 112,
+    "carbs_target": 365,
+    "fat_target": 71,
+    "monthly_budget": 2900,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא לקטוז"
+    ],
+    "allergies": [],
+    "favorite_foods": [
+     "טחינה גולמית",
+     "חזה הודו טרי"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G032",
+   "slot": 21,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "medium",
+    "budget": "generous",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "beef",
+    "eggs",
+    "whiteCheese",
+    "rice",
+    "pasta",
+    "oats",
+    "cucumber",
+    "pepper",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "tahini",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 82,
+    "height": 184,
+    "age": 62,
+    "gender": "male",
+    "activity_level": "sedentary",
+    "goal": "weight_loss",
+    "strength_training": "none",
+    "daily_calories": 1598,
+    "protein_target": 148,
+    "carbs_target": 132,
+    "fat_target": 53,
+    "monthly_budget": 2500,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [
+     "דגים"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G033",
+   "slot": 22,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "medium",
+    "budget": "generous",
+    "diet": "צמחוני"
+   },
+   "keys": [
+    "eggs",
+    "cottage",
+    "whiteCheese",
+    "yogurt",
+    "pasta",
+    "quinoa",
+    "oats",
+    "cucumber",
+    "pepper",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "orange",
+    "almonds",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 88,
+    "height": 177,
+    "age": 28,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "maintenance",
+    "strength_training": "none",
+    "daily_calories": 3193,
+    "protein_target": 141,
+    "carbs_target": 419,
+    "fat_target": 106,
+    "monthly_budget": 3200,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "צמחוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G034",
+   "slot": 23,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "medium",
+    "budget": "generous",
+    "diet": "טבעוני"
+   },
+   "keys": [
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "soyDrink",
+    "pasta",
+    "bread",
+    "oats",
+    "potato",
+    "tomato",
+    "pepper",
+    "lettuce",
+    "broccoli",
+    "apple",
+    "orange",
+    "oil",
+    "almonds",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 71,
+    "height": 178,
+    "age": 38,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "weight_gain",
+    "strength_training": "3-5",
+    "daily_calories": 3225,
+    "protein_target": 128,
+    "carbs_target": 476,
+    "fat_target": 90,
+    "monthly_budget": 3200,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "טבעוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [
+     "פסטה פנה",
+     "משקה סויה"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G035",
+   "slot": 24,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "rich",
+    "budget": "generous",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "chicken",
+    "turkey",
+    "tuna",
+    "salmon",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "whiteCheese",
+    "yellowCheese",
+    "yogurt",
+    "milk",
+    "soyDrink",
+    "rice",
+    "pasta",
+    "pita",
+    "potato",
+    "tomato",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "berries",
+    "almonds",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 66,
+    "height": 160,
+    "age": 39,
+    "gender": "female",
+    "activity_level": "very_active",
+    "goal": "weight_loss",
+    "strength_training": "1-2",
+    "daily_calories": 1849,
+    "protein_target": 125,
+    "carbs_target": 198,
+    "fat_target": 62,
+    "monthly_budget": 3200,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G036",
+   "slot": 25,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "rich",
+    "budget": "generous",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "chicken",
+    "tuna",
+    "salmon",
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "cottage",
+    "pasta",
+    "quinoa",
+    "bread",
+    "oats",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "banana",
+    "apple",
+    "orange",
+    "berries",
+    "oil",
+    "almonds",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 89,
+    "height": 169,
+    "age": 61,
+    "gender": "male",
+    "activity_level": "lightly_active",
+    "goal": "maintenance",
+    "strength_training": "none",
+    "daily_calories": 2264,
+    "protein_target": 142,
+    "carbs_target": 255,
+    "fat_target": 75,
+    "monthly_budget": 3400,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G037",
+   "slot": 26,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "rich",
+    "budget": "generous",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "turkey",
+    "tuna",
+    "eggs",
+    "chickpeas",
+    "tofu",
+    "whiteCheese",
+    "yellowCheese",
+    "yogurt",
+    "milk",
+    "pasta",
+    "quinoa",
+    "pita",
+    "oats",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "berries",
+    "oil",
+    "almonds",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 62,
+    "height": 175,
+    "age": 22,
+    "gender": "female",
+    "activity_level": "moderately_active",
+    "goal": "weight_gain",
+    "strength_training": "none",
+    "daily_calories": 2636,
+    "protein_target": 99,
+    "carbs_target": 396,
+    "fat_target": 73,
+    "monthly_budget": 2800,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [
+     "ביצים"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "תפוז"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G038",
+   "slot": 27,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "sparse",
+    "budget": "tight",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "turkey",
+    "salmon",
+    "milk",
+    "pasta",
+    "bread",
+    "cucumber",
+    "pepper",
+    "banana",
+    "oil",
+    "tahini",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 77,
+    "height": 176,
+    "age": 20,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "weight_loss",
+    "strength_training": "1-2",
+    "daily_calories": 2662,
+    "protein_target": 146,
+    "carbs_target": 319,
+    "fat_target": 89,
+    "monthly_budget": 1200,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [
+     "סויה"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G039",
+   "slot": 28,
+   "attempt": 1,
+   "design": {
+    "goal": "maintenance",
+    "size": "sparse",
+    "budget": "tight",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "pita",
+    "potato",
+    "tomato",
+    "pepper",
+    "banana",
+    "oil",
+    "tahini"
+   ],
+   "profile": {
+    "weight": 75,
+    "height": 165,
+    "age": 40,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "maintenance",
+    "strength_training": "none",
+    "daily_calories": 2736,
+    "protein_target": 120,
+    "carbs_target": 359,
+    "fat_target": 91,
+    "monthly_budget": 1350,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [
+     "תפוח אדמה"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G040",
+   "slot": 29,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "sparse",
+    "budget": "tight",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "turkey",
+    "tuna",
+    "salmon",
+    "rice",
+    "bread",
+    "tomato",
+    "pepper",
+    "broccoli",
+    "apple",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 81,
+    "height": 167,
+    "age": 23,
+    "gender": "female",
+    "activity_level": "moderately_active",
+    "goal": "weight_gain",
+    "strength_training": "3-5",
+    "daily_calories": 2846,
+    "protein_target": 146,
+    "carbs_target": 388,
+    "fat_target": 79,
+    "monthly_budget": 1200,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G041",
+   "slot": 30,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "medium",
+    "budget": "tight",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "beef",
+    "turkey",
+    "tuna",
+    "lentils",
+    "tofu",
+    "yogurt",
+    "pasta",
+    "quinoa",
+    "bread",
+    "cucumber",
+    "pepper",
+    "lettuce",
+    "banana",
+    "berries",
+    "oil",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 61,
+    "height": 172,
+    "age": 24,
+    "gender": "female",
+    "activity_level": "very_active",
+    "goal": "weight_loss",
+    "strength_training": "1-2",
+    "daily_calories": 2022,
+    "protein_target": 116,
+    "carbs_target": 239,
+    "fat_target": 67,
+    "monthly_budget": 1300,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [
+     "אגוזים"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "מלפפון",
+     "לחם מלא"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G042",
+   "slot": 31,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "medium",
+    "budget": "tight",
+    "diet": "כשר"
+   },
+   "keys": [
+    "eggs",
+    "tofu",
+    "whiteCheese",
+    "yellowCheese",
+    "yogurt",
+    "rice",
+    "quinoa",
+    "pita",
+    "oats",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "apple",
+    "orange",
+    "berries",
+    "tahini",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 82,
+    "height": 176,
+    "age": 52,
+    "gender": "male",
+    "activity_level": "lightly_active",
+    "goal": "maintenance",
+    "strength_training": "3-5",
+    "daily_calories": 2289,
+    "protein_target": 148,
+    "carbs_target": 253,
+    "fat_target": 76,
+    "monthly_budget": 1500,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "כשר"
+    ],
+    "allergies": [
+     "דגים"
+    ],
+    "favorite_foods": [
+     "ביצים L 12 יחידות"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G043",
+   "slot": 32,
+   "attempt": 1,
+   "design": {
+    "goal": "weight_gain",
+    "size": "medium",
+    "budget": "tight",
+    "diet": "כשר"
+   },
+   "keys": [
+    "chicken",
+    "salmon",
+    "eggs",
+    "tofu",
+    "quinoa",
+    "pita",
+    "potato",
+    "tomato",
+    "carrot",
+    "lettuce",
+    "banana",
+    "apple",
+    "oil",
+    "tahini"
+   ],
+   "profile": {
+    "weight": 80,
+    "height": 159,
+    "age": 25,
+    "gender": "female",
+    "activity_level": "lightly_active",
+    "goal": "weight_gain",
+    "strength_training": "1-2",
+    "daily_calories": 2473,
+    "protein_target": 136,
+    "carbs_target": 327,
+    "fat_target": 69,
+    "monthly_budget": 1400,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "כשר"
+    ],
+    "allergies": [
+     "חלב"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G044",
+   "slot": 33,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "rich",
+    "budget": "tight",
+    "diet": "כשר"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "turkey",
+    "tuna",
+    "eggs",
+    "lentils",
+    "tofu",
+    "cottage",
+    "milk",
+    "soyDrink",
+    "rice",
+    "bread",
+    "oats",
+    "potato",
+    "tomato",
+    "pepper",
+    "lettuce",
+    "broccoli",
+    "orange",
+    "berries",
+    "oil",
+    "tahini",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 71,
+    "height": 155,
+    "age": 32,
+    "gender": "female",
+    "activity_level": "lightly_active",
+    "goal": "weight_loss",
+    "strength_training": "3-5",
+    "daily_calories": 1467,
+    "protein_target": 142,
+    "carbs_target": 115,
+    "fat_target": 49,
+    "monthly_budget": 1450,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "כשר"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G045",
+   "slot": 34,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "rich",
+    "budget": "tight",
+    "diet": "טבעוני"
+   },
+   "keys": [
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "soyDrink",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "pita",
+    "oats",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "banana",
+    "apple",
+    "orange",
+    "berries",
+    "oil",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 88,
+    "height": 182,
+    "age": 37,
+    "gender": "male",
+    "activity_level": "moderately_active",
+    "goal": "maintenance",
+    "strength_training": "1-2",
+    "daily_calories": 2848,
+    "protein_target": 150,
+    "carbs_target": 348,
+    "fat_target": 95,
+    "monthly_budget": 1500,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "טבעוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [
+     "קינואה"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G046",
+   "slot": 35,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "rich",
+    "budget": "tight",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "turkey",
+    "tuna",
+    "salmon",
+    "lentils",
+    "chickpeas",
+    "whiteCheese",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "potato",
+    "tomato",
+    "cucumber",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "berries",
+    "oil",
+    "tahini",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 63,
+    "height": 181,
+    "age": 53,
+    "gender": "male",
+    "activity_level": "sedentary",
+    "goal": "weight_gain",
+    "strength_training": "1-2",
+    "daily_calories": 2202,
+    "protein_target": 107,
+    "carbs_target": 306,
+    "fat_target": 61,
+    "monthly_budget": 1450,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G047",
+   "slot": 36,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "sparse",
+    "budget": "normal",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "salmon",
+    "tofu",
+    "milk",
+    "bread",
+    "pita",
+    "potato",
+    "tomato",
+    "carrot",
+    "broccoli",
+    "berries",
+    "almonds",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 84,
+    "height": 176,
+    "age": 36,
+    "gender": "male",
+    "activity_level": "sedentary",
+    "goal": "weight_loss",
+    "strength_training": "none",
+    "daily_calories": 1718,
+    "protein_target": 151,
+    "carbs_target": 150,
+    "fat_target": 57,
+    "monthly_budget": 1850,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G048",
+   "slot": 37,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "sparse",
+    "budget": "normal",
+    "diet": "ללא לקטוז"
+   },
+   "keys": [
+    "beef",
+    "salmon",
+    "bread",
+    "potato",
+    "cucumber",
+    "broccoli",
+    "berries",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 76,
+    "height": 179,
+    "age": 59,
+    "gender": "male",
+    "activity_level": "lightly_active",
+    "goal": "maintenance",
+    "strength_training": "none",
+    "daily_calories": 2185,
+    "protein_target": 122,
+    "carbs_target": 260,
+    "fat_target": 73,
+    "monthly_budget": 1600,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא לקטוז"
+    ],
+    "allergies": [
+     "סויה"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G049",
+   "slot": 38,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "sparse",
+    "budget": "normal",
+    "diet": "צמחוני"
+   },
+   "keys": [
+    "salmon",
+    "eggs",
+    "tofu",
+    "milk",
+    "oats",
+    "potato",
+    "cucumber",
+    "broccoli",
+    "berries",
+    "cashew",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 78,
+    "height": 178,
+    "age": 51,
+    "gender": "female",
+    "activity_level": "lightly_active",
+    "goal": "weight_gain",
+    "strength_training": "6-7",
+    "daily_calories": 2430,
+    "protein_target": 148,
+    "carbs_target": 307,
+    "fat_target": 68,
+    "monthly_budget": 2200,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "צמחוני"
+    ],
+    "allergies": [
+     "דגים"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "קשיו טבעי"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G050",
+   "slot": 39,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "medium",
+    "budget": "normal",
+    "diet": "צמחוני"
+   },
+   "keys": [
+    "chicken",
+    "tuna",
+    "eggs",
+    "lentils",
+    "yogurt",
+    "rice",
+    "pasta",
+    "pita",
+    "tomato",
+    "carrot",
+    "broccoli",
+    "banana",
+    "orange",
+    "oil",
+    "tahini",
+    "almonds",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 78,
+    "height": 165,
+    "age": 34,
+    "gender": "female",
+    "activity_level": "lightly_active",
+    "goal": "weight_loss",
+    "strength_training": "6-7",
+    "daily_calories": 1635,
+    "protein_target": 164,
+    "carbs_target": 121,
+    "fat_target": 55,
+    "monthly_budget": 1950,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "צמחוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G051",
+   "slot": 40,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "medium",
+    "budget": "normal",
+    "diet": "צמחוני"
+   },
+   "keys": [
+    "chickpeas",
+    "cottage",
+    "whiteCheese",
+    "rice",
+    "bread",
+    "oats",
+    "potato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "oil",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 52,
+    "height": 172,
+    "age": 24,
+    "gender": "female",
+    "activity_level": "very_active",
+    "goal": "maintenance",
+    "strength_training": "3-5",
+    "daily_calories": 2267,
+    "protein_target": 94,
+    "carbs_target": 302,
+    "fat_target": 76,
+    "monthly_budget": 2200,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "צמחוני"
+    ],
+    "allergies": [
+     "ביצים"
+    ],
+    "favorite_foods": [
+     "בננה",
+     "קשיו טבעי"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G052",
+   "slot": 41,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "medium",
+    "budget": "normal",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "beef",
+    "salmon",
+    "cottage",
+    "whiteCheese",
+    "yogurt",
+    "rice",
+    "quinoa",
+    "bread",
+    "pita",
+    "potato",
+    "tomato",
+    "pepper",
+    "carrot",
+    "banana",
+    "berries",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 58,
+    "height": 176,
+    "age": 45,
+    "gender": "female",
+    "activity_level": "moderately_active",
+    "goal": "weight_gain",
+    "strength_training": "3-5",
+    "daily_calories": 2406,
+    "protein_target": 104,
+    "carbs_target": 347,
+    "fat_target": 67,
+    "monthly_budget": 2150,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "עגבניות"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G053",
+   "slot": 42,
+   "attempt": 1,
+   "design": {
+    "goal": "weight_loss",
+    "size": "rich",
+    "budget": "normal",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "beef",
+    "turkey",
+    "tuna",
+    "salmon",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "whiteCheese",
+    "yellowCheese",
+    "soyDrink",
+    "rice",
+    "quinoa",
+    "bread",
+    "pita",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "lettuce",
+    "apple",
+    "orange",
+    "berries",
+    "tahini",
+    "almonds",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 66,
+    "height": 173,
+    "age": 34,
+    "gender": "male",
+    "activity_level": "lightly_active",
+    "goal": "weight_loss",
+    "strength_training": "none",
+    "daily_calories": 1767,
+    "protein_target": 119,
+    "carbs_target": 190,
+    "fat_target": 59,
+    "monthly_budget": 1900,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G054",
+   "slot": 43,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "rich",
+    "budget": "normal",
+    "diet": "ללא גלוטן"
+   },
+   "keys": [
+    "beef",
+    "turkey",
+    "salmon",
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "whiteCheese",
+    "yogurt",
+    "soyDrink",
+    "rice",
+    "quinoa",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "berries",
+    "oil",
+    "tahini",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 76,
+    "height": 155,
+    "age": 57,
+    "gender": "female",
+    "activity_level": "lightly_active",
+    "goal": "maintenance",
+    "strength_training": "1-2",
+    "daily_calories": 1764,
+    "protein_target": 129,
+    "carbs_target": 179,
+    "fat_target": 59,
+    "monthly_budget": 1750,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא גלוטן"
+    ],
+    "allergies": [
+     "אגוזים"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G055",
+   "slot": 44,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "rich",
+    "budget": "normal",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "turkey",
+    "tuna",
+    "salmon",
+    "eggs",
+    "tofu",
+    "whiteCheese",
+    "soyDrink",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "pita",
+    "oats",
+    "cucumber",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "orange",
+    "berries",
+    "oil",
+    "tahini",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 64,
+    "height": 192,
+    "age": 42,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "weight_gain",
+    "strength_training": "6-7",
+    "daily_calories": 3220,
+    "protein_target": 122,
+    "carbs_target": 483,
+    "fat_target": 89,
+    "monthly_budget": 1900,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [
+     "פיתות",
+     "טחינה גולמית"
+    ],
+    "disliked_foods": [
+     "לחם מלא"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G056",
+   "slot": 45,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "sparse",
+    "budget": "generous",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "beef",
+    "salmon",
+    "soyDrink",
+    "quinoa",
+    "pita",
+    "pepper",
+    "lettuce",
+    "orange",
+    "almonds"
+   ],
+   "profile": {
+    "weight": 91,
+    "height": 173,
+    "age": 30,
+    "gender": "male",
+    "activity_level": "sedentary",
+    "goal": "weight_loss",
+    "strength_training": "1-2",
+    "daily_calories": 1816,
+    "protein_target": 173,
+    "carbs_target": 144,
+    "fat_target": 61,
+    "monthly_budget": 3150,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G057",
+   "slot": 46,
+   "attempt": 4,
+   "design": {
+    "goal": "maintenance",
+    "size": "sparse",
+    "budget": "generous",
+    "diet": "ללא גלוטן"
+   },
+   "keys": [
+    "turkey",
+    "salmon",
+    "tofu",
+    "yogurt",
+    "potato",
+    "tomato",
+    "pepper",
+    "broccoli",
+    "banana",
+    "berries",
+    "tahini",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 60,
+    "height": 170,
+    "age": 48,
+    "gender": "female",
+    "activity_level": "lightly_active",
+    "goal": "maintenance",
+    "strength_training": "3-5",
+    "daily_calories": 1735,
+    "protein_target": 108,
+    "carbs_target": 195,
+    "fat_target": 58,
+    "monthly_budget": 3100,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא גלוטן"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "אוכמניות"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G058",
+   "slot": 47,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "sparse",
+    "budget": "generous",
+    "diet": "ללא לקטוז"
+   },
+   "keys": [
+    "chicken",
+    "turkey",
+    "chickpeas",
+    "yogurt",
+    "rice",
+    "pita",
+    "cucumber",
+    "carrot",
+    "apple",
+    "oil",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 77,
+    "height": 188,
+    "age": 23,
+    "gender": "male",
+    "activity_level": "moderately_active",
+    "goal": "weight_gain",
+    "strength_training": "none",
+    "daily_calories": 3244,
+    "protein_target": 123,
+    "carbs_target": 486,
+    "fat_target": 90,
+    "monthly_budget": 3250,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא לקטוז"
+    ],
+    "allergies": [
+     "דגים"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "אורז פרסי"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G059",
+   "slot": 48,
+   "attempt": 2,
+   "design": {
+    "goal": "weight_loss",
+    "size": "medium",
+    "budget": "generous",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "yogurt",
+    "rice",
+    "quinoa",
+    "bread",
+    "pita",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "lettuce",
+    "banana",
+    "orange",
+    "oil",
+    "tahini",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 79,
+    "height": 153,
+    "age": 33,
+    "gender": "female",
+    "activity_level": "very_active",
+    "goal": "weight_loss",
+    "strength_training": "3-5",
+    "daily_calories": 2050,
+    "protein_target": 158,
+    "carbs_target": 202,
+    "fat_target": 68,
+    "monthly_budget": 3350,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G060",
+   "slot": 49,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "medium",
+    "budget": "generous",
+    "diet": "טבעוני"
+   },
+   "keys": [
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "soyDrink",
+    "pasta",
+    "quinoa",
+    "pita",
+    "oats",
+    "potato",
+    "tomato",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "almonds",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 81,
+    "height": 167,
+    "age": 39,
+    "gender": "female",
+    "activity_level": "sedentary",
+    "goal": "maintenance",
+    "strength_training": "3-5",
+    "daily_calories": 1797,
+    "protein_target": 146,
+    "carbs_target": 168,
+    "fat_target": 60,
+    "monthly_budget": 2550,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "טבעוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "אבוקדו",
+     "ברוקולי"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G061",
+   "slot": 50,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "medium",
+    "budget": "generous",
+    "diet": "כשר"
+   },
+   "keys": [
+    "chicken",
+    "tuna",
+    "tofu",
+    "yogurt",
+    "rice",
+    "pasta",
+    "quinoa",
+    "pita",
+    "oats",
+    "potato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "banana",
+    "apple",
+    "almonds",
+    "cashew",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 55,
+    "height": 175,
+    "age": 44,
+    "gender": "female",
+    "activity_level": "sedentary",
+    "goal": "weight_gain",
+    "strength_training": "3-5",
+    "daily_calories": 1915,
+    "protein_target": 99,
+    "carbs_target": 261,
+    "fat_target": 53,
+    "monthly_budget": 3150,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "כשר"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G062",
+   "slot": 51,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "rich",
+    "budget": "generous",
+    "diet": "צמחוני"
+   },
+   "keys": [
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "soyDrink",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "pita",
+    "oats",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 73,
+    "height": 182,
+    "age": 51,
+    "gender": "male",
+    "activity_level": "sedentary",
+    "goal": "weight_loss",
+    "strength_training": "6-7",
+    "daily_calories": 1541,
+    "protein_target": 153,
+    "carbs_target": 118,
+    "fat_target": 51,
+    "monthly_budget": 2850,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "צמחוני"
+    ],
+    "allergies": [
+     "חלב"
+    ],
+    "favorite_foods": [
+     "עגבניות"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G063",
+   "slot": 52,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "rich",
+    "budget": "generous",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "salmon",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "whiteCheese",
+    "yellowCheese",
+    "yogurt",
+    "soyDrink",
+    "rice",
+    "quinoa",
+    "bread",
+    "pita",
+    "potato",
+    "cucumber",
+    "pepper",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "berries",
+    "oil",
+    "tahini",
+    "almonds",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 86,
+    "height": 186,
+    "age": 57,
+    "gender": "male",
+    "activity_level": "moderately_active",
+    "goal": "maintenance",
+    "strength_training": "none",
+    "daily_calories": 2701,
+    "protein_target": 138,
+    "carbs_target": 335,
+    "fat_target": 90,
+    "monthly_budget": 3300,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G064",
+   "slot": 53,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "rich",
+    "budget": "generous",
+    "diet": "ללא גלוטן"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "turkey",
+    "tuna",
+    "salmon",
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "soyDrink",
+    "rice",
+    "quinoa",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "berries",
+    "oil",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 81,
+    "height": 165,
+    "age": 50,
+    "gender": "female",
+    "activity_level": "moderately_active",
+    "goal": "weight_gain",
+    "strength_training": "none",
+    "daily_calories": 2617,
+    "protein_target": 130,
+    "carbs_target": 360,
+    "fat_target": 73,
+    "monthly_budget": 3150,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא גלוטן"
+    ],
+    "allergies": [
+     "חלב"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G065",
+   "slot": 54,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "sparse",
+    "budget": "tight",
+    "diet": "צמחוני"
+   },
+   "keys": [
+    "eggs",
+    "tofu",
+    "pasta",
+    "quinoa",
+    "bread",
+    "oats",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "banana",
+    "oil"
+   ],
+   "profile": {
+    "weight": 74,
+    "height": 178,
+    "age": 36,
+    "gender": "female",
+    "activity_level": "lightly_active",
+    "goal": "weight_loss",
+    "strength_training": "6-7",
+    "daily_calories": 1678,
+    "protein_target": 155,
+    "carbs_target": 139,
+    "fat_target": 56,
+    "monthly_budget": 1200,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "צמחוני"
+    ],
+    "allergies": [
+     "חלב"
+    ],
+    "favorite_foods": [
+     "מלפפון",
+     "בננה"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G066",
+   "slot": 55,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "sparse",
+    "budget": "tight",
+    "diet": "כשר"
+   },
+   "keys": [
+    "tuna",
+    "lentils",
+    "milk",
+    "quinoa",
+    "bread",
+    "pita",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "apple",
+    "tahini",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 78,
+    "height": 179,
+    "age": 32,
+    "gender": "male",
+    "activity_level": "moderately_active",
+    "goal": "maintenance",
+    "strength_training": "none",
+    "daily_calories": 2703,
+    "protein_target": 125,
+    "carbs_target": 348,
+    "fat_target": 90,
+    "monthly_budget": 1300,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "כשר"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G067",
+   "slot": 56,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "sparse",
+    "budget": "tight",
+    "diet": "צמחוני"
+   },
+   "keys": [
+    "whiteCheese",
+    "yogurt",
+    "pasta",
+    "oats",
+    "potato",
+    "tomato",
+    "broccoli",
+    "apple",
+    "orange",
+    "oil",
+    "tahini",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 78,
+    "height": 178,
+    "age": 27,
+    "gender": "female",
+    "activity_level": "moderately_active",
+    "goal": "weight_gain",
+    "strength_training": "1-2",
+    "daily_calories": 2875,
+    "protein_target": 133,
+    "carbs_target": 406,
+    "fat_target": 80,
+    "monthly_budget": 1350,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "צמחוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G068",
+   "slot": 57,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "medium",
+    "budget": "tight",
+    "diet": "כשר"
+   },
+   "keys": [
+    "tuna",
+    "chickpeas",
+    "tofu",
+    "cottage",
+    "rice",
+    "pasta",
+    "bread",
+    "pepper",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "almonds",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 94,
+    "height": 177,
+    "age": 55,
+    "gender": "male",
+    "activity_level": "sedentary",
+    "goal": "weight_loss",
+    "strength_training": "none",
+    "daily_calories": 1732,
+    "protein_target": 169,
+    "carbs_target": 134,
+    "fat_target": 58,
+    "monthly_budget": 1350,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "כשר"
+    ],
+    "allergies": [],
+    "favorite_foods": [
+     "שקדים טבעיים"
+    ],
+    "disliked_foods": [
+     "טונה במים",
+     "ברוקולי"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G069",
+   "slot": 58,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "medium",
+    "budget": "tight",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "chickpeas",
+    "yogurt",
+    "pasta",
+    "bread",
+    "potato",
+    "cucumber",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "berries",
+    "oil",
+    "almonds",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 83,
+    "height": 174,
+    "age": 49,
+    "gender": "female",
+    "activity_level": "sedentary",
+    "goal": "maintenance",
+    "strength_training": "3-5",
+    "daily_calories": 1814,
+    "protein_target": 149,
+    "carbs_target": 170,
+    "fat_target": 60,
+    "monthly_budget": 1300,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G070",
+   "slot": 59,
+   "attempt": 1,
+   "design": {
+    "goal": "weight_gain",
+    "size": "medium",
+    "budget": "tight",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "eggs",
+    "tofu",
+    "yogurt",
+    "milk",
+    "soyDrink",
+    "rice",
+    "bread",
+    "potato",
+    "tomato",
+    "cucumber",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "apple",
+    "berries",
+    "oil",
+    "cashew",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 72,
+    "height": 161,
+    "age": 29,
+    "gender": "female",
+    "activity_level": "very_active",
+    "goal": "weight_gain",
+    "strength_training": "6-7",
+    "daily_calories": 2850,
+    "protein_target": 137,
+    "carbs_target": 398,
+    "fat_target": 79,
+    "monthly_budget": 1250,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [
+     "דגים"
+    ],
+    "favorite_foods": [
+     "ביצים L 12 יחידות"
+    ],
+    "disliked_foods": [
+     "ברוקולי",
+     "גזר"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G071",
+   "slot": 60,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "rich",
+    "budget": "tight",
+    "diet": "טבעוני"
+   },
+   "keys": [
+    "turkey",
+    "tuna",
+    "salmon",
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "cottage",
+    "whiteCheese",
+    "yogurt",
+    "milk",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "pita",
+    "oats",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "broccoli",
+    "banana",
+    "apple",
+    "berries",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 102,
+    "height": 165,
+    "age": 32,
+    "gender": "male",
+    "activity_level": "moderately_active",
+    "goal": "weight_loss",
+    "strength_training": "3-5",
+    "daily_calories": 2539,
+    "protein_target": 204,
+    "carbs_target": 240,
+    "fat_target": 85,
+    "monthly_budget": 1450,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "טבעוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "גרגירי חומוס",
+     "פיתות"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G072",
+   "slot": 61,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "rich",
+    "budget": "tight",
+    "diet": "צמחוני"
+   },
+   "keys": [
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "cottage",
+    "whiteCheese",
+    "yogurt",
+    "soyDrink",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "oats",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "oil",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 80,
+    "height": 192,
+    "age": 37,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "maintenance",
+    "strength_training": "1-2",
+    "daily_calories": 3140,
+    "protein_target": 136,
+    "carbs_target": 413,
+    "fat_target": 105,
+    "monthly_budget": 1250,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "צמחוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G073",
+   "slot": 62,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "rich",
+    "budget": "tight",
+    "diet": "טבעוני"
+   },
+   "keys": [
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "soyDrink",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "pita",
+    "oats",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "berries",
+    "oil",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 100,
+    "height": 194,
+    "age": 23,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "weight_gain",
+    "strength_training": "none",
+    "daily_calories": 4027,
+    "protein_target": 160,
+    "carbs_target": 595,
+    "fat_target": 112,
+    "monthly_budget": 1450,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "טבעוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G074",
+   "slot": 63,
+   "attempt": 1,
+   "design": {
+    "goal": "weight_loss",
+    "size": "sparse",
+    "budget": "normal",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "turkey",
+    "tuna",
+    "eggs",
+    "chickpeas",
+    "pasta",
+    "quinoa",
+    "bread",
+    "cucumber",
+    "pepper",
+    "banana",
+    "almonds"
+   ],
+   "profile": {
+    "weight": 99,
+    "height": 166,
+    "age": 35,
+    "gender": "male",
+    "activity_level": "lightly_active",
+    "goal": "weight_loss",
+    "strength_training": "6-7",
+    "daily_calories": 2154,
+    "protein_target": 208,
+    "carbs_target": 169,
+    "fat_target": 72,
+    "monthly_budget": 1800,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G075",
+   "slot": 64,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "sparse",
+    "budget": "normal",
+    "diet": "צמחוני"
+   },
+   "keys": [
+    "lentils",
+    "chickpeas",
+    "cottage",
+    "pasta",
+    "pita",
+    "tomato",
+    "lettuce",
+    "apple",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 71,
+    "height": 175,
+    "age": 33,
+    "gender": "male",
+    "activity_level": "moderately_active",
+    "goal": "maintenance",
+    "strength_training": "3-5",
+    "daily_calories": 2548,
+    "protein_target": 128,
+    "carbs_target": 318,
+    "fat_target": 85,
+    "monthly_budget": 1650,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "צמחוני"
+    ],
+    "allergies": [
+     "דגים"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "חסה"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G076",
+   "slot": 65,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "sparse",
+    "budget": "normal",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "beef",
+    "yogurt",
+    "pasta",
+    "bread",
+    "cucumber",
+    "pepper",
+    "banana",
+    "orange",
+    "oil",
+    "almonds"
+   ],
+   "profile": {
+    "weight": 99,
+    "height": 168,
+    "age": 35,
+    "gender": "male",
+    "activity_level": "lightly_active",
+    "goal": "weight_gain",
+    "strength_training": "1-2",
+    "daily_calories": 2971,
+    "protein_target": 168,
+    "carbs_target": 388,
+    "fat_target": 83,
+    "monthly_budget": 2100,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G077",
+   "slot": 66,
+   "attempt": 2,
+   "design": {
+    "goal": "weight_loss",
+    "size": "medium",
+    "budget": "normal",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "beef",
+    "tuna",
+    "salmon",
+    "eggs",
+    "chickpeas",
+    "tofu",
+    "yogurt",
+    "quinoa",
+    "pita",
+    "potato",
+    "tomato",
+    "cucumber",
+    "carrot",
+    "banana",
+    "orange",
+    "berries",
+    "tahini",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 63,
+    "height": 163,
+    "age": 59,
+    "gender": "female",
+    "activity_level": "sedentary",
+    "goal": "weight_loss",
+    "strength_training": "1-2",
+    "daily_calories": 1031,
+    "protein_target": 120,
+    "carbs_target": 61,
+    "fat_target": 34,
+    "monthly_budget": 1750,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G078",
+   "slot": 67,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "medium",
+    "budget": "normal",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "tuna",
+    "salmon",
+    "lentils",
+    "yogurt",
+    "rice",
+    "pasta",
+    "oats",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "lettuce",
+    "banana",
+    "apple",
+    "orange",
+    "berries",
+    "oil",
+    "almonds",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 54,
+    "height": 170,
+    "age": 53,
+    "gender": "female",
+    "activity_level": "very_active",
+    "goal": "maintenance",
+    "strength_training": "3-5",
+    "daily_calories": 2029,
+    "protein_target": 97,
+    "carbs_target": 257,
+    "fat_target": 68,
+    "monthly_budget": 2150,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [
+     "ביצים"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G079",
+   "slot": 68,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "medium",
+    "budget": "normal",
+    "diet": "צמחוני"
+   },
+   "keys": [
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "yellowCheese",
+    "yogurt",
+    "rice",
+    "pasta",
+    "quinoa",
+    "oats",
+    "tomato",
+    "cucumber",
+    "carrot",
+    "broccoli",
+    "banana",
+    "orange",
+    "oil",
+    "tahini"
+   ],
+   "profile": {
+    "weight": 67,
+    "height": 168,
+    "age": 58,
+    "gender": "female",
+    "activity_level": "sedentary",
+    "goal": "weight_gain",
+    "strength_training": "6-7",
+    "daily_calories": 1923,
+    "protein_target": 127,
+    "carbs_target": 235,
+    "fat_target": 53,
+    "monthly_budget": 1650,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "צמחוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "מלפפון",
+     "שיבולת שועל"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G080",
+   "slot": 69,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "rich",
+    "budget": "normal",
+    "diet": "כשר"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "turkey",
+    "tuna",
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "yellowCheese",
+    "rice",
+    "pasta",
+    "bread",
+    "oats",
+    "potato",
+    "tomato",
+    "cucumber",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "oil",
+    "cashew",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 75,
+    "height": 170,
+    "age": 40,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "weight_loss",
+    "strength_training": "1-2",
+    "daily_calories": 2390,
+    "protein_target": 143,
+    "carbs_target": 275,
+    "fat_target": 80,
+    "monthly_budget": 2100,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "כשר"
+    ],
+    "allergies": [],
+    "favorite_foods": [
+     "לחם מלא",
+     "בננה"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G081",
+   "slot": 70,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "rich",
+    "budget": "normal",
+    "diet": "צמחוני"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "turkey",
+    "eggs",
+    "chickpeas",
+    "tofu",
+    "cottage",
+    "whiteCheese",
+    "yellowCheese",
+    "soyDrink",
+    "pasta",
+    "quinoa",
+    "oats",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "oil",
+    "almonds",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 97,
+    "height": 191,
+    "age": 31,
+    "gender": "male",
+    "activity_level": "moderately_active",
+    "goal": "maintenance",
+    "strength_training": "none",
+    "daily_calories": 3121,
+    "protein_target": 155,
+    "carbs_target": 391,
+    "fat_target": 104,
+    "monthly_budget": 1800,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "צמחוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G082",
+   "slot": 71,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "rich",
+    "budget": "normal",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "turkey",
+    "salmon",
+    "eggs",
+    "chickpeas",
+    "tofu",
+    "cottage",
+    "whiteCheese",
+    "soyDrink",
+    "rice",
+    "pasta",
+    "bread",
+    "potato",
+    "tomato",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "apple",
+    "orange",
+    "berries",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 62,
+    "height": 161,
+    "age": 43,
+    "gender": "female",
+    "activity_level": "lightly_active",
+    "goal": "weight_gain",
+    "strength_training": "1-2",
+    "daily_calories": 2119,
+    "protein_target": 105,
+    "carbs_target": 292,
+    "fat_target": 59,
+    "monthly_budget": 1750,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [
+     "פלפל אדום"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G083",
+   "slot": 72,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "sparse",
+    "budget": "generous",
+    "diet": "צמחוני"
+   },
+   "keys": [
+    "turkey",
+    "tofu",
+    "whiteCheese",
+    "soyDrink",
+    "rice",
+    "oats",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "orange",
+    "tahini",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 63,
+    "height": 178,
+    "age": 27,
+    "gender": "female",
+    "activity_level": "lightly_active",
+    "goal": "weight_loss",
+    "strength_training": "none",
+    "daily_calories": 1589,
+    "protein_target": 113,
+    "carbs_target": 165,
+    "fat_target": 53,
+    "monthly_budget": 3100,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "צמחוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "גבינה לבנה 5%"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G084",
+   "slot": 73,
+   "attempt": 1,
+   "design": {
+    "goal": "maintenance",
+    "size": "sparse",
+    "budget": "generous",
+    "diet": "טבעוני"
+   },
+   "keys": [
+    "chickpeas",
+    "tofu",
+    "rice",
+    "pasta",
+    "pita",
+    "cucumber",
+    "pepper",
+    "lettuce",
+    "apple",
+    "almonds"
+   ],
+   "profile": {
+    "weight": 64,
+    "height": 176,
+    "age": 57,
+    "gender": "female",
+    "activity_level": "moderately_active",
+    "goal": "maintenance",
+    "strength_training": "3-5",
+    "daily_calories": 2006,
+    "protein_target": 115,
+    "carbs_target": 236,
+    "fat_target": 67,
+    "monthly_budget": 2450,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "טבעוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [
+     "פיתות"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G085",
+   "slot": 74,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "sparse",
+    "budget": "generous",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "chicken",
+    "turkey",
+    "tuna",
+    "lentils",
+    "quinoa",
+    "oats",
+    "cucumber",
+    "lettuce",
+    "apple",
+    "almonds"
+   ],
+   "profile": {
+    "weight": 62,
+    "height": 177,
+    "age": 62,
+    "gender": "female",
+    "activity_level": "moderately_active",
+    "goal": "weight_gain",
+    "strength_training": "none",
+    "daily_calories": 2346,
+    "protein_target": 99,
+    "carbs_target": 341,
+    "fat_target": 65,
+    "monthly_budget": 2900,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "חסה"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G086",
+   "slot": 75,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "medium",
+    "budget": "generous",
+    "diet": "טבעוני"
+   },
+   "keys": [
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "pita",
+    "oats",
+    "tomato",
+    "cucumber",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "orange",
+    "berries",
+    "oil",
+    "almonds",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 62,
+    "height": 155,
+    "age": 55,
+    "gender": "female",
+    "activity_level": "very_active",
+    "goal": "weight_loss",
+    "strength_training": "none",
+    "daily_calories": 1588,
+    "protein_target": 112,
+    "carbs_target": 166,
+    "fat_target": 53,
+    "monthly_budget": 2900,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "טבעוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G087",
+   "slot": 76,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "medium",
+    "budget": "generous",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "eggs",
+    "tofu",
+    "rice",
+    "pasta",
+    "quinoa",
+    "pita",
+    "oats",
+    "cucumber",
+    "carrot",
+    "lettuce",
+    "banana",
+    "apple",
+    "orange",
+    "oil",
+    "tahini",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 78,
+    "height": 180,
+    "age": 56,
+    "gender": "male",
+    "activity_level": "sedentary",
+    "goal": "maintenance",
+    "strength_training": "1-2",
+    "daily_calories": 1956,
+    "protein_target": 133,
+    "carbs_target": 210,
+    "fat_target": 65,
+    "monthly_budget": 3200,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [
+     "חלב"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "קפה נמס"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G088",
+   "slot": 77,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "medium",
+    "budget": "generous",
+    "diet": "ללא גלוטן"
+   },
+   "keys": [
+    "chicken",
+    "turkey",
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "whiteCheese",
+    "yellowCheese",
+    "rice",
+    "quinoa",
+    "cucumber",
+    "carrot",
+    "broccoli",
+    "banana",
+    "apple",
+    "oil",
+    "almonds",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 55,
+    "height": 157,
+    "age": 41,
+    "gender": "female",
+    "activity_level": "moderately_active",
+    "goal": "weight_gain",
+    "strength_training": "6-7",
+    "daily_calories": 2206,
+    "protein_target": 105,
+    "carbs_target": 309,
+    "fat_target": 61,
+    "monthly_budget": 2850,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא גלוטן"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "בננה",
+     "תפוח עץ"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G089",
+   "slot": 78,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "rich",
+    "budget": "generous",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "turkey",
+    "tuna",
+    "salmon",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "cottage",
+    "whiteCheese",
+    "yellowCheese",
+    "soyDrink",
+    "rice",
+    "quinoa",
+    "bread",
+    "pita",
+    "potato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "berries",
+    "almonds",
+    "cashew",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 87,
+    "height": 167,
+    "age": 33,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "weight_loss",
+    "strength_training": "3-5",
+    "daily_calories": 2625,
+    "protein_target": 174,
+    "carbs_target": 284,
+    "fat_target": 88,
+    "monthly_budget": 3300,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [
+     "ביצים"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G090",
+   "slot": 79,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "rich",
+    "budget": "generous",
+    "diet": "כשר"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "chickpeas",
+    "tofu",
+    "whiteCheese",
+    "yellowCheese",
+    "milk",
+    "soyDrink",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "pita",
+    "oats",
+    "potato",
+    "tomato",
+    "cucumber",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "berries",
+    "oil",
+    "tahini",
+    "cashew",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 51,
+    "height": 169,
+    "age": 48,
+    "gender": "female",
+    "activity_level": "moderately_active",
+    "goal": "maintenance",
+    "strength_training": "6-7",
+    "daily_calories": 1806,
+    "protein_target": 97,
+    "carbs_target": 220,
+    "fat_target": 60,
+    "monthly_budget": 2400,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "כשר"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G091",
+   "slot": 80,
+   "attempt": 1,
+   "design": {
+    "goal": "weight_gain",
+    "size": "rich",
+    "budget": "generous",
+    "diet": "ללא גלוטן"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "turkey",
+    "salmon",
+    "eggs",
+    "cottage",
+    "whiteCheese",
+    "yellowCheese",
+    "yogurt",
+    "soyDrink",
+    "rice",
+    "quinoa",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "apple",
+    "berries",
+    "oil",
+    "tahini",
+    "almonds"
+   ],
+   "profile": {
+    "weight": 66,
+    "height": 162,
+    "age": 39,
+    "gender": "female",
+    "activity_level": "lightly_active",
+    "goal": "weight_gain",
+    "strength_training": "3-5",
+    "daily_calories": 2210,
+    "protein_target": 119,
+    "carbs_target": 296,
+    "fat_target": 61,
+    "monthly_budget": 2600,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא גלוטן"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G092",
+   "slot": 81,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "sparse",
+    "budget": "tight",
+    "diet": "צמחוני"
+   },
+   "keys": [
+    "eggs",
+    "cottage",
+    "whiteCheese",
+    "rice",
+    "bread",
+    "tomato",
+    "lettuce",
+    "apple",
+    "almonds",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 91,
+    "height": 174,
+    "age": 43,
+    "gender": "male",
+    "activity_level": "lightly_active",
+    "goal": "weight_loss",
+    "strength_training": "3-5",
+    "daily_calories": 2058,
+    "protein_target": 182,
+    "carbs_target": 177,
+    "fat_target": 69,
+    "monthly_budget": 1250,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "צמחוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "שקדים טבעיים",
+     "אורז פרסי"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G093",
+   "slot": 82,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "sparse",
+    "budget": "tight",
+    "diet": "ללא גלוטן"
+   },
+   "keys": [
+    "turkey",
+    "tuna",
+    "chickpeas",
+    "soyDrink",
+    "quinoa",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "berries",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 63,
+    "height": 153,
+    "age": 36,
+    "gender": "female",
+    "activity_level": "lightly_active",
+    "goal": "maintenance",
+    "strength_training": "3-5",
+    "daily_calories": 1712,
+    "protein_target": 113,
+    "carbs_target": 187,
+    "fat_target": 57,
+    "monthly_budget": 1350,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא גלוטן"
+    ],
+    "allergies": [],
+    "favorite_foods": [
+     "גרגירי חומוס",
+     "תפוח עץ"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G094",
+   "slot": 83,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "sparse",
+    "budget": "tight",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "salmon",
+    "eggs",
+    "lentils",
+    "rice",
+    "oats",
+    "tomato",
+    "cucumber",
+    "orange",
+    "tahini",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 71,
+    "height": 180,
+    "age": 27,
+    "gender": "female",
+    "activity_level": "moderately_active",
+    "goal": "weight_gain",
+    "strength_training": "none",
+    "daily_calories": 2785,
+    "protein_target": 114,
+    "carbs_target": 409,
+    "fat_target": 77,
+    "monthly_budget": 1350,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G095",
+   "slot": 84,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "medium",
+    "budget": "tight",
+    "diet": "כשר"
+   },
+   "keys": [
+    "beef",
+    "turkey",
+    "tuna",
+    "salmon",
+    "milk",
+    "rice",
+    "pasta",
+    "bread",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "banana",
+    "apple",
+    "berries",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado"
+   ],
+   "profile": {
+    "weight": 80,
+    "height": 181,
+    "age": 30,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "weight_loss",
+    "strength_training": "3-5",
+    "daily_calories": 2681,
+    "protein_target": 160,
+    "carbs_target": 310,
+    "fat_target": 89,
+    "monthly_budget": 1400,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "כשר"
+    ],
+    "allergies": [
+     "חלב"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G096",
+   "slot": 85,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "medium",
+    "budget": "tight",
+    "diet": "טבעוני"
+   },
+   "keys": [
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "rice",
+    "pasta",
+    "quinoa",
+    "pita",
+    "oats",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "banana",
+    "apple",
+    "orange",
+    "oil",
+    "tahini",
+    "cashew"
+   ],
+   "profile": {
+    "weight": 82,
+    "height": 180,
+    "age": 27,
+    "gender": "female",
+    "activity_level": "very_active",
+    "goal": "maintenance",
+    "strength_training": "3-5",
+    "daily_calories": 2845,
+    "protein_target": 148,
+    "carbs_target": 350,
+    "fat_target": 95,
+    "monthly_budget": 1250,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "טבעוני"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G097",
+   "slot": 86,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "medium",
+    "budget": "tight",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "beef",
+    "tuna",
+    "salmon",
+    "chickpeas",
+    "cottage",
+    "whiteCheese",
+    "rice",
+    "pasta",
+    "bread",
+    "pita",
+    "oats",
+    "cucumber",
+    "pepper",
+    "lettuce",
+    "banana",
+    "apple",
+    "oil",
+    "tahini",
+    "almonds"
+   ],
+   "profile": {
+    "weight": 69,
+    "height": 180,
+    "age": 49,
+    "gender": "female",
+    "activity_level": "moderately_active",
+    "goal": "weight_gain",
+    "strength_training": "3-5",
+    "daily_calories": 2584,
+    "protein_target": 124,
+    "carbs_target": 360,
+    "fat_target": 72,
+    "monthly_budget": 1300,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [
+     "שקדים טבעיים"
+    ],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G098",
+   "slot": 87,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_loss",
+    "size": "rich",
+    "budget": "tight",
+    "diet": "ללא גלוטן"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "turkey",
+    "salmon",
+    "eggs",
+    "lentils",
+    "chickpeas",
+    "tofu",
+    "cottage",
+    "whiteCheese",
+    "yogurt",
+    "rice",
+    "pasta",
+    "quinoa",
+    "bread",
+    "pita",
+    "oats",
+    "potato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "berries",
+    "oil",
+    "almonds",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 74,
+    "height": 168,
+    "age": 20,
+    "gender": "male",
+    "activity_level": "lightly_active",
+    "goal": "weight_loss",
+    "strength_training": "3-5",
+    "daily_calories": 1931,
+    "protein_target": 148,
+    "carbs_target": 191,
+    "fat_target": 64,
+    "monthly_budget": 1300,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "ללא גלוטן"
+    ],
+    "allergies": [
+     "סויה"
+    ],
+    "favorite_foods": [],
+    "disliked_foods": [
+     "עדשים ירוקות",
+     "גרגירי חומוס"
+    ],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G099",
+   "slot": 88,
+   "attempt": 0,
+   "design": {
+    "goal": "maintenance",
+    "size": "rich",
+    "budget": "tight",
+    "diet": "ללא העדפה"
+   },
+   "keys": [
+    "chicken",
+    "beef",
+    "turkey",
+    "chickpeas",
+    "tofu",
+    "cottage",
+    "whiteCheese",
+    "yellowCheese",
+    "yogurt",
+    "rice",
+    "pasta",
+    "bread",
+    "oats",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "broccoli",
+    "banana",
+    "apple",
+    "orange",
+    "berries",
+    "oil",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 65,
+    "height": 182,
+    "age": 57,
+    "gender": "male",
+    "activity_level": "very_active",
+    "goal": "maintenance",
+    "strength_training": "1-2",
+    "daily_calories": 2600,
+    "protein_target": 111,
+    "carbs_target": 343,
+    "fat_target": 87,
+    "monthly_budget": 1400,
+    "purchases_per_month": 4,
+    "dietary_preferences": [],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  },
+  {
+   "id": "G100",
+   "slot": 89,
+   "attempt": 0,
+   "design": {
+    "goal": "weight_gain",
+    "size": "rich",
+    "budget": "tight",
+    "diet": "כשר"
+   },
+   "keys": [
+    "chicken",
+    "tuna",
+    "salmon",
+    "eggs",
+    "chickpeas",
+    "tofu",
+    "whiteCheese",
+    "yellowCheese",
+    "yogurt",
+    "soyDrink",
+    "rice",
+    "pasta",
+    "quinoa",
+    "pita",
+    "oats",
+    "potato",
+    "tomato",
+    "cucumber",
+    "pepper",
+    "carrot",
+    "lettuce",
+    "banana",
+    "apple",
+    "orange",
+    "tahini",
+    "almonds",
+    "cashew",
+    "avocado",
+    "coffee"
+   ],
+   "profile": {
+    "weight": 99,
+    "height": 190,
+    "age": 26,
+    "gender": "male",
+    "activity_level": "sedentary",
+    "goal": "weight_gain",
+    "strength_training": "1-2",
+    "daily_calories": 2863,
+    "protein_target": 168,
+    "carbs_target": 368,
+    "fat_target": 80,
+    "monthly_budget": 1450,
+    "purchases_per_month": 4,
+    "dietary_preferences": [
+     "כשר"
+    ],
+    "allergies": [],
+    "favorite_foods": [],
+    "disliked_foods": [],
+    "onboarding_complete": true
+   }
+  }
+ ]
+}

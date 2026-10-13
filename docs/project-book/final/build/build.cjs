@@ -549,7 +549,7 @@ function refEntry(text) {
   // "[n] reference text" — numbered reference, LTR for English entries, RTL for Hebrew ones.
   const m = text.match(/^\[(\d+)\]\s+(.*)$/);
   const body = m ? m[2] : text;
-  const rtl = HEB.test(body.slice(0, 40));
+  const rtl = /^[^A-Za-z\u0590-\u05FF]*[\u0590-\u05FF]/.test(body);  // direction follows the first letter
   return new Paragraph({
     bidirectional: rtl || undefined, alignment: AlignmentType.START, spacing: { line: 300, after: 110 },
     indent: { left: 560, hanging: 560 },

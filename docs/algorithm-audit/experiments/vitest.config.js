@@ -12,7 +12,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["docs/algorithm-audit/experiments/runBenchmark.js"],
-    testTimeout: 30 * 60 * 1000,
-    hookTimeout: 30 * 60 * 1000,
+    testTimeout: 6 * 60 * 60 * 1000,
+    hookTimeout: 6 * 60 * 60 * 1000,
   },
 });

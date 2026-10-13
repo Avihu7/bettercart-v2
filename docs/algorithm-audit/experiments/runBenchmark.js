@@ -17,7 +17,7 @@
  */
 import { it, vi } from "vitest";
 import os from "node:os";
-import { writeFileSync } from "node:fs";
+import { writeFileSync, readFileSync } from "node:fs";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
@@ -46,6 +46,18 @@ import { weeklyBudget } from "@/lib/pricing";
 import { planWeekExperimental, LIMITS, SLOT_PAIRS } from "./extendedNeighborhood.js";
 import { measure, compareRank } from "./metrics.js";
 import { SCENARIOS, CONTROLS } from "./scenarios.js";
+import { ITEMS } from "../../../tests/fixtures/baskets";
+
+// BENCH_SET=100: the ten original scenarios + the 90 synthetic ones of scenarios100.json (buildScenarios100.mjs)
+const SET = process.env.BENCH_SET || "10";
+const COMPACT = process.env.BENCH_COMPACT === "1";   // leave the full menus and move examples out of the output
+const ALL_SCENARIOS = SET === "100" ? [
+  ...SCENARIOS.map(s => ({ ...s, kind: "original" })),
+  ...JSON.parse(readFileSync(new URL("./scenarios100.json", import.meta.url), "utf8")).scenarios.map(g => ({
+    id: g.id, title: `Synthetic: ${g.design.goal}, ${g.design.size} basket, ${g.design.budget} budget, ${g.design.diet}`,
+    source: "scenarios100.json — seeded generator (buildScenarios100.mjs)", kind: "synthetic", design: g.design,
+    items: g.keys.map(k => ITEMS[k]), profile: g.profile })),
+] : SCENARIOS;
 
 const TIMING_RUNS = Number(process.env.BENCH_TIMING_RUNS ?? 10);
 const ONLY = process.env.BENCH_ONLY ? process.env.BENCH_ONLY.split(",") : null;
@@ -131,10 +143,10 @@ it("extended-neighborhood benchmark", async () => {
     timingRuns: TIMING_RUNS,
     limits: { ...LIMITS, slotPairs: SLOT_PAIRS.length, productionMaxPasses: 6, eps: 1e-9 },
     objective: { effectiveWeights: WEIGHTS, weightKeys: Object.keys(WEIGHTS).length, variants: PLANNER_VARIANTS },
-    scenarios: [], controls: [],
+    scenarioSet: SET, scenarios: [], controls: [],
   };
 
-  const scenarios = SCENARIOS.filter(s => !ONLY || ONLY.includes(s.id));
+  const scenarios = ALL_SCENARIOS.filter(s => !ONLY || ONLY.includes(s.id));
   for (const scenario of scenarios) {
     const { items, profile } = scenario;
     const budget = weeklyBudget(profile);
@@ -179,9 +191,13 @@ it("extended-neighborhood benchmark", async () => {
       sameAsQualityRun: times[mode].prints.has((mode === "production" ? baseline : extended).fingerprint ?? `error:${(mode === "production" ? baseline : extended).error?.name}`),
     } : null);
 
-    const strip = x => { const { fingerprint: _f, ...rest } = x; return rest; };
+    const strip = x => {
+      const { fingerprint: _f, ...rest } = x;
+      if (COMPACT) { delete rest.plan; if (rest.search) rest.search = rest.search.map(({ examples: _e, ...v }) => v); }
+      return rest;
+    };
     results.scenarios.push({
-      id: scenario.id, title: scenario.title, source: scenario.source,
+      id: scenario.id, title: scenario.title, source: scenario.source, kind: scenario.kind, design: scenario.design,
       input: {
         products: items.length, eatable: eatable.length, productNames: items.map(i => i.name),
         profile: Object.fromEntries(["daily_calories", "protein_target", "fat_target", "carbs_target", "monthly_budget", "goal", "strength_training", "weight",
@@ -203,7 +219,7 @@ it("extended-neighborhood benchmark", async () => {
   }
 
   // Controls: inputs the planner should refuse or cannot fit — reported, not part of the comparison
-  for (const control of ONLY ? [] : CONTROLS) {
+  for (const control of ONLY || SET === "100" ? [] : CONTROLS) {
     const budget = weeklyBudget(control.profile);
     const b = await build("production", control, budget), e = await build("extended", control, budget);
     const brief = r => (r.error ? { refused: r.error.name } : (() => { const m = measure({ plan: r.plan, items: control.items, profile: control.profile, budget });
